@@ -15,7 +15,8 @@ The project was initially developed using [SOFA](https://www.sofa-framework.org/
 [PyTorch](https://pytorch.org/) as the **AI framework**. 
 Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **other frameworks** can also be used.
 The packages corresponding to these frameworks will therefore be used for the default installation.
-For further instructions (set up your installation config, developer mode), please refer to the **documentation**.
+For further instructions (dependencies, set up your installation config, developer mode), please refer to the 
+**documentation**.
 
 ``` bash
 $ git clone https://github.com/mimesis/deepphysx.git

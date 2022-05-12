@@ -1,0 +1,22 @@
+.wy-nav-content {
+    max-width: 75% !important;
+}
+
+.docutils caption {
+    caption-side: bottom;
+}
+
+.core {
+    color: #0097a7ff;
+    font-weight: bold;
+}
+
+.simu {
+    color: #ffab40ff;
+    font-weight: bold;
+}
+
+.ai {
+    color: #a64d79ff;
+    font-weight: bold;
+}
