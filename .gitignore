@@ -1,0 +1,32 @@
+#Files to ignore
+CMakeLists.txt.user
+.DS_Store
+
+#Directories to ignore
+__pycache__/
+build/
+.idea/
+cmake-build-release/
+cmake-build-debug/
+DeepPhysX.egg-info/
+dist/
+venv/
+sessions/
+debug/
+/Sofa/
+/Torch/
+
+#File extensions to ignore
+*.log
+*.view
+*.bin
+*.pyc
+*.autosave
+*.save
+*.pdf
+*.pth
+*.csv
+*.npy
+*.obj
+*.vtk
+*.ini

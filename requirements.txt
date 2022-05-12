@@ -1,0 +1,7 @@
+numpy
+vedo
+tensorboard
+tensorboardX
+pyDataverse
+torch
+psutil
