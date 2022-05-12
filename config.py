@@ -3,8 +3,8 @@ import sys
 from distutils.util import strtobool
 from importlib.util import find_spec
 
-PACKAGES = {'sofa': True,
-            'torch': True}
+PACKAGES = {'sofa': False,
+            'torch': False}
 GIT = {'sofa': '',
        'torch': ''}
 
