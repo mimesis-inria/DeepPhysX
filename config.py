@@ -5,8 +5,8 @@ from importlib.util import find_spec
 
 PACKAGES = {'sofa': False,
             'torch': False}
-GIT = {'sofa': '',
-       'torch': ''}
+GIT = {'sofa': 'https://github.com/mimesis-inria/DeepPhysX_Sofa.git',
+       'torch': 'https://github.com/mimesis-inria/DeepPhysX_Torch.git'}
 
 
 if __name__ == '__main__':
