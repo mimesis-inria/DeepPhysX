@@ -190,7 +190,7 @@ class DataManager:
         # Get a prediction
         prediction = self.manager.network_manager.compute_online_prediction(network_input=network_input)
         # Unapply normalization on prediction
-        return self.normalize_data(prediction, 'input', reverse=True)
+        return self.normalize_data(prediction, 'output', reverse=True)
 
     def apply_prediction(self, prediction: ndarray) -> None:
         """
