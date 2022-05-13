@@ -28,7 +28,7 @@ The project was initially developed using [SOFA](https://www.sofa-framework.org/
 Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **other frameworks** can also be used.
 The packages corresponding to these frameworks will therefore be used for the default installation.
 For further instructions (dependencies, set up your installation config, developer mode), please refer to the 
-**documentation**.
+[**documentation**](https://deepphysx.readthedocs.io).
 
 ``` bash
 $ git clone https://github.com/mimesis/deepphysx.git
