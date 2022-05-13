@@ -1,7 +1,6 @@
 import os
 import sys
 from distutils.util import strtobool
-from importlib.util import find_spec
 
 PACKAGES = {'sofa': False,
             'torch': False}
@@ -47,7 +46,7 @@ if __name__ == '__main__':
 
     # Clone missing packages
     for name, value in PACKAGES.items():
-        if value and find_spec(standard_name[name]) is None:
+        if value and not os.path.exists(standard_name[name]):
             print(f'Package {standard_name[name]} not found, cloning from {GIT[name]}...')
             os.system(f'git clone {GIT[name]} {standard_name[name]}')
 
