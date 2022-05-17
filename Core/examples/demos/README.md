@@ -16,6 +16,7 @@ from forces applied on the object.
 Each demo will contain the following scripts:
 * `download.py`: Allow to automatically download the missing demo data. Launching this script is not mandatory.
 * `prediction.py`: Launch the prediction session with `Environment/<Demo>.py`.
+* `interactive.py`: Launch an interactive prediction session with `Environment/<Demo>Interative.py`.
 
 ### Description
 

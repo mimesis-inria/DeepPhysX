@@ -16,7 +16,7 @@ class LiverDownloader(DataDownloader):
     def __init__(self):
         DataDownloader.__init__(self, DOI, session_name)
 
-        self.categories = {'models': [118, 120, 212],
+        self.categories = {'models': [117, 118, 120, 212],
                            'session': [281],
                            'network': [195],
                            'stats': [198],
