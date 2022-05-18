@@ -60,7 +60,7 @@ class Armadillo(BaseEnvironment):
         # Force fields
         self.arrows = None
         self.areas = []
-        self.sphere = lambda center: Sphere(center, r=0.75 * p_model.scale, c='lightgray').lighting('glossy')
+        self.sphere = lambda center: Sphere(center, r=0.5 * p_model.scale, c='lightgray').lighting('glossy')
         self.spheres = []
         self.spheres_init = []
 

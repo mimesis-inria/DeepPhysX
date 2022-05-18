@@ -35,3 +35,13 @@ $ git clone https://github.com/mimesis/deepphysx.git
 $ cd DeepPhysX
 $ pip install .
 ```
+
+
+### Demos
+
+**DeepPhysX** includes a set of detailed tutorials, examples and demos.
+Run the following commands from main directory to directly try the **interactive demos**:
+
+|        **Armadillo**<br>`python3 demo.py armadillo`        |        **Beam**<br>`python3 demo.py beam`        |        **Liver**<br>`python3 demo.py liver`        |
+|:----------------------------------------------------------:|:------------------------------------------------:|:--------------------------------------------------:|
+| ![armadillo](Core/docs/source/_static/image/armadillo.png) | ![beam](Core/docs/source/_static/image/beam.png) | ![liver](Core/docs/source/_static/image/liver.png) |
