@@ -102,7 +102,7 @@ class BaseNetwork:
         :return: Converted tensor
         """
 
-        raise NotImplementedError
+        return data.astype(self.config.data_type)
 
     def transform_to_numpy(self, data: Any) -> ndarray:
         """
@@ -112,7 +112,7 @@ class BaseNetwork:
         :return: Converted array
         """
 
-        raise NotImplementedError
+        return data.astype(self.config.data_type)
 
     def __str__(self) -> str:
         """

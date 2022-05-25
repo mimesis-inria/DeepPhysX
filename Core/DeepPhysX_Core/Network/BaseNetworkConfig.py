@@ -1,6 +1,7 @@
 from typing import Any, Optional, Type
 from collections import namedtuple
 from os.path import isdir
+from numpy import typeDict
 
 from DeepPhysX_Core.Network.BaseNetwork import BaseNetwork
 from DeepPhysX_Core.Network.BaseOptimization import BaseOptimization
@@ -26,6 +27,7 @@ class BaseNetworkConfig:
     :param int which_network: If several networks in network_dir, load the specified one
     :param bool save_each_epoch: If True, network state will be saved at each epoch end; if False, network state
                                  will be saved at the end of the training
+    :param str data_type: Type of the training data
     :param Optional[float] lr: Learning rate
     :param bool require_training_stuff: If specified, loss and optimizer class can be not necessary for training
     :param Optional[Any] loss: Loss class
@@ -41,6 +43,7 @@ class BaseNetworkConfig:
                  network_type: str = 'BaseNetwork',
                  which_network: int = 0,
                  save_each_epoch: bool = False,
+                 data_type: str = 'float64',
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
                  loss: Optional[Any] = None,
@@ -71,15 +74,23 @@ class BaseNetworkConfig:
         if type(save_each_epoch) != bool:
             raise TypeError(
                 f"[{self.__class__.__name__}] Wrong 'save each epoch' type: bool required, get {type(save_each_epoch)}")
+        # Check data type
+        if data_type not in typeDict:
+            raise ValueError(
+                f"[{self.__class__.__name__}] The following data type is not a numpy type: {data_type}")
 
         # BaseNetwork parameterization
         self.network_class: Type[BaseNetwork] = network_class
-        self.network_config: namedtuple = self.make_config(config_name='network_config', network_name=network_name,
-                                                           network_type=network_type)
+        self.network_config: namedtuple = self.make_config(config_name='network_config',
+                                                           network_name=network_name,
+                                                           network_type=network_type,
+                                                           data_type=data_type)
 
         # BaseOptimization parameterization
         self.optimization_class: Type[BaseOptimization] = optimization_class
-        self.optimization_config: namedtuple = self.make_config(config_name='optimization_config', loss=loss, lr=lr,
+        self.optimization_config: namedtuple = self.make_config(config_name='optimization_config',
+                                                                loss=loss,
+                                                                lr=lr,
                                                                 optimizer=optimizer)
         self.training_stuff: bool = (loss is not None) and (optimizer is not None) or (not require_training_stuff)
 
