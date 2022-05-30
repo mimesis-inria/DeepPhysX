@@ -33,6 +33,7 @@ For further instructions (dependencies, set up your installation config, develop
 ``` bash
 $ git clone https://github.com/mimesis/deepphysx.git
 $ cd DeepPhysX
+$ python3 config.py torch=True (required to run the demos)
 $ pip install .
 ```
 
