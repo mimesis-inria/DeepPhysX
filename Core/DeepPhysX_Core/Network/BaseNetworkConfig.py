@@ -43,7 +43,7 @@ class BaseNetworkConfig:
                  network_type: str = 'BaseNetwork',
                  which_network: int = 0,
                  save_each_epoch: bool = False,
-                 data_type: str = 'float64',
+                 data_type: str = 'float32',
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
                  loss: Optional[Any] = None,
