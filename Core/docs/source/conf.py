@@ -19,6 +19,7 @@ all_modules = {'DeepPhysX_Core': ['AsyncSocket', 'Dataset', 'Environment', 'Mana
                                   'Visualizer']}
 
 # Import all modules
+sys.path.append(root)
 for package, modules in all_modules.items():
     sys.path.append(os.path.join(root, package))
     for module in modules:
