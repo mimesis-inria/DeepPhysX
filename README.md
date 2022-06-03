@@ -51,6 +51,6 @@ $ python3 config.py                                         # Answer 'yes' to in
 $ pip install .
 ```
 
-|        **Armadillo**<br>`python3 demo.py armadillo`        |        **Beam**<br>`python3 demo.py beam`        |        **Liver**<br>`python3 demo.py liver`        |
-|:----------------------------------------------------------:|:------------------------------------------------:|:--------------------------------------------------:|
-| ![armadillo](Core/docs/source/_static/image/armadillo.png) | ![beam](Core/docs/source/_static/image/beam.png) | ![liver](Core/docs/source/_static/image/liver.png) |
+|     **Armadillo**<br>`python3 demo.py armadillo`      |     **Beam**<br>`python3 demo.py beam`      |     **Liver**<br>`python3 demo.py liver`      |
+|:-----------------------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
+| ![armadillo](docs/source/_static/image/armadillo.png) | ![beam](docs/source/_static/image/beam.png) | ![liver](docs/source/_static/image/liver.png) |
