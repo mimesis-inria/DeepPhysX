@@ -30,3 +30,4 @@ debug/
 *.obj
 *.vtk
 *.ini
+*.json

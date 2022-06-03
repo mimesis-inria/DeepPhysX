@@ -1,41 +1,49 @@
 from setuptools import setup, find_packages
-from os.path import join
-from config import PACKAGES
+from os.path import join, pardir, exists
+from json import load, dump
+
+from config import check_repositories, PROJECT, PACKAGES
 
 
-# Init DeepPhysX packages and dependencies to install
-roots = ['Core']
-available = {'ai': ['Torch'],
-             'simu': ['Sofa']}
-dependencies = {'Core': ['numpy', 'vedo', 'tensorboard', 'tensorboardX', 'pyDataverse'],
+DEPENDENCIES = {'Core': ['numpy', 'vedo', 'tensorboard', 'tensorboardX', 'pyDataverse'],
                 'Sofa': [],
                 'Torch': ['torch', 'psutil']}
-packages = []
-requires = []
 
-# Include user config
-user_ai_packages = []
-user_simu_packages = []
-for user_packages, key in zip([user_ai_packages, user_simu_packages], ['ai', 'simu']):
-    for root in available[key]:
-        if PACKAGES[root.lower()]:
-            user_packages.append(root)
+# Check repositories names
+check_repositories()
 
-# Define the main packages to install
-roots += user_ai_packages
-roots += user_simu_packages
+# Load existing configuration file
+if exists('config.json'):
+    with open('config.json') as file:
+        PACKAGES = load(file)
+    # Check config validity
+    correct_config = True
+    for package_name, do_install in PACKAGES.items():
+        if do_install and not exists(join(pardir, package_name)):
+            PACKAGES[package_name] = False
+            correct_config = False
+    if not correct_config:
+        with open('config.json', 'w') as file:
+            dump(PACKAGES, file)
 
-# Configure packages and subpackages list and dependencies list
-prefix = 'DeepPhysX_'
+# Getting the packages to be installed
+roots = ['Core']
+for package_name, do_install in PACKAGES.items():
+    if do_install:
+        roots.append(package_name)
+
+# Adding packages defined in configuration
 packages = []
 packages_dir = {}
 requires = []
-for root in roots:
-    for sub_package in find_packages(where=root):
-        if 'tests' not in sub_package:
-            packages.append(sub_package)
-            packages_dir[sub_package] = join(root, *sub_package.split('.'))
-    requires += dependencies[root]
+for package_name in roots:
+    packages.append(f'{PROJECT}.{package_name}')
+    packages_dir[f'{PROJECT}.{package_name}'] = join(pardir, package_name, 'src')
+    requires += DEPENDENCIES[package_name]
+    for sub_package in find_packages(where=join(pardir, package_name, 'src')):
+        packages.append(f'{PROJECT}.{package_name}.{sub_package}')
+        packages_dir[f'{PROJECT}.{package_name}.{sub_package}'] = join(pardir, package_name, 'src',
+                                                                       *sub_package.split('.'))
 
 # Installation
 setup(name='DeepPhysX',

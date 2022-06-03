@@ -31,17 +31,25 @@ For further instructions (dependencies, set up your installation config, develop
 [**documentation**](https://deepphysx.readthedocs.io).
 
 ``` bash
-$ git clone https://github.com/mimesis/deepphysx.git
-$ cd DeepPhysX
-$ python3 config.py torch=True (required to run the demos)
-$ pip install .
+$ pip install DeepPhysX             # Install default package
+$ pip install DeepPhysX_Sofa        # Install simulation package
+$ pip install DeepPhysX_Torch       # Install AI package
 ```
 
 
 ### Demos
 
 **DeepPhysX** includes a set of detailed tutorials, examples and demos.
-Run the following commands from main directory to directly try the **interactive demos**:
+Following this installation process to directly try the **interactive demos**:
+
+``` bash
+$ mkdir DeepPhysX
+$ cd DeepPhysX
+$ git clone https://github.com/mimesis/deepphysx.git Core   # Make shure to clone this repository in 'DeepPhysX/Core'
+$ cd Core
+$ python3 config.py                                         # Answer 'yes' to install Torch package to launch examples
+$ pip install .
+```
 
 |        **Armadillo**<br>`python3 demo.py armadillo`        |        **Beam**<br>`python3 demo.py beam`        |        **Liver**<br>`python3 demo.py liver`        |
 |:----------------------------------------------------------:|:------------------------------------------------:|:--------------------------------------------------:|

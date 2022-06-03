@@ -13,7 +13,6 @@ demos = ['armadillo', 'beam', 'liver']
 if demo not in demos:
     raise ValueError(f"Unknown demo '{demo}', available are: {demos}")
 
-repo = os.path.join(os.path.dirname(__file__), 'Core', 'examples', 'demos',
-                    demo[0].upper() + demo[1:].lower(), 'FC')
+repo = os.path.join(os.path.dirname(__file__), 'examples', 'demos', demo[0].upper() + demo[1:].lower(), 'FC')
 os.chdir(repo)
 os.system(f'{sys.executable} interactive.py')
