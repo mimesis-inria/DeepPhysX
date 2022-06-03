@@ -2,15 +2,13 @@ from setuptools import setup, find_packages
 from os.path import join, pardir, exists
 from json import load, dump
 
-from config import check_repositories, PROJECT, PACKAGES
 
-
+PROJECT = 'DeepPhysX'
+PACKAGES = {'Torch': False,
+            'Sofa': False}
 DEPENDENCIES = {'Core': ['numpy', 'vedo', 'tensorboard', 'tensorboardX', 'pyDataverse'],
                 'Sofa': [],
                 'Torch': ['torch', 'psutil']}
-
-# Check repositories names
-check_repositories()
 
 # Load existing configuration file
 if exists('config.json'):
