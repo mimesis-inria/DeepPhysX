@@ -7,8 +7,8 @@ with **learning algorithms**.
 
 **DeepPhysX** provides a **Core** package with no dependency on any **simulation** or **AI** framework.
 Then other packages are compatible with this **Core** and a specific **simulation** or **AI** framework:
-* [DeepPhysX_Sofa](https://github.com/mimesis-inria/DeepPhysX_Sofa) as simulation packages;
-* [DeepPhysX_Torch](https://github.com/mimesis-inria/DeepPhysX_Torch) as AI packages.
+* [DeepPhysX.Sofa](https://github.com/mimesis-inria/DeepPhysX_Sofa) as simulation packages;
+* [DeepPhysX.Torch](https://github.com/mimesis-inria/DeepPhysX_Torch) as AI packages.
 
 
 ### Features
