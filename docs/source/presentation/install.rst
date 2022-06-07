@@ -54,16 +54,16 @@ They can easily be installed with ``pip``:
 .. code-block:: bash
 
     pip3 install DeepPhysX
-    pip3 install DeepPhysX_Sofa
-    pip3 install DeepPhysX_Torch
+    pip3 install DeepPhysX.Sofa
+    pip3 install DeepPhysX.Torch
 
 Then, you should be able to run:
 
 .. code-block:: bash
 
     pip3 show DeepPhysX
-    pip3 show DeepPhysX_Sofa
-    pip3 show DeepPhysX_Torch
+    pip3 show DeepPhysX.Sofa
+    pip3 show DeepPhysX.Torch
 
 .. code-block:: python
 

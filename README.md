@@ -27,13 +27,14 @@ The project was initially developed using [SOFA](https://www.sofa-framework.org/
 [PyTorch](https://pytorch.org/) as the **AI framework**. 
 Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **other frameworks** can also be used.
 The packages corresponding to these frameworks will therefore be used for the default installation.
-For further instructions (dependencies, set up your installation config, developer mode), please refer to the 
-[**documentation**](https://deepphysx.readthedocs.io).
+
+The easiest way to install is using `pip`, but there are a several way to install and configure a **DeepPhysX**
+environment (refer to the [**documentation**](https://deepphysx.readthedocs.io) for further instructions).
 
 ``` bash
 $ pip install DeepPhysX             # Install default package
-$ pip install DeepPhysX_Sofa        # Install simulation package
-$ pip install DeepPhysX_Torch       # Install AI package
+$ pip install DeepPhysX.Sofa        # Install simulation package
+$ pip install DeepPhysX.Torch       # Install AI package
 ```
 
 

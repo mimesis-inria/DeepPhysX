@@ -7,8 +7,8 @@ PACKAGES = {'Torch': False,
             'Sofa': False}
 AVAILABLE = {'AI': ['Torch'],
              'Simulation': ['Sofa']}
-GIT = {'Torch': 'https://github.com/mimesis-inria/DeepPhysX_Torch.git',
-       'Sofa': 'https://github.com/mimesis-inria/DeepPhysX_Sofa.git'}
+GIT = {'Torch': 'https://github.com/mimesis-inria/DeepPhysX.Torch.git',
+       'Sofa': 'https://github.com/mimesis-inria/DeepPhysX.Sofa.git'}
 ANSWERS = ['y', 'yes', 'n', 'no']
 
 
