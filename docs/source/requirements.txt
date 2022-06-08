@@ -1,0 +1,6 @@
+numpy
+vedo
+tensorboard
+tensorboardX
+pyDataverse
+DeepPhysX
