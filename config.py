@@ -1,6 +1,7 @@
-from os import chdir, pardir, system, sep, rename, listdir, getcwd
+from os import chdir, pardir, system, sep, rename, listdir, getcwd, mkdir
 from os.path import exists, abspath, join
 from json import dump
+from shutil import move
 
 PROJECT = 'DeepPhysX'
 PACKAGES = {'Torch': False,
@@ -15,20 +16,33 @@ ANSWERS = ['y', 'yes', 'n', 'no']
 def check_repositories():
 
     # Check current repository
+    path = abspath(join(__file__, pardir, pardir))
     repository = abspath(join(__file__, pardir)).split(sep)[-1]
+    chdir(join(path, repository))
+    size = 2
     if repository != 'Core':
-        print(f"WARNING: Wrong current repository name, renaming '{repository}' --> 'Core'")
+        print(f"WARNING: Wrong repository, moving '{repository}' --> '{join(PROJECT, 'Core')}'")
         chdir(pardir)
         rename(repository, 'Core')
-        chdir('Core')
+        mkdir(PROJECT)
+        move(src=join(path, f'Core{sep}'),
+             dst=join(path, PROJECT))
+        size += 1
+        path = join(path, PROJECT)
+        chdir(join(path, 'Core'))
 
     # Check other repositories
-    chdir(pardir)
-    for repository in listdir(getcwd()):
-        if 'DeepPhysX_' in repository:
-            print(f"WARNING: Wrong current repository name, renaming '{repository}' --> '{repository[10:]}'")
-            rename(repository, repository[10:])
-    chdir('Core')
+    for i in range(size):
+        for repository in listdir(getcwd()):
+            if 'DeepPhysX.' in repository:
+                if repository[10:] in PACKAGES.keys():
+                    print(f"WARNING: Wrong repository, moving '{repository}' --> '{join(PROJECT, repository[10:])}'")
+                    rename(repository, repository[10:])
+                    if not exists(join(path, f'{repository[10:]}{sep}')):
+                        move(src=join(getcwd(), f'{repository[10:]}{sep}'),
+                             dst=path)
+        chdir(pardir)
+    chdir(join(path, 'Core'))
 
 
 if __name__ == '__main__':

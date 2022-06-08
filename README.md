@@ -29,12 +29,26 @@ Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **oth
 The packages corresponding to these frameworks will therefore be used for the default installation.
 
 The easiest way to install is using `pip`, but there are a several way to install and configure a **DeepPhysX**
-environment (refer to the [**documentation**](https://deepphysx.readthedocs.io) for further instructions).
+environment (refer to the [**documentation**](https://deepphysx.readthedocs.io/en/latest/presentation/install.html) 
+for further instructions).
 
 ``` bash
 $ pip install DeepPhysX             # Install default package
 $ pip install DeepPhysX.Sofa        # Install simulation package
 $ pip install DeepPhysX.Torch       # Install AI package
+```
+
+If cloning sources, create a `DeepPhysX` repository to store every package. 
+Packages must be cloned in a directory with the corresponding name as shown below:
+
+``` bash
+$ mkdir DeepPhysX
+$ cd DeepPhysX
+$ git clone https://github.com/mimesis-inria/DeepPhysX.git Core             # Clone default package
+$ git clone https://github.com/mimesis-inria/DeepPhysX.Sofa.git Sofa        # Clone simulation package
+$ git clone https://github.com/mimesis-inria/DeepPhysX.Torch.git Torch      # Clone AI package
+$ ls
+Core Sofa Torch
 ```
 
 

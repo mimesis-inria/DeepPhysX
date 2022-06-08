@@ -91,7 +91,7 @@ Start by cloning the **DeepPhysX** source code from its Github repository in a d
 
     $ mkdir DeepPhysX
     $ cd DeepPhysX
-    $ git clone https://github.com/mimesis/deepphysx.git Core
+    $ git clone https://github.com/mimesis-inria/DeepPhysX.git Core
     $ cd Core
 
 Specify which packages to install by running the configuration script.
