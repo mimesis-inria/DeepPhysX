@@ -4,3 +4,4 @@ tensorboard
 tensorboardX
 pyDataverse
 torch
+yaml
