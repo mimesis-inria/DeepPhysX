@@ -11,7 +11,7 @@ PACKAGES = {'Torch': False,
             'Sofa': False}
 DEPENDENCIES = {'Core': ['numpy', 'vedo', 'tensorboard', 'tensorboardX', 'pyDataverse'],
                 'Sofa': [],
-                'Torch': ['torch', 'psutil']}
+                'Torch': ['torch']}
 
 # (SHARED) Loading existing configuration file
 if exists('config.json'):

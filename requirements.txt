@@ -4,4 +4,3 @@ tensorboard
 tensorboardX
 pyDataverse
 torch
-psutil
