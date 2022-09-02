@@ -122,28 +122,6 @@ class VedoVisualizer:
                 del self.viewers[viewer_id]
                 continue
 
-            # # Create plotter
-            # self.viewers[viewer_id]['plotter'] = Plotter(N=len(self.viewers[viewer_id]['instances']),
-            #                                              title=self.viewers[viewer_id]['title'],
-            #                                              axes=viewer_id,
-            #                                              sharecam=self.viewers[viewer_id]['sharecam'],
-            #                                              interactive=self.viewers[viewer_id]['interactive'])
-            # self.viewers[viewer_id]['plotter'].add(self.info, at=0)
-            #
-            # # self.viewers[viewer_id]['instances'] is a list containing lists of instances
-            # # Each sublist contains all instances present in a window hence, each sublist has it own "at"
-            # for at, ids in enumerate(self.viewers[viewer_id]['instances']):
-            #     for scene_id, object_in_scene_id in ids:
-            #         # Add object instance in the actors list of plotter
-            #         self.viewers[viewer_id]['plotter'].add(
-            #             self.scene[scene_id].objects_instance[object_in_scene_id], at=at, render=False)
-            #         # Register the object rendering location
-            #         self.objects_rendered_in[f'{scene_id}_{object_in_scene_id}'] = (viewer_id, at)
-            #
-            # # Render viewer
-            # self.viewers[viewer_id]['plotter'].show(interactive=True)
-            # self.viewers[viewer_id]['plotter'].remove(self.info)
-
             actors = []
             for at, ids in enumerate(self.viewers[viewer_id]['instances']):
                 actors.append([])
@@ -159,6 +137,19 @@ class VedoVisualizer:
                                                       sharecam=self.viewers[viewer_id]['sharecam'],
                                                       interactive=self.viewers[viewer_id]['interactive'])
             self.viewers[viewer_id]['plotter'].remove(self.info)
+
+            # Once the user closed the window, recreate a new viewer
+            actors[0].remove(self.info)
+            camera = {'pos': self.viewers[viewer_id]['plotter'].camera.GetPosition(),
+                      'focalPoint': self.viewers[viewer_id]['plotter'].camera.GetFocalPoint()}
+            self.viewers[viewer_id]['plotter'] = show(actors,
+                                                      N=len(actors),
+                                                      new=True,
+                                                      title=self.viewers[viewer_id]['title'],
+                                                      axes=viewer_id,
+                                                      sharecam=self.viewers[viewer_id]['sharecam'],
+                                                      interactive=False,
+                                                      camera=camera)
 
     def render(self) -> None:
         """
