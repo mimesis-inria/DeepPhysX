@@ -8,21 +8,21 @@ from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConf
 
 
 class EnvironmentManager:
-    """
-    | Deals with the online generation of data for both training and running of the neural networks.
-
-    :param Optional[BaseEnvironmentConfig] environment_config: Specialisation containing the parameters of the
-                                                               environment manager
-    :param DataManager data_manager: DataManager that handles the EnvironmentManager
-    :param int batch_size: Number of samples in a batch of data
-    :param bool train: True if this session is a network training
-    """
 
     def __init__(self,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 environment_config: BaseEnvironmentConfig,
+                 session: str,
                  data_manager: Any = None,
                  batch_size: int = 1,
-                 train: bool = True):
+                 training: bool = True):
+        """
+        Deals with the online generation of data for both training and running of the neural networks.
+
+        :param environment_config: Specialisation containing the parameters of the environment manager
+        :param data_manager: DataManager that handles the EnvironmentManager
+        :param batch_size: Number of samples in a batch of data
+        :param training: True if this session is a network training
+        """
 
         self.name: str = self.__class__.__name__
 
@@ -35,30 +35,36 @@ class EnvironmentManager:
         self.use_dataset_in_environment: bool = environment_config.use_dataset_in_environment
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
-        self.train: bool = train
+        self.train: bool = training
         self.dataset_batch: Optional[Dict[str, Dict[int, Any]]] = None
         # self.prediction_requested: bool = False
+
+        # Create the Visualizer
+        self.visualizer_manager, visu_db = None, None
+        if environment_config.visualizer is not None:
+            self.visualizer_manager = VisualizerManager(data_manager=data_manager,
+                                                        visualizer=environment_config.visualizer,
+                                                        session=session)
+            visu_db = self.visualizer_manager.visualizer.get_database()
 
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = environment_config.number_of_thread
         self.server: Optional[TcpIpServer] = None
         self.environment: Optional[BaseEnvironment] = None
         if environment_config.as_tcp_ip_client:
-            self.server = environment_config.create_server(environment_manager=self, batch_size=batch_size)
+            self.server = environment_config.create_server(environment_manager=self,
+                                                           batch_size=batch_size,
+                                                           visu_db=id(visu_db))
         else:
-            self.environment = environment_config.create_environment(environment_manager=self)
+            self.environment = environment_config.create_environment(environment_manager=self,
+                                                                     visu_db=visu_db)
 
         # Define get_data and dispatch methods
         self.get_data = self.get_data_from_server if self.server else self.get_data_from_environment
         self.dispatch_batch = self.dispatch_batch_to_server if self.server else self.dispatch_batch_to_environment
 
         # Init visualizer
-        if environment_config.visualizer is None:
-            self.visualizer_manager = None
-        else:
-            self.visualizer_manager = VisualizerManager(data_manager=data_manager,
-                                                        visualizer=environment_config.visualizer,
-                                                        screenshot_rate=environment_config.screenshot_sample_rate)
+        if self.visualizer_manager is not None:
             self.init_visualizer()
 
     def get_data_manager(self) -> Any:
@@ -86,7 +92,7 @@ class EnvironmentManager:
             elif self.environment is not None:
                 data_dict[0] = self.environment.send_visualization()
             # Init view
-            self.visualizer_manager.init_view(data_dict)
+            self.visualizer_manager.init_view()
 
     def update_visualizer(self, data_dict: Dict[int, Dict[int, Dict[str, Dict[str, Any]]]]) -> None:
         """
@@ -96,7 +102,7 @@ class EnvironmentManager:
         """
 
         if self.visualizer_manager is not None:
-            self.visualizer_manager.update_visualizer(data_dict)
+            # self.visualizer_manager.update_visualizer(data_dict)
             self.visualizer_manager.render()
 
     def get_data_from_server(self, get_inputs: bool = True, get_outputs: bool = True,

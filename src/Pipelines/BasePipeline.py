@@ -19,7 +19,7 @@ class BasePipeline:
     :param BaseNetworkConfig network_config: Specialisation containing the parameters of the network manager
     :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
     :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
+    :param str session_name: Name of the newly created directory if session is not defined
     :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
     :param Optional[str] pipeline: Values at either 'training' or 'prediction'
     """

@@ -7,7 +7,7 @@ from sys import modules, executable
 
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
-from DeepPhysX.Core.Visualizer.VedoVisualizer import VedoVisualizer
+from SSD.Core.Rendering.VedoVisualizer import VedoVisualizer
 
 
 class BaseEnvironmentConfig:
@@ -100,7 +100,10 @@ class BaseEnvironmentConfig:
         self.number_of_thread: int = min(max(number_of_thread, 1), cpu_count())  # Assert nb is between 1 and cpu_count
         self.max_client_connections = max_client_connection
 
-    def create_server(self, environment_manager: Optional[Any] = None, batch_size: int = 1) -> TcpIpServer:
+    def create_server(self,
+                      environment_manager: Optional[Any] = None,
+                      batch_size: int = 1,
+                      visu_db: Optional[int] = None) -> TcpIpServer:
         """
         | Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
@@ -119,7 +122,7 @@ class BaseEnvironmentConfig:
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i,))
+            client_thread = Thread(target=self.start_client, args=(i, visu_db))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -143,7 +146,9 @@ class BaseEnvironmentConfig:
         # Server is ready
         self.server_is_ready: bool = True
 
-    def start_client(self, idx: int = 1) -> None:
+    def start_client(self,
+                     idx: int = 1,
+                     visu_db: Optional[int] = None) -> None:
         """
         | Run a subprocess to start a TcpIpClient.
 
@@ -159,9 +164,12 @@ class BaseEnvironmentConfig:
                        self.ip_address,
                        str(self.port),
                        str(idx),
-                       str(self.number_of_thread)])
+                       str(self.number_of_thread),
+                       str(visu_db)])
 
-    def create_environment(self, environment_manager: Any) -> BaseEnvironment:
+    def create_environment(self,
+                           environment_manager: Any,
+                           visu_db: Optional[Any] = None) -> BaseEnvironment:
         """
         | Create an Environment that will not be a TcpIpObject.
 
@@ -170,13 +178,9 @@ class BaseEnvironmentConfig:
         """
 
         # Create instance
-        try:
-            environment = self.environment_class(environment_manager=environment_manager, as_tcp_ip_client=False)
-        except:
-            raise ValueError(f"[{self.name}] Given 'environment_class' cannot be created in {self.name}")
-        if not isinstance(environment, BaseEnvironment):
-            raise TypeError(f"[{self.name}] Wrong 'environment_class' type: BaseEnvironment required, get "
-                            f"{self.environment_class}")
+        environment = self.environment_class(environment_manager=environment_manager,
+                                             as_tcp_ip_client=False,
+                                             visu_db=visu_db)
         # Create & Init Environment
         environment.recv_parameters(self.param_dict)
         environment.create()

@@ -1,33 +1,30 @@
 from typing import Any, Dict, Tuple, Optional
-from os import listdir
+from os import listdir, sep
 from os.path import join as osPathJoin
 from os.path import isdir, isfile
 from numpy import copy, array, ndarray
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Utils.pathUtils import copy_dir, create_dir, get_first_caller
+from DeepPhysX.Core.Utils.pathUtils import copy_dir, create_dir
 
 
 class NetworkManager:
-    """
-    Deals with all the interactions with the neural network. Predictions, saves, initialisation, loading,
-    back-propagation, etc...
-
-    :param Optional[BaseNetworkConfig] network_config: Specialisation containing the parameters of the network manager
-    :param Manager manager: Manager that handle the network manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
-    :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
-    :param bool new_session: Define the creation of new directories to store data
-    :param bool train: If True prediction will cause tensors gradient creation
-    """
 
     def __init__(self,
-                 network_config: Optional[BaseNetworkConfig] = None,
+                 network_config: BaseNetworkConfig,
+                 session: str,
                  manager: Optional[Any] = None,
-                 session_name: str = 'default',
-                 session_dir: Optional[str] = None,
                  new_session: bool = True,
-                 train: bool = True):
+                 training: bool = True):
+        """
+        Deals with all the interactions with the neural network. Predictions, saves, initialisation, loading,
+        back-propagation, etc...
+
+        :param network_config: Specialisation containing the parameters of the network manager
+        :param manager: Manager that handle the network manager
+        :param new_session: Define the creation of new directories to store data
+        :param training: If True prediction will cause tensors gradient creation
+        """
 
         self.name: str = self.__class__.__name__
 
@@ -35,33 +32,29 @@ class NetworkManager:
         if not isinstance(network_config, BaseNetworkConfig):
             raise TypeError(f"[{self.name}] Wrong 'network_config' type: BaseNetworkConfig required, "
                             f"get {type(network_config)}")
-        # Check session_name type
-        if type(session_name) != str:
-            raise TypeError(f"[{self.name}] Wrong 'session_name' type: str required, get {type(session_name)}")
-        # Check session_dir type and existence
-        if session_dir is not None:
-            if type(session_dir) != str:
-                raise TypeError(f"[{self.name}] Wrong 'session_dir' type: str required, get {type(session_dir)}")
-            if not isdir(session_dir):
-                raise ValueError(f"[{self.name}] Given 'session_dir' does not exists: {session_dir}")
+        # Check session type and existence
+        if type(session) != str:
+            raise TypeError(f"[{self.name}] Wrong 'session' type: str required, get {type(session)}")
+        if not isdir(session):
+            raise ValueError(f"[{self.name}] Given 'session' does not exists: {session}")
         # Check new_session type
         if type(new_session) != bool:
             raise TypeError(f"[{self.name}] Wrong 'new_session' type: bool required, get {type(new_session)}")
         # Check train type
-        if type(train) != bool:
-            raise TypeError(f"[{self.name}] Wrong 'train' type: bool required, get {type(train)}")
+        if type(training) != bool:
+            raise TypeError(f"[{self.name}] Wrong 'train' type: bool required, get {type(training)}")
 
         # Storage management
-        self.session_dir: str = session_dir if session_dir is not None else osPathJoin(get_first_caller(), session_name)
+        self.session: str = session
         self.new_session: bool = new_session
         self.network_dir: Optional[str] = None
-        self.network_template_name: str = session_name + '_network_{}'
+        self.network_template_name: str = session.split(sep)[-1] + '_network_{}'
 
         # Network management
         self.manager: Any = manager
-        if train and not network_config.training_stuff:
+        if training and not network_config.training_stuff:
             raise ValueError(f"[{self.name}] Training requires a loss and an optimizer in your NetworkConfig")
-        self.training: bool = train
+        self.training: bool = training
         self.save_each_epoch: bool = network_config.save_each_epoch
         self.saved_counter: int = 0
 
@@ -106,10 +99,10 @@ class NetworkManager:
             # Setting network directory
             if self.new_session and self.network_config.network_dir and isdir(self.network_config.network_dir):
                 self.network_dir = self.network_config.network_dir
-                self.network_dir = copy_dir(self.network_dir, self.session_dir, dest_dir='network')
+                self.network_dir = copy_dir(self.network_dir, self.session, dest_dir='network')
                 self.load_network()
             else:
-                self.network_dir = osPathJoin(self.session_dir, 'network/')
+                self.network_dir = osPathJoin(self.session, 'network/')
                 self.network_dir = create_dir(self.network_dir, dir_name='network')
 
         # Prediction
@@ -117,7 +110,7 @@ class NetworkManager:
             # Configure as prediction
             self.network.set_eval()
             # Need an existing network
-            self.network_dir = osPathJoin(self.session_dir, 'network/')
+            self.network_dir = osPathJoin(self.session, 'network/')
             # Load parameters
             self.load_network()
 

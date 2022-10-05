@@ -22,7 +22,8 @@ class MeanEnvironment(BaseEnvironment):
                  instance_id=0,
                  number_of_instances=1,
                  as_tcp_ip_client=True,
-                 environment_manager=None):
+                 environment_manager=None,
+                 visu_db=None):
 
         BaseEnvironment.__init__(self,
                                  ip_address=ip_address,
@@ -30,7 +31,8 @@ class MeanEnvironment(BaseEnvironment):
                                  instance_id=instance_id,
                                  number_of_instances=number_of_instances,
                                  as_tcp_ip_client=as_tcp_ip_client,
-                                 environment_manager=environment_manager)
+                                 environment_manager=environment_manager,
+                                 visu_db=visu_db)
 
         # Define training data values
         self.input_value = array([])
@@ -64,25 +66,22 @@ class MeanEnvironment(BaseEnvironment):
 
     def send_visualization(self):
         # Point cloud (object will have id = 0)
-        self.factory.add_object(object_type="Points",
-                                data_dict={"positions": self.input_value,
-                                           "c": "blue",
-                                           "at": self.instance_id,
-                                           "r": 8})
+        self.factory.add_points(positions=self.input_value,
+                                at=self.instance_id,
+                                c='blue',
+                                point_size=8)
         # Ground truth value (object will have id = 1)
-        self.factory.add_object(object_type="Points",
-                                data_dict={"positions": [self.output_value],
-                                           "c": "green",
-                                           "at": self.instance_id,
-                                           "r": 10})
+        self.factory.add_points(positions=self.output_value,
+                                at=self.instance_id,
+                                c='green',
+                                point_size=10)
         # Prediction value (object will have id = 2)
-        self.factory.add_object(object_type="Points",
-                                data_dict={"positions": [self.output_value],
-                                           "c": "orange",
-                                           "at": self.instance_id,
-                                           "r": 12})
+        self.factory.add_points(positions=self.output_value,
+                                at=self.instance_id,
+                                c='orange',
+                                point_size=12)
         # Return the visualization data
-        return self.factory.objects_dict
+        return {}
 
     """
     ENVIRONMENT BEHAVIOR
@@ -111,16 +110,16 @@ class MeanEnvironment(BaseEnvironment):
         # Update visualization with new input and ground truth
         if not self.constant:
             # Point cloud
-            self.factory.update_object_dict(object_id=0,
-                                            new_data_dict={'positions': self.input_value})
+            self.factory.update_points(object_id=0,
+                                       positions=self.input_value)
             # Ground truth value
-            self.factory.update_object_dict(object_id=1,
-                                            new_data_dict={'positions': self.output_value})
+            self.factory.update_points(object_id=1,
+                                       positions=self.output_value)
         # Update visualization with prediction
-        self.factory.update_object_dict(object_id=2,
-                                        new_data_dict={'positions': prediction})
+        self.factory.update_points(object_id=2,
+                                   positions=prediction)
         # Send visualization data to update
-        self.update_visualisation(visu_dict=self.factory.updated_object_dict)
+        self.factory.render()
 
     def close(self):
         # Shutdown message

@@ -8,12 +8,13 @@ ground truth.
 from torch.nn import MSELoss
 from torch.optim import Adam
 
+from SSD.Core.Rendering.VedoVisualizer import VedoVisualizer
+
 # DeepPhysX related imports
 from DeepPhysX.Core.Pipelines.BaseTrainer import BaseTrainer
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
-from DeepPhysX.Core.Visualizer.VedoVisualizer import VedoVisualizer
 
 # Session related imports
 from Environment import MeanEnvironment

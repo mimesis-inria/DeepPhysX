@@ -14,85 +14,70 @@ from DeepPhysX.Core.Utils.pathUtils import get_first_caller, create_dir
 
 
 class Manager:
-    """
-    | Collection of all the specialized managers. Allows for some basic functions call.
-    | More specific behaviour have to be directly call from the corresponding manager.
-
-    :param BasePipeline pipeline: Specialisation That define the type of usage
-    :param Optional[BaseNetworkConfig] network_config: Specialisation containing the parameters of the network manager
-    :param Optional[BaseDatasetConfig] dataset_config: Specialisation containing the parameters of the dataset manager
-    :param Optional[BaseEnvironmentConfig] environment_config: Specialisation containing the parameters of the
-                                                               environment manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
-    :param str session_dir: Name of the directory in which to write all of the necessary data
-    :param bool new_session: Define the creation of new directories to store data
-    :param int batch_size: Number of samples in a batch
-    """
 
     def __init__(self,
+                 network_config: BaseNetworkConfig,
+                 dataset_config: BaseDatasetConfig,
+                 environment_config: BaseEnvironmentConfig,
                  pipeline: Optional[Any] = None,
-                 network_config: Optional[BaseNetworkConfig] = None,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
-                 session_name: str = 'default',
-                 session_dir: str = None,
+                 session_dir: Optional[str] = None,
+                 session_name: str = 'DPX_default',
                  new_session: bool = True,
+                 training: bool = True,
+                 store_data: bool = True,
                  batch_size: int = 1):
+        """
+        Collection of all the specialized managers. Allows for some basic functions call.
+        More specific behaviour have to be directly call from the corresponding manager.
 
-        self.pipeline: Any = pipeline
-        #Constructing the session_dir with the provided arguments
+        :param network_config: Specialisation containing the parameters of the network manager.
+        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param environment_config: Specialisation containing the parameters of the environment manager.
+        :param session_name: Name of the newly created directory if session is not defined.
+        :param session_dir: Name of the directory in which to write all the necessary data
+        :param bool new_session: Define the creation of new directories to store data
+        :param int batch_size: Number of samples in a batch
+        """
+
+        self.pipeline: Optional[Any] = pipeline
+
+        # Constructing the session with the provided arguments
         if session_name is None:
             raise ValueError("[Manager] The session name cannot be set to None (will raise error).")
         if session_dir is None:
             # Create manager directory from the session name
-            self.session_dir: str = osPathJoin(get_first_caller(), session_name)
+            self.session: str = osPathJoin(get_first_caller(), session_name)
         else:
-            self.session_dir: str = osPathJoin(session_dir, session_name)
+            self.session: str = osPathJoin(session_dir, session_name)
 
         # Trainer: must create a new session to avoid overwriting
-        if pipeline.type == 'training':
-            train = True
+        if training:
             # Avoid unwanted overwritten data
             if new_session:
-                self.session_dir: str = create_dir(self.session_dir, dir_name=session_name)
+                self.session: str = create_dir(self.session, dir_name=session_name)
         # Prediction: work in an existing session
-        elif pipeline.type == 'prediction':
-            train = False
-            if not exists(self.session_dir):
-                raise ValueError("[Manager] The session directory {} does not exists.".format(self.session_dir))
         else:
-            raise ValueError("[Manager] The pipeline must be either training or prediction.")
+            if not exists(self.session):
+                raise ValueError("[Manager] The session directory {} does not exists.".format(self.session))
 
-        self.session_name: str = session_name
         # Always create the NetworkMmanager
         self.network_manager = NetworkManager(manager=self,
                                               network_config=network_config,
-                                              session_name=self.session_name,
-                                              session_dir=self.session_dir,
+                                              session=self.session,
                                               new_session=new_session,
-                                              train=train)
+                                              training=training)
         # Always create the DataManager for same reason
         self.data_manager = DataManager(manager=self,
                                         dataset_config=dataset_config,
                                         environment_config=environment_config,
-                                        session_name=self.session_name,
-                                        session_dir=self.session_dir,
+                                        session=self.session,
                                         new_session=new_session,
-                                        training=train,
-                                        record_data=pipeline.record_data,
+                                        training=training,
+                                        store_data=store_data,
                                         batch_size=batch_size)
         # Create the StatsManager for training
         self.stats_manager = StatsManager(manager=self,
-                                          log_dir=osPathJoin(self.session_dir, 'stats/')) if train else None
-
-    def get_pipeline(self) -> Any:
-        """
-        | Return the pipeline that is using the Manager.
-
-        :return: Pipeline that uses the manager
-        """
-
-        return self.pipeline
+                                          session=self.session) if training else None
 
     def get_data(self, epoch: int = 0, batch_size: int = 1, animate: bool = True) -> None:
         """
@@ -121,14 +106,6 @@ class Manager:
         prediction, loss_dict = self.network_manager.compute_prediction_and_loss(data, optimize=True)
         return prediction, loss_dict
 
-    def set_eval(self) -> None:
-        self.network_manager.set_eval()
-        self.data_manager.set_eval()
-
-    def set_train(self) -> None:
-        self.network_manager.set_train()
-        self.data_manager.set_train()
-
     def save_network(self) -> None:
         """
         | Save network weights as a pth file
@@ -154,7 +131,7 @@ class Manager:
           the description of all the components.
         """
 
-        filename = osPathJoin(self.session_dir, 'infos.txt')
+        filename = osPathJoin(self.session, 'infos.txt')
         date_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if not isfile(filename):
             f = open(filename, "w+")

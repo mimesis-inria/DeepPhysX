@@ -1,8 +1,10 @@
 from typing import Any, Optional, Dict
 from numpy import array, ndarray
 
+from SSD.Core.Storage.Database import Database
+from SSD.Core.Rendering.VedoFactory import VedoFactory
+
 from DeepPhysX.Core.AsyncSocket.TcpIpClient import TcpIpClient
-from DeepPhysX.Core.Visualizer.VedoObjectFactories.VedoObjectFactory import VedoObjectFactory
 
 
 class BaseEnvironment(TcpIpClient):
@@ -24,7 +26,8 @@ class BaseEnvironment(TcpIpClient):
                  instance_id: int = 0,
                  number_of_instances: int = 1,
                  as_tcp_ip_client: bool = True,
-                 environment_manager: Optional[Any] = None):
+                 environment_manager: Optional[Any] = None,
+                 visu_db: Optional[Database] = None):
 
         TcpIpClient.__init__(self,
                              instance_id=instance_id,
@@ -43,7 +46,10 @@ class BaseEnvironment(TcpIpClient):
         self.loss_data: Any = None
         # Manager if the Environment is not a TcpIpClient
         self.environment_manager: Any = environment_manager
-        self.factory = VedoObjectFactory()
+
+        self.factory: Optional[VedoFactory] = None
+        if visu_db is not None:
+            self.factory = VedoFactory(database=visu_db)
 
     ##########################################################################################
     ##########################################################################################

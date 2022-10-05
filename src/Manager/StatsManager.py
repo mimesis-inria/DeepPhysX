@@ -3,6 +3,7 @@ from tensorboardX import SummaryWriter
 from tensorboard import program
 from webbrowser import open as w_open
 from numpy import full, inf, array, ndarray, append, concatenate
+from os.path import join
 
 
 def generate_default_scene():
@@ -26,7 +27,7 @@ class StatsManager:
     """
 
     def __init__(self,
-                 log_dir: str,
+                 session: str,
                  manager: Any = None,
                  keep_losses: bool = False):
 
@@ -34,13 +35,13 @@ class StatsManager:
 
         # Init writer
         self.manager = manager
-        self.log_dir: str = log_dir
-        self.writer: SummaryWriter = SummaryWriter(log_dir)
+        self.log_dir: str = join(session, 'stats/')
+        self.writer: SummaryWriter = SummaryWriter(self.log_dir)
 
         # Open Tensorboard
         if not self.manager.pipeline.debug:
             tb = program.TensorBoard()
-            tb.configure(argv=[None, '--logdir', log_dir])
+            tb.configure(argv=[None, '--logdir', self.log_dir])
             url = tb.launch()
             w_open(url)
 
