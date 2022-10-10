@@ -9,7 +9,6 @@ from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Manager.DatasetManager import DatasetManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
-from DeepPhysX.Core.Manager.VisualizerManager import VisualizerManager
 
 
 class BasePipeline:
@@ -130,15 +129,3 @@ class BasePipeline:
         """
 
         return self.get_any_manager(['data_manager', 'environment_manager'])
-
-    def get_visualizer_manager(self) -> VisualizerManager:
-        """
-        | Return the VisualizerManager associated with the pipeline.
-
-        :return: VisualizerManager associated with the pipeline
-        """
-
-        return self.get_any_manager(['data_manager', 'environment_manager', 'visualizer_manager'])
-
-
-
