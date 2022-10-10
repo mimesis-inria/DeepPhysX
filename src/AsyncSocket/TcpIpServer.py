@@ -3,7 +3,6 @@ from asyncio import get_event_loop, gather
 from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
 from socket import socket
-
 from numpy import ndarray
 from queue import SimpleQueue
 
@@ -11,17 +10,6 @@ from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
 
 
 class TcpIpServer(TcpIpObject):
-    """
-    | TcpIpServer is used to communicate with clients associated with Environment to produce batches for the
-      EnvironmentManager.
-
-    :param str ip_address: IP address of the TcpIpObject
-    :param int port: Port number of the TcpIpObject
-    :param int nb_client: Number of expected client connections
-    :param int max_client_count: Maximum number of allowed clients
-    :param int batch_size: Number of samples in a batch
-    :param Optional[Any] manager: EnvironmentManager that handles the TcpIpServer
-    """
 
     def __init__(self,
                  ip_address: str = 'localhost',
@@ -30,6 +18,17 @@ class TcpIpServer(TcpIpObject):
                  max_client_count: int = 10,
                  batch_size: int = 5,
                  manager: Optional[Any] = None):
+        """
+        TcpIpServer is used to communicate with clients associated with Environment to produce batches for the
+        EnvironmentManager.
+
+        :param ip_address: IP address of the TcpIpObject.
+        :param port: Port number of the TcpIpObject.
+        :param nb_client: Number of expected client connections.
+        :param max_client_count: Maximum number of allowed clients.
+        :param batch_size: Number of samples in a batch.
+        :param manager: EnvironmentManager that handles the TcpIpServer.
+        """
 
         super(TcpIpServer, self).__init__(ip_address=ip_address,
                                           port=port)
@@ -64,7 +63,7 @@ class TcpIpServer(TcpIpObject):
 
     def connect(self) -> None:
         """
-        | Run __connect method with asyncio.
+        Run __connect method with asyncio.
         """
 
         print(f"[{self.name}] Waiting for clients...")
@@ -72,7 +71,7 @@ class TcpIpServer(TcpIpObject):
 
     async def __connect(self) -> None:
         """
-        | Accept connections from clients.
+        Accept connections from clients.
         """
 
         loop = get_event_loop()
@@ -91,13 +90,13 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def initialize(self, param_dict: Dict[Any, Any]) -> Dict[Any, Any]:
+    def initialize(self,
+                   param_dict: Dict[Any, Any]) -> Dict[Any, Any]:
         """
-        | Run __initialize method with asyncio.
-        | Manage parameters exchange.
+        Run __initialize method with asyncio. Manage parameters exchange.
 
-        :param Dict[Any, Any] param_dict: Dictionary of parameters to send to the client's environment
-        :return: Dictionary of parameters for each environment to send the manager
+        :param param_dict: Dictionary of parameters to send to the client's environment.
+        :return: Dictionary of parameters for each environment to send the manager.
         """
 
         print(f"[{self.name}] Initializing clients...")
@@ -111,9 +110,9 @@ class TcpIpServer(TcpIpObject):
 
     async def __initialize(self, param_dict: Dict[Any, Any]) -> None:
         """
-        | Send parameters to the clients to create their environments, receive parameters from clients in exchange.
+        Send parameters to the clients to create their environments, receive parameters from clients in exchange.
 
-        :param Dict[Any, Any] param_dict: Dictionary of parameters to send to the client's environment
+        :param param_dict: Dictionary of parameters to send to the client's environment.
         """
 
         loop = get_event_loop()
@@ -136,15 +135,17 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def get_batch(self, get_inputs: bool = True, get_outputs: bool = True,
+    def get_batch(self,
+                  get_inputs: bool = True,
+                  get_outputs: bool = True,
                   animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
         """
-        | Build a batch from clients samples.
+        Build a batch from clients samples.
 
-        :param bool get_inputs: If True, compute and return input
-        :param bool get_outputs: If True, compute and return output
-        :param bool animate: If True, triggers an environment step
-        :return: Batch (list of samples) & additional data in a dictionary
+        :param get_inputs: If True, compute and return input.
+        :param get_outputs: If True, compute and return output.
+        :param animate: If True, triggers an environment step.
+        :return: Batch (list of samples) & additional data in a dictionary.
         """
 
         # Trigger communication protocol
@@ -176,15 +177,17 @@ class TcpIpServer(TcpIpObject):
                 self.sample_to_client_id.append(data['ID'])
         return data_sorter
 
-    async def __request_data_to_clients(self, get_inputs: bool = True, get_outputs: bool = True,
+    async def __request_data_to_clients(self,
+                                        get_inputs: bool = True,
+                                        get_outputs: bool = True,
                                         animate: bool = True) -> None:
         """
-        | Trigger a communication protocol for each client. Wait for all clients before to launch another communication
-          protocol while the batch is not full.
+        Trigger a communication protocol for each client. Wait for all clients before to launch another communication
+        protocol while the batch is not full.
 
-        :param bool get_inputs: If True, compute and return input
-        :param bool get_outputs: If True, compute and return output
-        :param bool animate: If True, triggers an environment step
+        :param get_inputs: If True, compute and return input
+        :param get_outputs: If True, compute and return output
+        :param animate: If True, triggers an environment step
         """
 
         client_launched = 0
@@ -196,19 +199,23 @@ class TcpIpServer(TcpIpObject):
                            for client_id, client in self.clients])
             client_launched += len(self.clients)
 
-    async def __communicate(self, client: Optional[socket] = None, client_id: Optional[int] = None,
-                            get_inputs: bool = True, get_outputs: bool = True, animate: bool = True) -> None:
+    async def __communicate(self,
+                            client: Optional[socket] = None,
+                            client_id: Optional[int] = None,
+                            get_inputs: bool = True,
+                            get_outputs: bool = True,
+                            animate: bool = True) -> None:
         """
         | Communication protocol with a client. It goes through different steps:
         |   1) Eventually send samples to Client
         |   2) Running steps & Receiving training data
         |   3) Add data to the Queue
 
-        :param Optional[socket] client: TcpIpObject client to communicate with
-        :param Optional[int] client_id: Index of the client
-        :param bool get_inputs: If True, compute and return input
-        :param bool get_outputs: If True, compute and return output
-        :param bool animate: If True, triggers an environment step
+        :param client: TcpIpObject client to communicate with.
+        :param client_id: Index of the client.
+        :param get_inputs: If True, compute and return input.
+        :param get_outputs: If True, compute and return output.
+        :param animate: If True, triggers an environment step.
         """
 
         loop = get_event_loop()
@@ -274,11 +281,12 @@ class TcpIpServer(TcpIpObject):
         # 3.5) Add data to the Queue
         self.data_fifo.put(data)
 
-    def set_dataset_batch(self, batch: Dict[str, Union[ndarray, Dict]]) -> None:
+    def set_dataset_batch(self,
+                          batch: Dict[str, Union[ndarray, Dict]]) -> None:
         """
-        | Receive a batch of data from the Dataset. Samples will be dispatched between clients.
+        Receive a batch of data from the Dataset. Samples will be dispatched between clients.
 
-        :param Dict[str, Union[ndarray, Dict]] batch: Batch of data
+        :param batch: Batch of data.
         """
 
         # Check batch size
@@ -296,7 +304,7 @@ class TcpIpServer(TcpIpObject):
 
     def close(self) -> None:
         """
-        | Run __close method with asyncio
+        Run __close method with asyncio.
         """
 
         print(f"[{self.name}] Closing clients...")
@@ -304,7 +312,7 @@ class TcpIpServer(TcpIpObject):
 
     async def __close(self) -> None:
         """
-        | Run server shutdown protocol.
+        Run server shutdown protocol.
         """
 
         # Send all exit protocol and wait for the last one to finish
@@ -312,12 +320,13 @@ class TcpIpServer(TcpIpObject):
         # Close socket
         self.sock.close()
 
-    async def __shutdown(self, client: socket, idx: int) -> None:
+    async def __shutdown(self,
+                         client: socket, idx: int) -> None:
         """
-        | Send exit command to all clients
+        Send exit command to all clients.
 
-        :param socket client: TcpIpObject client
-        :param int idx: Client index
+        :param client: TcpIpObject client.
+        :param idx: Client index.
         """
 
         loop = get_event_loop()
@@ -336,14 +345,18 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    async def action_on_prediction(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_prediction(self,
+                                   data: Dict[Any, Any],
+                                   client_id: int,
+                                   sender: socket,
+                                   loop: EventLoop) -> None:
         """
-        Action to run when receiving the 'prediction' command
+        Action to run when receiving the 'prediction' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: asyncio.get_event_loop() return.
+        :param sender: TcpIpObject sender.
         """
 
         # Receive network input
@@ -366,19 +379,19 @@ class TcpIpServer(TcpIpObject):
         await self.send_labeled_data(data_to_send=prediction, label="prediction", receiver=sender,
                                      send_read_command=False)
 
-    async def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket,
+    async def action_on_visualisation(self,
+                                      data: Dict[Any, Any],
+                                      client_id: int,
+                                      sender: socket,
                                       loop: EventLoop) -> None:
         """
-        Action to run when receiving the 'visualisation' command
+        Action to run when receiving the 'visualisation' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: asyncio.get_event_loop() return.
+        :param sender: TcpIpObject sender.
         """
 
-        # Receive visualization data
-        await self.receive_dict(data[client_id], sender=sender, loop=loop)
-        # Update visualization
-        if 'visualisation' in data[client_id] and hasattr(self.environment_manager, 'visualizer_manager'):
-            self.environment_manager.update_visualizer({client_id: data[client_id]['visualisation']})
+        _, idx = await self.receive_labeled_data(loop=loop, sender=sender)
+        self.environment_manager.update_visualizer(idx)

@@ -64,7 +64,7 @@ class MeanEnvironment(BaseEnvironment):
         self.input_value = pi * random(self.data_size)
         self.output_value = mean(self.input_value, axis=0)
 
-    def send_visualization(self):
+    def init_visualization(self):
         # Point cloud (object will have id = 0)
         self.factory.add_points(positions=self.input_value,
                                 at=self.instance_id,
@@ -80,8 +80,6 @@ class MeanEnvironment(BaseEnvironment):
                                 at=self.instance_id,
                                 c='orange',
                                 point_size=12)
-        # Return the visualization data
-        return {}
 
     """
     ENVIRONMENT BEHAVIOR
@@ -119,7 +117,7 @@ class MeanEnvironment(BaseEnvironment):
         self.factory.update_points(object_id=2,
                                    positions=prediction)
         # Send visualization data to update
-        self.factory.render()
+        self.update_visualisation()
 
     def close(self):
         # Shutdown message

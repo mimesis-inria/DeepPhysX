@@ -8,12 +8,11 @@ ground truth.
 from torch.nn import MSELoss
 from torch.optim import Adam
 
-from SSD.Core.Rendering.VedoVisualizer import VedoVisualizer
-
 # DeepPhysX related imports
 from DeepPhysX.Core.Pipelines.BaseTrainer import BaseTrainer
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 # Session related imports
@@ -31,7 +30,8 @@ def launch_training():
                                                            'data_size': [nb_points, dimension],
                                                            'sleep': False,
                                                            'allow_requests': True},
-                                               as_tcp_ip_client=False)
+                                               as_tcp_ip_client=True,
+                                               number_of_thread=2)
     # Fully Connected configuration (the number of neurones on the first and last layer is defined by the total amount
     # of parameters in the input and the output vectors respectively)
     network_config = FCConfig(loss=MSELoss,
