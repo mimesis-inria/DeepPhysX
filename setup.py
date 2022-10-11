@@ -9,7 +9,7 @@ PROJECT = 'DeepPhysX'
 PACKAGE = 'Core'
 PACKAGES = {'Torch': False,
             'Sofa': False}
-DEPENDENCIES = {'Core': ['numpy', 'vedo', 'tensorboard', 'tensorboardX', 'pyDataverse'],
+DEPENDENCIES = {'Core': ['numpy', 'SimulationSimpleDatabase', 'tensorboard', 'tensorboardX', 'pyDataverse'],
                 'Sofa': [],
                 'Torch': ['torch']}
 

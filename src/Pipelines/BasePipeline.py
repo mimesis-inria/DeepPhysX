@@ -9,7 +9,6 @@ from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Manager.DatasetManager import DatasetManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
-from DeepPhysX.Core.Manager.VisualizerManager import VisualizerManager
 
 
 class BasePipeline:
@@ -19,7 +18,7 @@ class BasePipeline:
     :param BaseNetworkConfig network_config: Specialisation containing the parameters of the network manager
     :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
     :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
+    :param str session_name: Name of the newly created directory if session is not defined
     :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
     :param Optional[str] pipeline: Values at either 'training' or 'prediction'
     """
@@ -130,15 +129,3 @@ class BasePipeline:
         """
 
         return self.get_any_manager(['data_manager', 'environment_manager'])
-
-    def get_visualizer_manager(self) -> VisualizerManager:
-        """
-        | Return the VisualizerManager associated with the pipeline.
-
-        :return: VisualizerManager associated with the pipeline
-        """
-
-        return self.get_any_manager(['data_manager', 'environment_manager', 'visualizer_manager'])
-
-
-

@@ -18,7 +18,7 @@ class BaseDataGenerator(BasePipeline):
 
     :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
     :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
+    :param str session_name: Name of the newly created directory if session is not defined
     :param int nb_batches: Number of batches
     :param int batch_size: Size of a batch
     :param bool record_input: True if the input must be stored

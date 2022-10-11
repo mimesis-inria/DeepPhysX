@@ -7,32 +7,10 @@ from sys import modules, executable
 
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
-from DeepPhysX.Core.Visualizer.VedoVisualizer import VedoVisualizer
+from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 
 class BaseEnvironmentConfig:
-    """
-    | BaseEnvironmentConfig is a configuration class to parameterize and create a BaseEnvironment for the
-      EnvironmentManager.
-
-    :param Type[BaseEnvironment] environment_class: Class from which an instance will be created
-    :param Optional[Type[VedoVisualizer]] visualizer: Class of the Visualizer to use
-    :param int simulations_per_step: Number of iterations to compute in the Environment at each time step
-    :param int max_wrong_samples_per_step: Maximum number of wrong samples to produce in a step
-    :param bool always_create_data: If True, data will always be created from environment. If False, data will be
-                                    created from the environment during the first epoch and then re-used from the
-                                    Dataset.
-    :param bool record_wrong_samples: If True, wrong samples are recorded through Visualizer
-    :param int screenshot_sample_rate: A screenshot of the viewer will be done every x sample
-    :param bool use_dataset_in_environment: If True, the dataset will always be used in the environment
-    :param Optional[Dict[Any, Any]] param_dict: Dictionary containing specific environment parameters
-    :param bool as_tcp_ip_client: Environment is owned by a TcpIpClient if True, by an EnvironmentManager if False
-    :param int number_of_thread: Number of thread to run
-    :param int max_client_connection: Maximum number of handled instances
-    :param Optional[str] environment_file: Path of the file containing the Environment class
-    :param str ip_address: IP address of the TcpIpObject
-    :param int port: Port number of the TcpIpObject
-    """
 
     def __init__(self,
                  environment_class: Type[BaseEnvironment],
@@ -50,6 +28,28 @@ class BaseEnvironmentConfig:
                  environment_file: Optional[str] = None,
                  ip_address: str = 'localhost',
                  port: int = 10000):
+        """
+        BaseEnvironmentConfig is a configuration class to parameterize and create a BaseEnvironment for the
+        EnvironmentManager.
+
+        :param environment_class: Class from which an instance will be created.
+        :param visualizer: Class of the Visualizer to use.
+        :param simulations_per_step: Number of iterations to compute in the Environment at each time step.
+        :param max_wrong_samples_per_step: Maximum number of wrong samples to produce in a step.
+        :param always_create_data: If True, data will always be created from environment. If False, data will be
+                                   created from the environment during the first epoch and then re-used from the
+                                   Dataset.
+        :param record_wrong_samples: If True, wrong samples are recorded through Visualizer.
+        :param screenshot_sample_rate: A screenshot of the viewer will be done every x sample.
+        :param use_dataset_in_environment: If True, the dataset will always be used in the environment.
+        :param param_dict: Dictionary containing specific environment parameters.
+        :param as_tcp_ip_client: Environment is owned by a TcpIpClient if True, by an EnvironmentManager if False.
+        :param number_of_thread: Number of thread to run.
+        :param max_client_connection: Maximum number of handled instances.
+        :param environment_file: Path of the file containing the Environment class.
+        :param ip_address: IP address of the TcpIpObject.
+        :param port: Port number of the TcpIpObject.
+        """
 
         if param_dict is None:
             param_dict = {}
@@ -100,13 +100,17 @@ class BaseEnvironmentConfig:
         self.number_of_thread: int = min(max(number_of_thread, 1), cpu_count())  # Assert nb is between 1 and cpu_count
         self.max_client_connections = max_client_connection
 
-    def create_server(self, environment_manager: Optional[Any] = None, batch_size: int = 1) -> TcpIpServer:
+    def create_server(self,
+                      environment_manager: Optional[Any] = None,
+                      batch_size: int = 1,
+                      visu_db: Optional[int] = None) -> TcpIpServer:
         """
-        | Create a TcpIpServer and launch TcpIpClients in subprocesses.
+        Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
-        :param Optional[Any] environment_manager: EnvironmentManager
-        :param int batch_size: Number of sample in a batch
-        :return: TcpIpServer object
+        :param environment_manager: EnvironmentManager.
+        :param batch_size: Number of sample in a batch.
+        :param visu_db: The path to the visualization Database to connect to.
+        :return: TcpIpServer object.
         """
 
         # Create server
@@ -119,7 +123,7 @@ class BaseEnvironmentConfig:
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i,))
+            client_thread = Thread(target=self.start_client, args=(i, visu_db))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -129,11 +133,12 @@ class BaseEnvironmentConfig:
             pass
         return server
 
-    def start_server(self, server: TcpIpServer) -> None:
+    def start_server(self,
+                     server: TcpIpServer) -> None:
         """
-        | Start TcpIpServer.
+        Start TcpIpServer.
 
-        :param server: TcpIpServer
+        :param server: TcpIpServer.
         """
 
         # Allow clients connections
@@ -143,15 +148,18 @@ class BaseEnvironmentConfig:
         # Server is ready
         self.server_is_ready: bool = True
 
-    def start_client(self, idx: int = 1) -> None:
+    def start_client(self,
+                     idx: int = 1,
+                     visu_db: Optional[int] = None) -> None:
         """
-        | Run a subprocess to start a TcpIpClient.
+        Run a subprocess to start a TcpIpClient.
 
-        :param int idx: Index of client
+        :param idx: Index of client.
+        :param visu_db: The path to the visualization Database to connect to.
         """
 
         script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcherBaseEnvironment.py')
-        # Usage: python3 script.py <file_path> <environment_class> <ip_address> <port> <idx> <nb_threads>"
+        # Usage: python3 script.py <file_path> <environment_class> <ip_address> <port> <idx> <nb_threads> <visu_db>"
         subprocessRun([executable,
                        script,
                        self.environment_file,
@@ -159,28 +167,29 @@ class BaseEnvironmentConfig:
                        self.ip_address,
                        str(self.port),
                        str(idx),
-                       str(self.number_of_thread)])
+                       str(self.number_of_thread),
+                       str(visu_db)])
 
-    def create_environment(self, environment_manager: Any) -> BaseEnvironment:
+    def create_environment(self,
+                           environment_manager: Any,
+                           visu_db: Optional[Any] = None) -> BaseEnvironment:
         """
-        | Create an Environment that will not be a TcpIpObject.
+        Create an Environment that will not be a TcpIpObject.
 
-        :param Any environment_manager: EnvironmentManager that handles the Environment
-        :return: Environment object
+        :param environment_manager: EnvironmentManager that handles the Environment.
+        :param visu_db: The visualisation Database to connect to.
+        :return: Environment object.
         """
 
         # Create instance
-        try:
-            environment = self.environment_class(environment_manager=environment_manager, as_tcp_ip_client=False)
-        except:
-            raise ValueError(f"[{self.name}] Given 'environment_class' cannot be created in {self.name}")
-        if not isinstance(environment, BaseEnvironment):
-            raise TypeError(f"[{self.name}] Wrong 'environment_class' type: BaseEnvironment required, get "
-                            f"{self.environment_class}")
+        environment = self.environment_class(environment_manager=environment_manager,
+                                             as_tcp_ip_client=False,
+                                             visu_db=visu_db)
         # Create & Init Environment
         environment.recv_parameters(self.param_dict)
         environment.create()
         environment.init()
+        environment.init_visualization()
         return environment
 
     def __str__(self) -> str:

@@ -2,27 +2,29 @@ from typing import Any, Dict, Optional, Union
 from numpy import array, ndarray
 from asyncio import run as async_run
 from copy import copy
+from os.path import join
 
-from DeepPhysX.Core.Manager.VisualizerManager import VisualizerManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig, TcpIpServer, BaseEnvironment
+from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 
 class EnvironmentManager:
-    """
-    | Deals with the online generation of data for both training and running of the neural networks.
-
-    :param Optional[BaseEnvironmentConfig] environment_config: Specialisation containing the parameters of the
-                                                               environment manager
-    :param DataManager data_manager: DataManager that handles the EnvironmentManager
-    :param int batch_size: Number of samples in a batch of data
-    :param bool train: True if this session is a network training
-    """
 
     def __init__(self,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 environment_config: BaseEnvironmentConfig,
+                 session: str,
                  data_manager: Any = None,
                  batch_size: int = 1,
-                 train: bool = True):
+                 training: bool = True):
+        """
+        Deals with the online generation of data for both training and running of the neural networks.
+
+        :param environment_config: Specialisation containing the parameters of the environment manager.
+        :param session: Path to the session directory.
+        :param data_manager: DataManager that handles the EnvironmentManager.
+        :param batch_size: Number of samples in a batch of data.
+        :param training: True if this session is a network training.
+        """
 
         self.name: str = self.__class__.__name__
 
@@ -35,80 +37,61 @@ class EnvironmentManager:
         self.use_dataset_in_environment: bool = environment_config.use_dataset_in_environment
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
-        self.train: bool = train
+        self.train: bool = training
         self.dataset_batch: Optional[Dict[str, Dict[int, Any]]] = None
-        # self.prediction_requested: bool = False
+
+        # Create the Visualizer
+        self.visualizer: Optional[VedoVisualizer] = None
+        visu_db = None
+        if environment_config.visualizer is not None:
+            self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
+                                                            database_name='Visualization',
+                                                            remote=environment_config.as_tcp_ip_client)
+            visu_db = self.visualizer.get_database()
 
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = environment_config.number_of_thread
         self.server: Optional[TcpIpServer] = None
         self.environment: Optional[BaseEnvironment] = None
         if environment_config.as_tcp_ip_client:
-            self.server = environment_config.create_server(environment_manager=self, batch_size=batch_size)
+            self.server = environment_config.create_server(environment_manager=self,
+                                                           batch_size=batch_size,
+                                                           visu_db=visu_db.get_path())
         else:
-            self.environment = environment_config.create_environment(environment_manager=self)
+            self.environment = environment_config.create_environment(environment_manager=self,
+                                                                     visu_db=visu_db)
 
         # Define get_data and dispatch methods
         self.get_data = self.get_data_from_server if self.server else self.get_data_from_environment
         self.dispatch_batch = self.dispatch_batch_to_server if self.server else self.dispatch_batch_to_environment
 
         # Init visualizer
-        if environment_config.visualizer is None:
-            self.visualizer_manager = None
-        else:
-            self.visualizer_manager = VisualizerManager(data_manager=data_manager,
-                                                        visualizer=environment_config.visualizer,
-                                                        screenshot_rate=environment_config.screenshot_sample_rate)
-            self.init_visualizer()
+        if self.visualizer is not None:
+            if len(self.visualizer.get_database().get_tables()) == 1:
+                self.visualizer.get_database().load()
+            self.visualizer.init_visualizer()
 
     def get_data_manager(self) -> Any:
         """
-        | Return the Manager of the EnvironmentManager.
+        Get the DataManager of this EnvironmentManager.
 
-        :return: DataManager that handle the EnvironmentManager
+        :return: The DataManager of this EnvironmentManager.
         """
 
         return self.data_manager
 
-    def init_visualizer(self) -> None:
-        """
-        | Initialize the Visualizer with initial visualization data provided when creating the Environment(s).
-        """
-
-        # This method is called only if a visualizer manager exists
-        if self.visualizer_manager is not None:
-            data_dict = {}
-            # If a server handle several clients, get the visualization dict of each one
-            if self.server is not None:
-                for client_id in self.server.data_dict:
-                    data_dict[client_id] = self.server.data_dict[client_id]['visualisation']
-            # If a single environment is created, request visualization data directly
-            elif self.environment is not None:
-                data_dict[0] = self.environment.send_visualization()
-            # Init view
-            self.visualizer_manager.init_view(data_dict)
-
-    def update_visualizer(self, data_dict: Dict[int, Dict[int, Dict[str, Dict[str, Any]]]]) -> None:
-        """
-        | Update the Visualizer with updated data.
-
-        :param Dict[int, Dict[int, Dict[str, Dict[str, Any]]]] data_dict: Updated visualization data.
-        """
-
-        if self.visualizer_manager is not None:
-            self.visualizer_manager.update_visualizer(data_dict)
-            self.visualizer_manager.render()
-
-    def get_data_from_server(self, get_inputs: bool = True, get_outputs: bool = True,
+    def get_data_from_server(self,
+                             get_inputs: bool = True,
+                             get_outputs: bool = True,
                              animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
         """
-        | Compute a batch of data from Environments requested through TcpIpServer.
+        Compute a batch of data from Environments requested through TcpIpServer.
 
-        :param bool get_inputs: If True, compute and return input
-        :param bool get_outputs: If True, compute and return output
-        :param bool animate: If True, triggers an environment step
+        :param get_inputs: If True, compute and return input.
+        :param get_outputs: If True, compute and return output.
+        :param  animate: If True, triggers an environment step.
         :return: Dictionary containing all labeled data sent by the clients in their own dictionary + in and out key
-                 corresponding to the batch
+                 corresponding to the batch.
         """
 
         # Get data from server
@@ -126,16 +109,18 @@ class EnvironmentManager:
         # Return batch
         return training_data
 
-    def get_data_from_environment(self, get_inputs: bool = True, get_outputs: bool = True,
+    def get_data_from_environment(self,
+                                  get_inputs: bool = True,
+                                  get_outputs: bool = True,
                                   animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
         """
-        | Compute a batch of data directly from Environment.
+        Compute a batch of data directly from Environment.
 
-        :param bool get_inputs: If True, compute and return input
-        :param bool get_outputs: If True, compute and return output
-        :param bool animate: If True, triggers an environment step
+        :param get_inputs: If True, compute and return input.
+        :param get_outputs: If True, compute and return output.
+        :param animate: If True, triggers an environment step.
         :return: Dictionary containing all labeled data sent by the clients in their own dictionary + in and out key
-                 corresponding to the batch
+                 corresponding to the batch.
         """
 
         # Init training data container, define production conditions
@@ -207,13 +192,14 @@ class EnvironmentManager:
 
         return training_data
 
-    def dispatch_batch_to_server(self, batch: Dict[str, Union[ndarray, dict]],
+    def dispatch_batch_to_server(self,
+                                 batch: Dict[str, Union[ndarray, dict]],
                                  animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
         """
-        | Send samples from dataset to the Environments. Get back the training data.
+        Send samples from dataset to the Environments. Get back the training data.
 
-        :param Dict[str, Union[ndarray, dict]] batch: Batch of samples.
-        :param bool animate: If True, triggers an environment step
+        :param batch: Batch of samples.
+        :param animate: If True, triggers an environment step.
         :return: Batch of training data.
         """
 
@@ -225,13 +211,14 @@ class EnvironmentManager:
         # Get data
         return self.get_data(animate=animate)
 
-    def dispatch_batch_to_environment(self, batch: Dict[str, Union[ndarray, dict]],
+    def dispatch_batch_to_environment(self,
+                                      batch: Dict[str, Union[ndarray, dict]],
                                       animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
         """
-        | Send samples from dataset to the Environments. Get back the training data.
+        Send samples from dataset to the Environments. Get back the training data.
 
-        :param Dict[str, Union[ndarray, dict]] batch: Batch of samples.
-        :param bool animate: If True, triggers an environment step
+        :param batch: Batch of samples.
+        :param animate: If True, triggers an environment step.
         :return: Batch of training data.
         """
 
@@ -240,9 +227,20 @@ class EnvironmentManager:
         # Get data
         return self.get_data(animate=animate)
 
+    def update_visualizer(self,
+                          instance: int) -> None:
+        """
+        Update the Visualizer.
+
+        :param instance: Index of the Environment render to update.
+        """
+
+        if self.visualizer is not None:
+            self.visualizer.render_instance(instance)
+
     def close(self) -> None:
         """
-        | Close the environment
+        Close the environment
         """
 
         # Server case

@@ -16,7 +16,7 @@ class BaseRunner(BasePipeline):
     :param BaseNetworkConfig network_config: Specialisation containing the parameters of the network manager
     :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
     :param Optional[BaseDatasetConfig] dataset_config: Specialisation containing the parameters of the dataset manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
+    :param str session_name: Name of the newly created directory if session is not defined
     :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
     :param int nb_steps: Number of simulation step to play
     :param bool record_inputs: Save or not the input in a numpy file

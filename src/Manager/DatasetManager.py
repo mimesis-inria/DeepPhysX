@@ -1,39 +1,36 @@
 from typing import Any, Dict, Tuple, List, Optional, Union
 from os.path import join as osPathJoin
 from os.path import isfile, isdir, abspath
-from os import listdir, symlink
+from os import listdir, symlink, sep
 from json import dump as json_dump
 from json import load as json_load
 from numpy import load, squeeze, ndarray, concatenate, float64
 
 from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
-from DeepPhysX.Core.Utils.pathUtils import get_first_caller, create_dir
+from DeepPhysX.Core.Utils.pathUtils import create_dir
 from DeepPhysX.Core.Utils.jsonUtils import CustomJSONEncoder
 
 
 class DatasetManager:
-    """
-    | DatasetManager handle all operations with input / output files. Allows saving and read tensors from files.
-
-    :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
-    :param DataManager data_manager: DataManager that handles the DatasetManager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
-    :param str session_dir: Name of the directory in which to write all the necessary data
-    :param bool new_session: Define the creation of new directories to store data
-    :param bool train: True if this session is a network training
-    :param bool offline: True if the session is done offline
-    :param Optional[Dict[str, bool]] record_data: Format {\'in\': bool, \'out\': bool} save the tensor when bool is True
-    """
 
     def __init__(self,
                  dataset_config: BaseDatasetConfig,
+                 session: str,
                  data_manager: Optional[Any] = None,
-                 session_name: str = 'default',
-                 session_dir: str = None,
                  new_session: bool = True,
-                 train: bool = True,
+                 training: bool = True,
                  offline: bool = False,
-                 record_data: Optional[Dict[str, bool]] = None):
+                 store_data: bool = True):
+        """
+        | DatasetManager handle all operations with input / output files. Allows saving and read tensors from files.
+
+        :param dataset_config: Specialisation containing the parameters of the dataset manager
+        :param data_manager: DataManager that handles the DatasetManager
+        :param new_session: Define the creation of new directories to store data
+        :param training: True if this session is a network training
+        :param offline: True if the session is done offline
+        :param store_data: Format {\'in\': bool, \'out\': bool} save the tensor when bool is True
+        """
 
         self.name: str = self.__class__.__name__
         self.data_manager: Optional[Any] = data_manager
@@ -41,19 +38,16 @@ class DatasetManager:
         # Checking arguments
         if dataset_config is not None and not isinstance(dataset_config, BaseDatasetConfig):
             raise TypeError(f"[{self.name}] The dataset config must be a BaseDatasetConfig object.")
-        if type(session_name) != str:
+        if type(session) != str:
             raise TypeError(f"[{self.name}] The session name must be a str.")
-        if session_dir is not None and type(session_dir) != str:
-            raise TypeError(f"[{self.name}] The session directory must be a str.")
+        elif not isdir(session):
+            raise ValueError(f"[{self.name}] Given 'session' does not exists: {session}")
         if type(new_session) != bool:
             raise TypeError(f"[{self.name}] The 'new_network' argument must be a boolean.")
-        if type(train) != bool:
+        if type(training) != bool:
             raise TypeError(f"[{self.name}] The 'train' argument must be a boolean.")
-        if record_data is not None and type(record_data) != dict:
-            raise TypeError(f"[{self.name}] The 'record_data' argument must be a dict.")
-        elif record_data is not None:
-            if type(record_data['input']) != bool or type(record_data['output']) != bool:
-                raise TypeError(f"[{self.name}] The values of 'record_data' must be booleans.")
+        if type(store_data) != bool:
+            raise TypeError(f"[{self.name}] The 'store_data' argument must be a boolean.")
 
         # Create the Dataset object (default if no config specified)
         dataset_config = BaseDatasetConfig() if dataset_config is None else dataset_config
@@ -62,7 +56,7 @@ class DatasetManager:
         # Dataset parameters
         self.max_size: int = self.dataset.max_size
         self.shuffle_dataset: bool = dataset_config.shuffle_dataset
-        self.record_data: Dict[str, bool] = record_data if record_data is not None else {'input': True, 'output': True}
+        self.record_data: bool = store_data
         self.first_add: bool = True
         self.__writing: bool = False
         self.normalize: bool = dataset_config.normalize
@@ -71,18 +65,19 @@ class DatasetManager:
 
         # Dataset modes
         self.modes: Dict[str, int] = {'Training': 0, 'Validation': 1, 'Running': 2}
-        self.mode: int = self.modes['Training'] if train else self.modes['Running']
+        self.mode: int = self.modes['Training'] if training else self.modes['Running']
         self.mode = self.mode if dataset_config.use_mode is None else self.modes[dataset_config.use_mode]
         self.last_loaded_dataset_mode: int = self.mode
 
         # Dataset partitions
+        session_name = session.split(sep)[-1]
         self.partitions_templates: Tuple[str, str, str] = (session_name + '_training_{}_{}.npy',
                                                            session_name + '_validation_{}_{}.npy',
                                                            session_name + '_running_{}_{}.npy')
         self.fields: List[str] = ['input', 'output']
         self.list_partitions: Dict[str, Optional[List[List[ndarray]]]] = {
-            'input': [[], [], []] if self.record_data['input'] else None,
-            'output': [[], [], []] if self.record_data['output'] else None}
+            'input': [[], [], []] if self.record_data else None,
+            'output': [[], [], []] if self.record_data else None}
         self.idx_partitions: List[int] = [0, 0, 0]
         self.current_partition_path: Dict[str, Optional[str]] = {'input': None, 'output': None}
 
@@ -103,18 +98,18 @@ class DatasetManager:
         self.json_found: bool = False
 
         # Dataset repository
-        self.session_dir: str = session_dir if session_dir is not None else osPathJoin(get_first_caller(), session_name)
+        self.session: str = session
         dataset_dir: str = dataset_config.dataset_dir
         self.new_session: bool = new_session
         self.__new_dataset: bool = False
 
         # Training
-        if train:
+        if training:
             # New training session
             if new_session:
                 # New training session with new dataset
                 if dataset_dir is None:
-                    self.dataset_dir: str = create_dir(dir_path=osPathJoin(self.session_dir, 'dataset/'),
+                    self.dataset_dir: str = create_dir(dir_path=osPathJoin(self.session, 'dataset/'),
                                                        dir_name='dataset')
                     self.__new_dataset = True
                 # New training session with existing dataset
@@ -124,8 +119,8 @@ class DatasetManager:
                     if dataset_dir[-8:] != "dataset/":
                         dataset_dir += "dataset/"
                     self.dataset_dir = dataset_dir
-                    if abspath(self.dataset_dir) != osPathJoin(self.session_dir, 'dataset'):
-                        symlink(abspath(self.dataset_dir), osPathJoin(self.session_dir, 'dataset'))
+                    if abspath(self.dataset_dir) != osPathJoin(self.session, 'dataset'):
+                        symlink(abspath(self.dataset_dir), osPathJoin(self.session, 'dataset'))
                         self.load_directory()
                     # Special case: adding data in existing Dataset with DataGeneration
                     else:
@@ -133,13 +128,13 @@ class DatasetManager:
                         self.__new_dataset = True
             # Existing training session
             else:
-                self.dataset_dir = osPathJoin(self.session_dir, 'dataset/')
+                self.dataset_dir = osPathJoin(self.session, 'dataset/')
                 self.load_directory()
         # Prediction
         else:
             # Saving running data
             if dataset_dir is None:
-                self.dataset_dir = osPathJoin(self.session_dir, 'dataset/')
+                self.dataset_dir = osPathJoin(self.session, 'dataset/')
                 self.__new_dataset = True
                 # self.create_running_partitions()
                 self.load_directory(load_data=False)
@@ -179,7 +174,7 @@ class DatasetManager:
 
         # 2. Add network data
         for field in ['input', 'output']:
-            if self.record_data[field]:
+            if self.record_data:
                 self.dataset.add(field, data[field], self.current_partition_path[field])
 
         # 3. Add additional data
@@ -308,7 +303,6 @@ class DatasetManager:
         if new_field not in self.fields or self.list_partitions[new_field] is None:
             self.fields.append(new_field)
             self.list_partitions[new_field] = [[], [], []]
-            self.record_data[new_field] = True
 
     def create_partitions(self) -> None:
         """
@@ -317,7 +311,7 @@ class DatasetManager:
 
         print(f"[{self.name}] New partitions added for each field with max size ~{float(self.max_size) / 1e9}Gb.")
         for field in self.fields:
-            if self.record_data[field]:
+            if self.record_data:
                 # Fill partition name template
                 if field in ['input', 'output']:
                     name = 'IN' if field == 'input' else 'OUT'

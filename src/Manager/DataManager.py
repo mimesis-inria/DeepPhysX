@@ -10,34 +10,32 @@ from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
 
 
 class DataManager:
-    """
-    | DataManager deals with the generation of input / output tensors. His job is to call get_data on either the
-      DatasetManager or the EnvironmentManager according to the context.
-
-    :param Optional[BaseDatasetConfig] dataset_config: Specialisation containing the parameters of the dataset manager
-    :param Optional[BaseEnvironmentConfig] environment_config: Specialisation containing the parameters of the
-                                                               environment manager
-    :param Optional[Any] manager: Manager that handle The DataManager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
-    :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
-    :param bool new_session: Define the creation of new directories to store data
-    :param bool training: True if this session is a network training
-    :param bool offline: True if the session is done offline
-    :param Dict[str, bool] record_data: Format {\'in\': bool, \'out\': bool} save the tensor when bool is True
-    :param int batch_size: Number of samples in a batch
-    """
 
     def __init__(self,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 dataset_config: BaseDatasetConfig,
+                 environment_config: BaseEnvironmentConfig,
+                 session: str,
                  manager: Optional[Any] = None,
-                 session_name: str = 'default',
-                 session_dir: Optional[str] = None,
                  new_session: bool = True,
                  training: bool = True,
                  offline: bool = False,
-                 record_data: Dict[str, bool] = None,
+                 store_data: bool = True,
                  batch_size: int = 1):
+
+        """
+        DataManager deals with the generation of input / output tensors. His job is to call get_data on either the
+        DatasetManager or the EnvironmentManager according to the context.
+
+        :param dataset_config: Specialisation containing the parameters of the dataset manager
+        :param environment_config: Specialisation containing the parameters of the environment manager
+        :param session: Path to the session directory.
+        :param manager: Manager that handle The DataManager
+        :param new_session: Define the creation of new directories to store data
+        :param training: True if this session is a network training
+        :param offline: True if the session is done offline
+        :param store_data: Format {\'in\': bool, \'out\': bool} save the tensor when bool is True
+        :param batch_size: Number of samples in a batch
+        """
 
         self.name: str = self.__class__.__name__
 
@@ -57,8 +55,8 @@ class DataManager:
         if dataset_config is not None and dataset_config.normalize:
             json_file_path = None
             # Existing Dataset in the current session
-            if session_dir is not None and os.path.exists(os.path.join(session_dir, 'dataset')):
-                json_file_path = os.path.join(session_dir, 'dataset', 'dataset.json')
+            if os.path.exists(os.path.join(session, 'dataset')):
+                json_file_path = os.path.join(session, 'dataset', 'dataset.json')
             # Dataset provided by config
             elif dataset_config.dataset_dir is not None:
                 dataset_dir = dataset_config.dataset_dir
@@ -90,41 +88,43 @@ class DataManager:
             # Create an environment for prediction if an environment config is provided
             create_environment = environment_config is not None
             # Create a dataset if data will be stored from environment during prediction
-            create_dataset = record_data is not None and (record_data['input'] or record_data['output'])
+            create_dataset = store_data
             # Create a dataset also if data should be loaded from any partition
             create_dataset = create_dataset or (dataset_config is not None and dataset_config.dataset_dir is not None)
 
         # Create dataset if required
         if create_dataset:
             self.dataset_manager = DatasetManager(data_manager=self, dataset_config=dataset_config,
-                                                  session_name=session_name, session_dir=session_dir,
-                                                  new_session=new_session, train=self.is_training,
-                                                  offline=offline, record_data=record_data)
+                                                  session=session, new_session=new_session, training=self.is_training,
+                                                  offline=offline, store_data=store_data)
         # Create environment if required
         if create_environment is None:  # If None then the dataset_manager exists
             create_environment = self.dataset_manager.new_dataset()
         if create_environment:
             self.environment_manager = EnvironmentManager(data_manager=self, environment_config=environment_config,
-                                                          batch_size=batch_size, train=self.is_training)
+                                                          session=session, batch_size=batch_size,
+                                                          training=self.is_training)
 
     def get_manager(self) -> Any:
         """
-        | Return the manager of DataManager.
+        Return the Manager of this DataManager.
 
-        :return: Manager that handle the DataManager
+        :return: The Manager of this DataManager.
         """
 
         return self.manager
 
-    def get_data(self, epoch: int = 0, batch_size: int = 1, animate: bool = True) -> Dict[str, ndarray]:
+    def get_data(self,
+                 epoch: int = 0,
+                 batch_size: int = 1,
+                 animate: bool = True) -> Dict[str, ndarray]:
         """
-        | Fetch data from EnvironmentManager or DatasetManager according to the context
+        Fetch data from the EnvironmentManager or the DatasetManager according to the context.
 
-        :param int epoch: Current epoch ID
-        :param int batch_size: Size of the desired batch
-        :param bool animate: Allow EnvironmentManager to generate a new sample
-
-        :return: Newly computed data
+        :param epoch: Current epoch number.
+        :param batch_size: Size of the desired batch.
+        :param animate: Allow EnvironmentManager to generate a new sample.
+        :return: Dict containing the newly computed data.
         """
 
         # Training
@@ -177,12 +177,13 @@ class DataManager:
         self.data = data
         return data
 
-    def get_prediction(self, network_input: ndarray) -> ndarray:
+    def get_prediction(self,
+                       network_input: ndarray) -> ndarray:
         """
-        | Get a Network prediction from an input array. Normalization is applied on input and prediction.
+        Get a Network prediction from an input array. Normalization is applied on input and prediction.
 
-        :param ndarray network_input: Input array of the Network
-        :return: Network prediction
+        :param network_input: Input array of the Network.
+        :return: Network prediction.
         """
 
         # Apply normalization
@@ -192,26 +193,31 @@ class DataManager:
         # Unapply normalization on prediction
         return self.normalize_data(prediction, 'output', reverse=True)
 
-    def apply_prediction(self, prediction: ndarray) -> None:
+    def apply_prediction(self,
+                         prediction: ndarray) -> None:
         """
-        | Apply the Network prediction in the Environment.
+        Apply the Network prediction in the Environment.
 
-        :param ndarray prediction: Prediction of the Network to apply
+        :param prediction: Prediction of the Network to apply.
         """
+
         if self.environment_manager is not None:
             # Unapply normalization on prediction
             prediction = self.normalize_data(prediction, 'output', reverse=True)
             # Apply prediction
             self.environment_manager.environment.apply_prediction(prediction)
 
-    def normalize_data(self, data: ndarray, field: str, reverse: bool = False) -> ndarray:
+    def normalize_data(self,
+                       data: ndarray,
+                       field: str,
+                       reverse: bool = False) -> ndarray:
         """
-        | Apply or unapply normalization following current standard score.
+        Apply or unapply normalization following current standard score.
 
-        :param ndarray data: Data to normalize
-        :param str field: Specify if data is an 'input' or an 'output'
-        :param bool reverse: If False, apply normalization; if False, unapply normalization
-        :return: Data with applied or disapplied normalization
+        :param data: Data to normalize.
+        :param field: Specify if data is an 'input' or an 'output'.
+        :param reverse: If False, apply normalization; if False, unapply normalization.
+        :return: Data with applied or misapplied normalization.
         """
 
         if not reverse:
@@ -222,7 +228,7 @@ class DataManager:
 
     def close(self) -> None:
         """
-        | Launch the closing procedure on its managers
+        Launch the closing procedure of Managers.
         """
 
         if self.environment_manager is not None:

@@ -18,7 +18,7 @@ class BaseTrainer(BasePipeline):
     :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
     :param Optional[BaseEnvironmentConfig] environment_config: Specialisation containing the parameters of the
                                                                environment manager
-    :param str session_name: Name of the newly created directory if session_dir is not defined
+    :param str session_name: Name of the newly created directory if session is not defined
     :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
     :param bool new_session: Define the creation of new directories to store data
     :param int nb_epochs: Number of epochs
@@ -117,7 +117,7 @@ class BaseTrainer(BasePipeline):
     def save_network(self) -> None:
         """
         | Registers the network weights and biases in the corresponding directory (session_name/network or
-          session_dir/network)
+          session/network)
         """
 
         self.manager.save_network()
@@ -223,7 +223,7 @@ class BaseTrainer(BasePipeline):
 
         description = "\n"
         description += f"# {self.__class__.__name__}\n"
-        description += f"    Session directory: {self.manager.session_dir}\n"
+        description += f"    Session directory: {self.manager.session}\n"
         description += f"    Number of epochs: {self.nb_epochs}\n"
         description += f"    Number of batches per epoch: {self.nb_batches}\n"
         description += f"    Number of samples per batch: {self.batch_size}\n"
