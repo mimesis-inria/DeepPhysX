@@ -31,7 +31,7 @@ class AbstractEnvironment:
         self.input: ndarray = array([])
         self.output: ndarray = array([])
         self.loss_data: Any = None
-        self.compute_essential_data: bool = True
+        self.compute_training_data: bool = True
 
         # Dataset data variables
         self.sample_in: Optional[ndarray] = None

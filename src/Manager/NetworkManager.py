@@ -5,7 +5,7 @@ from os.path import isdir, isfile
 from numpy import copy, array, ndarray
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Utils.pathUtils import copy_dir, create_dir
+from DeepPhysX.Core.Utils.path import copy_dir, create_dir
 
 
 class NetworkManager:

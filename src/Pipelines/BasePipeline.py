@@ -1,7 +1,7 @@
-from typing import Dict, Optional, Any, List, Union
+from typing import Optional, Any, List, Union
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Manager.Manager import Manager
 from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
@@ -12,60 +12,71 @@ from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 
 
 class BasePipeline:
-    """
-    | Base class defining Pipelines common variables.
-
-    :param BaseNetworkConfig network_config: Specialisation containing the parameters of the network manager
-    :param BaseDatasetConfig dataset_config: Specialisation containing the parameters of the dataset manager
-    :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
-    :param str session_name: Name of the newly created directory if session is not defined
-    :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
-    :param Optional[str] pipeline: Values at either 'training' or 'prediction'
-    """
 
     def __init__(self,
                  network_config: Optional[BaseNetworkConfig] = None,
                  dataset_config: Optional[BaseDatasetConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
+                 session_dir: str = 'sessions',
                  session_name: str = 'default',
-                 session_dir: Optional[str] = None,
-                 pipeline: Optional[str] = None):
+                 pipeline: str = ''):
+        """
+        Pipelines implement the main loop that defines data flow through components (Environment, Dataset, Network...).
+
+        :param network_config: Specialisation containing the parameters of the network manager.
+        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param environment_config: Specialisation containing the parameters of the environment manager.
+        :param session_dir: Name of the directory in which to write all the necessary data.
+        :param session_name: Name of the newly created directory if session is not defined.
+        :param pipeline: Name of the Pipeline.
+        """
 
         self.name: str = self.__class__.__name__
 
-        # Check the arguments
+        # Check the configurations
         if network_config is not None and not isinstance(network_config, BaseNetworkConfig):
-            raise TypeError(f"[{self.name}] The network configuration must be a BaseNetworkConfig")
-        if environment_config is not None and not isinstance(environment_config, BaseEnvironmentConfig):
-            raise TypeError(f"[{self.name}] The environment configuration must be a BaseEnvironmentConfig")
+            raise TypeError(f"[{self.name}] The Network configuration must be a BaseNetworkConfig object.")
         if dataset_config is not None and not isinstance(dataset_config, BaseDatasetConfig):
-            raise TypeError(f"[{self.name}] The dataset configuration must be a BaseDatasetConfig")
+            raise TypeError(f"[{self.name}] The Dataset configuration must be a BaseDatasetConfig object.")
+        if environment_config is not None and not isinstance(environment_config, BaseEnvironmentConfig):
+            raise TypeError(f"[{self.name}] The Environment configuration must be a BaseEnvironmentConfig object.")
+
+        # Check the session path variables
+        if type(session_dir) != str:
+            raise TypeError(f"[{self.name}] The given 'session_dir'={session_dir} must be a str.")
+        elif len(session_dir) == 0:
+            session_dir = 'sessions'
         if type(session_name) != str:
-            raise TypeError(f"[{self.name}] The network config must be a BaseNetworkConfig object.")
-        if session_dir is not None and type(session_dir) != str:
-            raise TypeError(f"[{self.name}] The session directory must be a str.")
+            raise TypeError(f"[{self.name}] The given 'session=name'={session_name} must be a str.")
+        elif len(session_name) == 0:
+            session_name = pipeline
 
-        self.type: str = pipeline    # Either training or prediction
-        self.debug: bool = False
-        self.new_session: bool = True
-        self.record_data: Optional[Dict[str, bool]] = None  # Can be of type {'in': bool, 'out': bool}
-
-        # Dataset variables
+        # Configuration variables
         self.dataset_config: BaseDatasetConfig = dataset_config
-        # Network variables
         self.network_config: BaseNetworkConfig = network_config
-        # Simulation variables
         self.environment_config: BaseEnvironmentConfig = environment_config
+
+        # Session variables
+        self.session_dir = session_dir
+        self.session_name = session_name
+
         # Main manager
         self.manager: Optional[Manager] = None
 
-    def get_any_manager(self, manager_names: Union[str, List[str]]) -> Optional[Any]:
+    def execute(self):
         """
-        | Return the desired Manager associated with the pipeline if it exists.
+        Launch the Pipeline.
+        """
 
-        :param Union[str, List[str]] manager_names: Name of the desired Manager or order of access to the desired
-                                                    Manager
-        :return: Manager associated with the Pipeline
+        raise NotImplemented
+
+    def __get_any_manager(self,
+                          manager_names: Union[str, List[str]]) -> Optional[Any]:
+        """
+        Return the desired Manager associated with the pipeline if it exists.
+
+        :param manager_names: Name of the desired Manager or order of access to this desired Manager.
+        :return: The desired Manager associated with the Pipeline.
         """
 
         # If manager variable is not defined, cannot access other manager
@@ -85,47 +96,47 @@ class BasePipeline:
                 return None
         return accessed_manager
 
-    def get_network_manager(self) -> NetworkManager:
+    def get_network_manager(self) -> Optional[NetworkManager]:
         """
-        | Return the NetworkManager associated with the pipeline.
+        Return the NetworkManager associated with the pipeline if it exists.
 
-        :return: NetworkManager associated with the pipeline
-        """
-
-        return self.get_any_manager('network_manager')
-
-    def get_data_manager(self) -> DataManager:
-        """
-        | Return the DataManager associated with the pipeline.
-
-        :return: DataManager associated with the pipeline
+        :return: The NetworkManager associated with the pipeline.
         """
 
-        return self.get_any_manager('data_manager')
+        return self.__get_any_manager(manager_names='network_manager')
 
-    def get_stats_manager(self) -> StatsManager:
+    def get_data_manager(self) -> Optional[DataManager]:
         """
-        | Return the StatsManager associated with the pipeline.
+        Return the DataManager associated with the pipeline if it exists.
 
-        :return: StatsManager associated with the pipeline
-        """
-
-        return self.get_any_manager('stats_manager')
-
-    def get_dataset_manager(self) -> DatasetManager:
-        """
-        | Return the DatasetManager associated with the pipeline.
-
-        :return: DatasetManager associated with the pipeline
+        :return: The DataManager associated with the pipeline.
         """
 
-        return self.get_any_manager(['data_manager', 'dataset_manager'])
+        return self.__get_any_manager(manager_names='data_manager')
 
-    def get_environment_manager(self) -> EnvironmentManager:
+    def get_stats_manager(self) -> Optional[StatsManager]:
         """
-        | Return the EnvironmentManager associated with the pipeline.
+        Return the StatsManager associated with the pipeline if it exists.
 
-        :return: EnvironmentManager associated with the pipeline
+        :return: The StatsManager associated with the pipeline.
         """
 
-        return self.get_any_manager(['data_manager', 'environment_manager'])
+        return self.__get_any_manager(manager_names='stats_manager')
+
+    def get_dataset_manager(self) -> Optional[DatasetManager]:
+        """
+        Return the DatasetManager associated with the pipeline if it exists.
+
+        :return: The DatasetManager associated with the pipeline.
+        """
+
+        return self.__get_any_manager(manager_names=['data_manager', 'dataset_manager'])
+
+    def get_environment_manager(self) -> Optional[EnvironmentManager]:
+        """
+        Return the EnvironmentManager associated with the pipeline if it exists.
+
+        :return: The EnvironmentManager associated with the pipeline.
+        """
+
+        return self.__get_any_manager(manager_names=['data_manager', 'environment_manager'])

@@ -5,6 +5,8 @@ from threading import Thread
 from subprocess import run as subprocessRun
 from sys import modules, executable
 
+from SSD.Core.Storage.Database import Database
+
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
@@ -172,6 +174,7 @@ class BaseEnvironmentConfig:
 
     def create_environment(self,
                            environment_manager: Any,
+                           data_db: Optional[Database] = None,
                            visu_db: Optional[Any] = None) -> BaseEnvironment:
         """
         Create an Environment that will not be a TcpIpObject.
@@ -184,11 +187,13 @@ class BaseEnvironmentConfig:
         # Create instance
         environment = self.environment_class(environment_manager=environment_manager,
                                              as_tcp_ip_client=False,
+                                             data_db=data_db,
                                              visu_db=visu_db)
         # Create & Init Environment
         environment.recv_parameters(self.param_dict)
         environment.create()
         environment.init()
+        environment.init_database()
         environment.init_visualization()
         return environment
 

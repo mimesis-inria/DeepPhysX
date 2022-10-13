@@ -10,21 +10,21 @@ from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Utils.pathUtils import get_first_caller, create_dir
+from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
 
 class Manager:
 
     def __init__(self,
-                 network_config: BaseNetworkConfig,
-                 dataset_config: BaseDatasetConfig,
-                 environment_config: BaseEnvironmentConfig,
+                 network_config: Optional[BaseNetworkConfig] = None,
+                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 environment_config: Optional[BaseEnvironmentConfig] = None,
                  pipeline: Optional[Any] = None,
                  session_dir: Optional[str] = None,
                  session_name: str = 'DPX_default',
                  new_session: bool = True,
-                 training: bool = True,
-                 store_data: bool = True,
+                 is_training: bool = True,
+                 produce_data: bool = True,
                  batch_size: int = 1):
         """
         Collection of all the specialized managers. Allows for some basic functions call.
@@ -34,9 +34,11 @@ class Manager:
         :param dataset_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_name: Name of the newly created directory if session is not defined.
-        :param session_dir: Name of the directory in which to write all the necessary data
-        :param bool new_session: Define the creation of new directories to store data
-        :param int batch_size: Number of samples in a batch
+        :param session_dir: Name of the directory in which to write all the necessary data.
+        :param bool new_session: Flag that indicates whether if the session is new
+        :param is_training: Flag that indicates whether if this session is training a Network.
+        :param produce_data: Flag that indicates whether if this session is producing data.
+        :param int batch_size: Number of samples in a batch.
         """
 
         self.pipeline: Optional[Any] = pipeline
@@ -51,7 +53,7 @@ class Manager:
             self.session: str = osPathJoin(session_dir, session_name)
 
         # Trainer: must create a new session to avoid overwriting
-        if training:
+        if is_training:
             # Avoid unwanted overwritten data
             if new_session:
                 self.session: str = create_dir(self.session, dir_name=session_name)

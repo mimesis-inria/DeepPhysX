@@ -7,7 +7,7 @@ from json import load as json_load
 from numpy import load, squeeze, ndarray, concatenate, float64
 
 from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
-from DeepPhysX.Core.Utils.pathUtils import create_dir
+from DeepPhysX.Core.Utils.path import create_dir
 from DeepPhysX.Core.Utils.jsonUtils import CustomJSONEncoder
 
 

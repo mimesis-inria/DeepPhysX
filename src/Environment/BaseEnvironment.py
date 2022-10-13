@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, Union, Tuple
+from typing import Any, Optional, Dict, Union, Tuple, List
 from numpy import array, ndarray
 
 from SSD.Core.Storage.Database import Database
@@ -16,6 +16,7 @@ class BaseEnvironment(TcpIpClient):
                  number_of_instances: int = 1,
                  as_tcp_ip_client: bool = True,
                  environment_manager: Optional[Any] = None,
+                 data_db: Optional[Union[Database, Tuple[str, str]]] = None,
                  visu_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         BaseEnvironment is an environment class to compute simulated data for the network and its optimization process.
@@ -37,8 +38,10 @@ class BaseEnvironment(TcpIpClient):
                              port=port)
 
         # Input and output to give to the network
-        self.input: ndarray = array([])
-        self.output: ndarray = array([])
+        self.__training_data: Dict[str, ndarray] = {}
+        self.__additional_data: Dict[str, ndarray] = {}
+        self.__first_add: List[bool] = [True, True]
+
         # Variables to store samples from Dataset
         self.sample_in: Optional[ndarray] = None
         self.sample_out: Optional[ndarray] = None
@@ -47,6 +50,17 @@ class BaseEnvironment(TcpIpClient):
         # Manager if the Environment is not a TcpIpClient
         self.environment_manager: Any = environment_manager
 
+        # Connect the Environment to the data Database
+        self.database: Optional[Database] = None
+        if data_db is not None:
+            if type(data_db) == list:
+                pass
+            else:
+                self.database = data_db
+                self.database.create_fields(table_name='Training',
+                                            fields=('env_id', int))
+
+        # Connect the Factory to the visualization Database
         self.factory: Optional[VedoFactory] = None
         if visu_db is not None:
             if type(visu_db) == list:
@@ -100,9 +114,17 @@ class BaseEnvironment(TcpIpClient):
 
         return {}
 
+    def init_database(self) -> None:
+        """
+        Define the fields of the training dataset.
+        Required.
+        """
+
+        raise NotImplementedError
+
     def init_visualization(self) -> None:
         """
-        Define the visualization objects to send to he Visualizer.
+        Define the visualization objects to send to the Visualizer.
         Not mandatory.
 
         :return: Dictionary of visualization data
@@ -160,19 +182,39 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
 
     def set_training_data(self,
-                          input_array: ndarray,
-                          output_array: ndarray) -> None:
+                          **kwargs) -> None:
         """
         Set the training data to send to the TcpIpServer or the EnvironmentManager.
-
-        :param input_array: Network input
-        :param output_array: Network expected output
         """
 
+        # Check kwargs
+        if self.__first_add[0]:
+            self.__first_add[0] = False
+            required_fields = list(set(self.database.get_fields(table_name='Training')) - {'id', 'env_id'})
+            for field in kwargs.keys():
+                if field not in required_fields:
+                    raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
+                                     f"Required fields are {required_fields}.")
+            for field in required_fields:
+                if field not in kwargs.keys():
+                    raise ValueError(f"[{self.name}] The field '{field}' was not defined in training data."
+                                     f"Required fields are {required_fields}.")
+
         # Training data is set if the Environment can compute data
-        if self.compute_essential_data:
-            self.input = input_array
-            self.output = output_array
+        if self.compute_training_data:
+            self.__training_data = kwargs
+            self.__training_data['env_id'] = self.instance_id
+
+    def _reset_training_data(self) -> None:
+        self.__training_data = {}
+
+    def _send_data(self) -> None:
+        line_id = self.database.add_data(table_name='Training',
+                                         data=self.__training_data)
+        self.database.add_data(table_name='Sync',
+                               data={'env': line_id})
+        self.database.add_data(table_name='Additional',
+                               data=self.__additional_data)
 
     def set_loss_data(self,
                       loss_data: Any) -> None:
