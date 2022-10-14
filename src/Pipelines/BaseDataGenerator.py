@@ -1,3 +1,4 @@
+from typing import Optional
 from os.path import join, sep
 from sys import stdout
 
@@ -12,14 +13,14 @@ from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 class BaseDataGenerator(BasePipeline):
 
     def __init__(self,
-                 dataset_config: BaseDatasetConfig,
                  environment_config: BaseEnvironmentConfig,
+                 dataset_config: Optional[BaseDatasetConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
-        BaseDataGenerator implement the main loop that only produces and stores data (no Network training).
+        BaseDataGenerator implements the main loop that only produces and stores data (no Network training).
 
         :param dataset_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
@@ -54,6 +55,11 @@ class BaseDataGenerator(BasePipeline):
             session_name = create_dir(session_dir=session_dir,
                                       session_name=session_name).split(sep)[-1]
 
+        # Data generation variables
+        self.batch_nb: int = batch_nb
+        self.batch_id: int = 0
+        self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
+
         # Create a DataManager
         self.data_manager = DataManager(dataset_config=dataset_config,
                                         environment_config=environment_config,
@@ -62,23 +68,68 @@ class BaseDataGenerator(BasePipeline):
                                         is_training=False,
                                         produce_data=True,
                                         batch_size=batch_size)
-        self.nb_batch: int = batch_nb
-        self.progress_bar = Progressbar(start=0, stop=self.nb_batch, c='orange', title="Data Generation")
 
     def execute(self) -> None:
         """
         Launch the data generation Pipeline.
+        Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
+        more complex pipeline.
         """
 
-        # Produce each batch of data
-        for i in range(self.nb_batch):
+        self.data_generation_begin()
+        while self.batch_condition():
+            self.batch_begin()
+            self.batch_produce()
+            self.batch_count()
+            self.batch_end()
+        self.data_generation_end()
 
-            # Produce a batch
-            self.data_manager.get_data()
+    def data_generation_begin(self) -> None:
+        """
+        Called once at the beginning of the data generation pipeline.
+        """
 
-            # Update progress bar
-            stdout.write("\033[K")
-            self.progress_bar.print(counts=i + 1)
+        pass
 
-        # Close DataManager
+    def batch_condition(self) -> bool:
+        """
+        Check the batch number condition.
+        """
+
+        return self.batch_id < self.batch_nb
+
+    def batch_begin(self) -> None:
+        """
+        Called once at the beginning of a batch production.
+        """
+
+        pass
+
+    def batch_produce(self) -> None:
+        """
+        Trigger the data production.
+        """
+
+        self.data_manager.get_data()
+
+    def batch_count(self) -> None:
+        """
+        Increment the batch counter.
+        """
+
+        self.batch_id += 1
+
+    def batch_end(self) -> None:
+        """
+        Called once at the beginning of a batch production.
+        """
+
+        stdout.write("\033[K")
+        self.progress_bar.print(counts=self.batch_id + 1)
+
+    def data_generation_end(self) -> None:
+        """
+        Called once at the beginning of the data generation pipeline.
+        """
+
         self.data_manager.close()
