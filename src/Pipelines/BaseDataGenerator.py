@@ -1,4 +1,4 @@
-from os.path import join, sep, exists
+from os.path import join, sep
 from sys import stdout
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline

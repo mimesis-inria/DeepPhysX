@@ -1,9 +1,7 @@
 from typing import Any, Optional, Dict, List
-import os.path
 from numpy import ndarray
-from json import load as json_load
 
-from DeepPhysX.Core.Manager.DatabaseManager import DatasetManager
+from DeepPhysX.Core.Manager.DatabaseManager import DatasetManager, Database
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
@@ -102,6 +100,9 @@ class DataManager:
         """
 
         return self.manager
+
+    def get_database(self) -> Database:
+        return self.dataset_manager.database
 
     def get_data(self,
                  epoch: int = 0,

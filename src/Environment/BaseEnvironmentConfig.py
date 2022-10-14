@@ -105,7 +105,8 @@ class BaseEnvironmentConfig:
     def create_server(self,
                       environment_manager: Optional[Any] = None,
                       batch_size: int = 1,
-                      visu_db: Optional[int] = None) -> TcpIpServer:
+                      data_db: Optional[str] = None,
+                      visu_db: Optional[str] = None) -> TcpIpServer:
         """
         Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
@@ -116,16 +117,19 @@ class BaseEnvironmentConfig:
         """
 
         # Create server
-        server = TcpIpServer(max_client_count=self.max_client_connections, batch_size=batch_size,
-                             nb_client=self.number_of_thread, manager=environment_manager,
-                             ip_address=self.ip_address, port=self.port)
+        server = TcpIpServer(ip_address=self.ip_address,
+                             port=self.port,
+                             nb_client=self.number_of_thread,
+                             max_client_count=self.max_client_connections,
+                             batch_size=batch_size,
+                             manager=environment_manager)
         server_thread = Thread(target=self.start_server, args=(server,))
         server_thread.start()
 
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i, visu_db))
+            client_thread = Thread(target=self.start_client, args=(i, data_db, visu_db))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -152,7 +156,8 @@ class BaseEnvironmentConfig:
 
     def start_client(self,
                      idx: int = 1,
-                     visu_db: Optional[int] = None) -> None:
+                     data_db: Optional[str] = None,
+                     visu_db: Optional[str] = None) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
@@ -170,6 +175,7 @@ class BaseEnvironmentConfig:
                        str(self.port),
                        str(idx),
                        str(self.number_of_thread),
+                       str(data_db),
                        str(visu_db)])
 
     def create_environment(self,

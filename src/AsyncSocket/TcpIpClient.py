@@ -76,6 +76,8 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         # Create the environment
         self.create()
         self.init()
+        if self.instance_id == 0:
+            self.init_database()
         self.init_visualization()
 
         # Send parameters
@@ -146,37 +148,6 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
     #                                  Data sending to Server                                #
     ##########################################################################################
     ##########################################################################################
-
-    async def __send_training_data(self,
-                                   loop: Optional[EventLoop] = None,
-                                   receiver: Optional[socket] = None) -> None:
-        """
-        Send the training data to the TcpIpServer.
-
-        :param loop: get_event_loop() return.
-        :param receiver: TcpIpObject receiver.
-        """
-
-        loop = get_event_loop() if loop is None else loop
-        receiver = self.sock if receiver is None else receiver
-
-        # Send and reset network input
-        if self.input.tolist():
-            await self.send_labeled_data(data_to_send=self.input, label="input", loop=loop, receiver=receiver)
-            self.input = array([])
-        # Send network output
-        if self.output.tolist():
-            await self.send_labeled_data(data_to_send=self.output, label="output", loop=loop, receiver=receiver)
-            self.output = array([])
-        # Send loss data
-        if self.loss_data:
-            await self.send_labeled_data(data_to_send=self.loss_data, label='loss', loop=loop, receiver=receiver)
-            self.loss_data = None
-        # Send additional dataset fields
-        for key in self.additional_fields.keys():
-            await self.send_labeled_data(data_to_send=self.additional_fields[key], label='dataset_' + key,
-                                         loop=loop, receiver=receiver)
-        self.additional_fields = {}
 
     def send_prediction_data(self,
                              network_input: ndarray,
@@ -312,18 +283,18 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         # Execute the required number of steps
         for step in range(self.simulations_per_step):
             # Compute data only on final step
-            self.compute_essential_data = step == self.simulations_per_step - 1
+            self.compute_training_data = step == self.simulations_per_step - 1
             await self.step()
 
         # If produced sample is not usable, run again
-        # Todo: add the max_rate here
         if self.sample_in is None and self.sample_out is None:
             while not self.check_sample():
                 for step in range(self.simulations_per_step):
                     # Compute data only on final step
-                    self.compute_essential_data = step == self.simulations_per_step - 1
+                    self.compute_training_data = step == self.simulations_per_step - 1
                     await self.step()
 
         # Sent training data to Server
-        await self.__send_training_data()
+        self._send_training_data()
+        self._reset_training_data()
         await self.send_command_done()

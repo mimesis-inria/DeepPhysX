@@ -100,6 +100,14 @@ class AbstractEnvironment:
 
         pass
 
+    def init_database(self) -> None:
+        """
+        Define the fields of the training dataset.
+        Required.
+        """
+
+        raise NotImplementedError
+
     def send_parameters(self) -> dict:
         """
         Create a dictionary of parameters to send to the manager. Automatically called after create and init.
@@ -119,3 +127,9 @@ class AbstractEnvironment:
         """
 
         pass
+
+    def _send_training_data(self) -> None:
+        raise NotImplementedError
+
+    def _reset_training_data(self) -> None:
+        raise NotImplementedError

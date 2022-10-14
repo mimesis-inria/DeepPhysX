@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional, Union
-from numpy import array, ndarray
+from numpy import ndarray
 from asyncio import run as async_run
 from copy import copy
 from os.path import join
@@ -56,7 +56,9 @@ class EnvironmentManager:
         if environment_config.as_tcp_ip_client:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           visu_db=visu_db.get_path())
+                                                           data_db=data_db if data_db is None else data_db.get_path(),
+                                                           visu_db=visu_db if visu_db is None else visu_db.get_path())
+            self.data_manager.get_database().load()
         else:
             self.environment = environment_config.create_environment(environment_manager=self,
                                                                      data_db=data_db,
@@ -82,33 +84,15 @@ class EnvironmentManager:
         return self.data_manager
 
     def get_data_from_server(self,
-                             get_inputs: bool = True,
-                             get_outputs: bool = True,
-                             animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
+                             animate: bool = True) -> None:
         """
         Compute a batch of data from Environments requested through TcpIpServer.
 
-        :param get_inputs: If True, compute and return input.
-        :param get_outputs: If True, compute and return output.
         :param  animate: If True, triggers an environment step.
-        :return: Dictionary containing all labeled data sent by the clients in their own dictionary + in and out key
-                 corresponding to the batch.
         """
 
         # Get data from server
-        batch = self.server.get_batch(get_inputs, get_outputs, animate)
-        # Filter input and output
-        training_data = {'input': array(batch['input']) if get_inputs else array([]),
-                         'output': array(batch['output']) if get_outputs else array([])}
-        # Convert each additional field
-        for field in batch['additional_fields']:
-            batch['additional_fields'][field] = array(batch['additional_fields'][field])
-        training_data['additional_fields'] = batch['additional_fields']
-        # Convert loss data
-        if 'loss' in batch and len(batch['loss']) != 0:
-            training_data['loss'] = array(batch['loss'])
-        # Return batch
-        return training_data
+        self.server.get_batch(animate)
 
     def get_data_from_environment(self,
                                   animate: bool = True) -> None:
@@ -148,7 +132,7 @@ class EnvironmentManager:
             # 1.3 Add the produced sample to the batch if the sample is validated
             if self.environment.check_sample():
                 nb_sample += 1
-                self.environment._send_data()
+                self.environment._send_training_data()
                 self.environment._reset_training_data()
 
     def dispatch_batch_to_server(self,

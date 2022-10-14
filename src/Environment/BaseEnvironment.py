@@ -54,9 +54,11 @@ class BaseEnvironment(TcpIpClient):
         self.database: Optional[Database] = None
         if data_db is not None:
             if type(data_db) == list:
-                pass
+                self.database = Database(database_dir=data_db[0],
+                                         database_name=data_db[1]).load()
             else:
                 self.database = data_db
+            if self.instance_id == 0:
                 self.database.create_fields(table_name='Training',
                                             fields=('env_id', int))
 
@@ -189,16 +191,18 @@ class BaseEnvironment(TcpIpClient):
 
         # Check kwargs
         if self.__first_add[0]:
+            if self.instance_id != 0:
+                self.database.load()
             self.__first_add[0] = False
             required_fields = list(set(self.database.get_fields(table_name='Training')) - {'id', 'env_id'})
             for field in kwargs.keys():
                 if field not in required_fields:
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
-                                     f"Required fields are {required_fields}.")
+                                     f"Required fields are {required_fields}.{self.instance_id}")
             for field in required_fields:
                 if field not in kwargs.keys():
                     raise ValueError(f"[{self.name}] The field '{field}' was not defined in training data."
-                                     f"Required fields are {required_fields}.")
+                                     f"Required fields are {required_fields}.{self.instance_id}")
 
         # Training data is set if the Environment can compute data
         if self.compute_training_data:
@@ -208,7 +212,7 @@ class BaseEnvironment(TcpIpClient):
     def _reset_training_data(self) -> None:
         self.__training_data = {}
 
-    def _send_data(self) -> None:
+    def _send_training_data(self) -> None:
         line_id = self.database.add_data(table_name='Training',
                                          data=self.__training_data)
         self.database.add_data(table_name='Sync',
