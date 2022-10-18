@@ -4,27 +4,33 @@ from collections import namedtuple
 
 
 class BaseNetwork:
-    """
-    | BaseNetwork is a network class to compute predictions from input data according to actual state.
 
-    :param namedtuple config: namedtuple containing BaseNetwork parameters
-    """
+    def __init__(self,
+                 config: namedtuple):
+        """
+        BaseNetwork is a network class to compute predictions from input data according to actual state.
 
-    def __init__(self, config: namedtuple):
+        :param namedtuple config: namedtuple containing BaseNetwork parameters
+        """
 
         # Config
         self.device = None
         self.config = config
 
-    def predict(self, input_data: Any) -> Any:
-        """
-        | Same as forward
+        # Data fields
+        self.net_fields = ['input']
+        self.opt_fields = ['ground_truth']
+        self.pred_fields = ['prediction']
 
-        :param Any input_data: Input tensor
-        :return: Network prediction
+    def predict(self, data_net: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compute a forward pass of the network.
+
+        :param data_net: Data used by the Network.
+        :return: Data produced by the Network.
         """
 
-        return self.forward(input_data)
+        return {'prediction': self.forward(data_net['input'])}
 
     def forward(self, input_data: Any) -> Any:
         """
@@ -93,7 +99,7 @@ class BaseNetwork:
 
         raise NotImplementedError
 
-    def transform_from_numpy(self, data: ndarray, grad: bool = True) -> Any:
+    def numpy_to_tensor(self, data: ndarray, grad: bool = True) -> Any:
         """
         | Transform and cast data from numpy to the desired tensor type.
 
@@ -104,7 +110,7 @@ class BaseNetwork:
 
         return data.astype(self.config.data_type)
 
-    def transform_to_numpy(self, data: Any) -> ndarray:
+    def tensor_to_numpy(self, data: Any) -> ndarray:
         """
         | Transform and cast data from tensor type to numpy.
 

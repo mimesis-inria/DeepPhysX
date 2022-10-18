@@ -1,15 +1,17 @@
-from typing import Callable, Any, Optional, Tuple
+from typing import Callable, Any, Optional, Tuple, Dict
 from collections import namedtuple
+
+DTYPE = Dict[str, Any]
 
 
 class DataTransformation:
-    """
-    | DataTransformation is dedicated to data operations before and after network predictions.
-
-    :param namedtuple config: Namedtuple containing the parameters of the network manager
-    """
 
     def __init__(self, config: namedtuple):
+        """
+        DataTransformation is dedicated to data operations before and after network predictions.
+
+        :param namedtuple config: Namedtuple containing the parameters of the network manager.
+        """
 
         self.name = self.__class__.__name__
 
@@ -27,36 +29,40 @@ class DataTransformation:
 
         return inner
 
-    def transform_before_prediction(self, data_in: Any) -> Any:
+    def transform_before_prediction(self,
+                                    data_net: DTYPE) -> DTYPE:
         """
-        | Apply data operations before network's prediction.
+        Apply data operations before network's prediction.
 
-        :param Any data_in: Input data
-        :return: Transformed input data
-        """
-
-        return data_in
-
-    def transform_before_loss(self, data_out: Any, data_gt: Optional[Any] = None) -> Tuple[Any, Optional[Any]]:
-        """
-        | Apply data operations between network's prediction and loss computation.
-
-        :param Any data_out: Prediction data
-        :param Optional[Any] data_gt: Ground truth data
-        :return: Transformed prediction data, transformed ground truth data
+        :param data_net: Data used by the Network.
+        :return: Transformed data_net.
         """
 
-        return data_out, data_gt
+        return data_net
 
-    def transform_before_apply(self, data_out: Any) -> Any:
+    def transform_before_loss(self,
+                              data_pred: DTYPE,
+                              data_opt: Optional[DTYPE] = None) -> Tuple[DTYPE, Optional[DTYPE]]:
         """
-        | Apply data operations between loss computation and prediction apply in environment.
+        Apply data operations between network's prediction and loss computation.
 
-        :param Any data_out: Prediction data
-        :return: Transformed prediction data
+        :param data_pred: Data produced by the Network.
+        :param data_opt: Data used by the Optimizer.
+        :return: Transformed data_pred, data_opt.
         """
 
-        return data_out
+        return data_pred, data_opt
+
+    def transform_before_apply(self,
+                               data_pred: DTYPE) -> DTYPE:
+        """
+        Apply data operations between loss computation and prediction apply in environment.
+
+        :param data_pred: Data produced by the Network.
+        :return: Transformed data_pred.
+        """
+
+        return data_pred
 
     def __str__(self) -> str:
         """

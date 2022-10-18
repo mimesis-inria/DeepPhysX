@@ -1,7 +1,5 @@
-from typing import Any, Dict, Optional, Union, List
-from numpy import ndarray
+from typing import Any, Optional, List
 from asyncio import run as async_run
-from copy import copy
 from os.path import join
 
 from SSD.Core.Storage.Database import Database
@@ -38,7 +36,7 @@ class EnvironmentManager:
         self.use_dataset_in_environment: bool = environment_config.use_dataset_in_environment
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
-        self.dataset_batch: Optional[Dict[str, Dict[int, Any]]] = None
+        self.dataset_batch: Optional[List[int]] = None
 
         # Create the Visualizer
         self.visualizer: Optional[VedoVisualizer] = None
@@ -105,21 +103,11 @@ class EnvironmentManager:
         nb_sample = 0
         while nb_sample < self.batch_size:
 
-            # # 1.1 Send a sample if a batch from dataset is given
-            # if self.dataset_batch is not None:
-            #     # Extract a sample from dataset batch: input
-            #     self.environment.sample_in = self.dataset_batch['input'][0]
-            #     self.dataset_batch['input'] = self.dataset_batch['input'][1:]
-            #     # Extract a sample from dataset batch: output
-            #     self.environment.sample_out = self.dataset_batch['output'][0]
-            #     self.dataset_batch['output'] = self.dataset_batch['output'][1:]
-            #     # Extract a sample from dataset batch: additional fields
-            #     additional_fields = {}
-            #     if 'additional_fields' in self.dataset_batch:
-            #         for field in self.dataset_batch['additional_fields']:
-            #             additional_fields[field] = self.dataset_batch['additional_fields'][field][0]
-            #             self.dataset_batch['additional_fields'][field] = self.dataset_batch['additional_fields'][field][1:]
-            #     self.environment.additional_fields = additional_fields
+            # 1.1 Send a sample if a batch from dataset is given
+            update_line = None
+            if self.dataset_batch is not None:
+                update_line = self.dataset_batch.pop(0)
+                self.environment._get_training_data(update_line)
 
             # 1.2 Run the defined number of step
             if animate:
@@ -131,34 +119,34 @@ class EnvironmentManager:
             # 1.3 Add the produced sample to the batch if the sample is validated
             if self.environment.check_sample():
                 nb_sample += 1
-                self.environment._send_training_data()
+                if update_line is None:
+                    self.environment._send_training_data()
+                else:
+                    self.environment._update_training_data(update_line)
                 self.environment._reset_training_data()
 
         # TODO: return the indices of samples
         return []
 
     def dispatch_batch_to_server(self,
-                                 batch: Dict[str, Union[ndarray, dict]],
-                                 animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
+                                 data_lines: List[int],
+                                 animate: bool = True) -> None:
         """
         Send samples from dataset to the Environments. Get back the training data.
 
-        :param batch: Batch of samples.
+        :param data_lines: Batch of samples.
         :param animate: If True, triggers an environment step.
         :return: Batch of training data.
         """
 
         # Define the batch to dispatch
-        self.server.set_dataset_batch(batch)
-        # Empty the server queue
-        while not self.server.data_fifo.empty():
-            self.server.data_fifo.get()
+        self.server.set_dataset_batch(data_lines)
         # Get data
-        return self.get_data(animate=animate)
+        self.get_data_from_server(animate=animate)
 
     def dispatch_batch_to_environment(self,
-                                      batch: Dict[str, Union[ndarray, dict]],
-                                      animate: bool = True) -> Dict[str, Union[ndarray, dict]]:
+                                      data_lines: List[int],
+                                      animate: bool = True) -> None:
         """
         Send samples from dataset to the Environments. Get back the training data.
 
@@ -168,9 +156,9 @@ class EnvironmentManager:
         """
 
         # Define the batch to dispatch
-        self.dataset_batch = copy(batch)
+        self.dataset_batch = data_lines.copy()
         # Get data
-        return self.get_data(animate=animate)
+        self.get_data_from_environment(animate=animate)
 
     def update_visualizer(self,
                           instance: int) -> None:

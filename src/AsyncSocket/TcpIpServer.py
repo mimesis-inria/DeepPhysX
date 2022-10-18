@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from asyncio import get_event_loop, gather
 from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
@@ -216,7 +216,7 @@ class TcpIpServer(TcpIpObject):
         #         # Send additional in / out sample
         #         await self.send_dict(name="additional_fields", dict_to_send=sample, loop=loop, receiver=client)
 
-        # 2) Execute n steps, the last one send data computation signal
+        # 2. Execute n steps, the last one send data computation signal
         if animate:
             await self.send_command_step(loop=loop, receiver=client)
             # Receive data
@@ -224,19 +224,15 @@ class TcpIpServer(TcpIpObject):
                                              client_id=client_id)
 
     def set_dataset_batch(self,
-                          batch: Dict[str, Union[ndarray, Dict]]) -> None:
+                          data_lines: List[int]) -> None:
         """
         Receive a batch of data from the Dataset. Samples will be dispatched between clients.
 
-        :param batch: Batch of data.
+        :param data_lines: Batch of data.
         """
 
-        # Check batch size
-        if len(batch['input']) != self.batch_size:
-            raise ValueError(f"[{self.name}] The size of batch from Dataset is {len(batch['input'])} while the batch "
-                             f"size was set to {self.batch_size}.")
         # Define batch from dataset
-        self.batch_from_dataset = batch.copy()
+        self.batch_from_dataset = data_lines.copy()
 
     def change_database(self,
                         database: str):

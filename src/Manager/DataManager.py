@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, List, Union
+from typing import Any, Optional, Dict, List
 from numpy import ndarray
 
 from DeepPhysX.Core.Manager.DatabaseManager import DatasetManager, Database
@@ -28,8 +28,8 @@ class DataManager:
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param manager: Manager that handle the DataManager
         :param session: Path to the session directory.
-        :param bool new_session: Flag that indicates whether if the session is new
-        :param is_training: Flag that indicates whether if this session is training a Network.
+        :param new_session: Flag that indicates whether if the session is new
+        :param pipeline: Flag that indicates whether if this session is training a Network.
         :param produce_data: Flag that indicates whether if this session is producing data.
         :param int batch_size: Number of samples in a batch
         """
@@ -40,32 +40,6 @@ class DataManager:
         self.manager: Optional[Any] = manager
         self.dataset_manager: Optional[DatasetManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
-
-        # Data normalization coefficients (default: mean = 0, standard deviation = 1)
-        self.normalization: Dict[str, List[float]] = {'input': [0., 1.], 'output': [0., 1.]}
-        # # If normalization flag is set to True, try to load existing coefficients
-        # if dataset_config is not None and dataset_config.normalize:
-        #     json_file_path = None
-        #     # Existing Dataset in the current session
-        #     if os.path.exists(os.path.join(session, 'dataset')):
-        #         json_file_path = os.path.join(session, 'dataset', 'dataset.json')
-        #     # Dataset provided by config
-        #     elif dataset_config.existing_dir is not None:
-        #         dataset_dir = dataset_config.existing_dir
-        #         if dataset_dir[-1] != "/":
-        #             dataset_dir += "/"
-        #         if dataset_dir[-8:] != "dataset/":
-        #             dataset_dir += "dataset/"
-        #         if os.path.exists(dataset_dir):
-        #             json_file_path = os.path.join(dataset_dir, 'dataset.json')
-        #     # If Dataset exists then a json file is associated
-        #     if json_file_path is not None:
-        #         with open(json_file_path) as json_file:
-        #             json_dict = json_load(json_file)
-        #             # Get the normalization coefficients
-        #             for field in self.normalization.keys():
-        #                 if field in json_dict['normalization']:
-        #                     self.normalization[field] = json_dict['normalization'][field]
 
         # Create a DatasetManager if required
         create_dataset = pipeline in ['data_generation', 'training'] or produce_data
@@ -92,7 +66,7 @@ class DataManager:
         self.pipeline = pipeline
         self.produce_data = produce_data
         self.batch_size = batch_size
-        self.data_lines: Union[List[int], int] = []
+        self.data_lines: List[int] = []
 
     def get_manager(self) -> Any:
         """
@@ -107,7 +81,7 @@ class DataManager:
         return self.dataset_manager.database
 
     def change_database(self) -> None:
-        # self.manager.change_database(self.dataset_manager.database)
+        self.manager.change_database(self.dataset_manager.database)
         self.environment_manager.change_database(self.dataset_manager.database)
 
     def get_data(self,
@@ -123,24 +97,27 @@ class DataManager:
 
         # Data generation case
         if self.pipeline == 'data_generation':
-            self.data_lines = self.environment_manager.get_data(animate=animate)
+            self.environment_manager.get_data(animate=animate)
             self.dataset_manager.add_data()
 
         # Training case
         elif self.pipeline == 'training':
 
             # Get data from Environment(s) if used and if the data should be created at this epoch
-            if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data):
+            # TODO
+            if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data)\
+                    and self.produce_data:
                 self.data_lines = self.environment_manager.get_data(animate=animate)
                 self.dataset_manager.add_data()
 
             # Get data from Dataset
             else:
                 self.data_lines = self.dataset_manager.get_data(batch_size=self.batch_size)
-                print(self.data_lines)
                 # Dispatch a batch to clients
+                # TODO
                 if self.environment_manager is not None and self.environment_manager.use_dataset_in_environment:
-                    self.data_lines = self.environment_manager.dispatch_batch(batch=self.data_lines)
+                    self.environment_manager.dispatch_batch(data_lines=self.data_lines,
+                                                            animate=animate)
 
                 # Environment is no longer used
                 elif self.environment_manager is not None:
@@ -148,6 +125,7 @@ class DataManager:
                     self.environment_manager = None
 
         # Prediction pipeline
+        # TODO
         else:
             if self.dataset_manager is not None and not self.dataset_manager.new_dataset():
                 # Get data from dataset
@@ -199,24 +177,9 @@ class DataManager:
             # Apply prediction
             self.environment_manager.environment.apply_prediction(prediction)
 
-    def normalize_data(self,
-                       data: ndarray,
-                       field: str,
-                       reverse: bool = False) -> ndarray:
-        """
-        Apply or unapply normalization following current standard score.
-
-        :param data: Data to normalize.
-        :param field: Specify if data is an 'input' or an 'output'.
-        :param reverse: If False, apply normalization; if False, unapply normalization.
-        :return: Data with applied or misapplied normalization.
-        """
-
-        if not reverse:
-            # Apply normalization
-            return (data - self.normalization[field][0]) / self.normalization[field][1]
-        # Unapply normalization
-        return (data * self.normalization[field][1]) + self.normalization[field][0]
+    @property
+    def normalization(self) -> Dict[str, List[float]]:
+        return self.dataset_manager.normalization
 
     def close(self) -> None:
         """

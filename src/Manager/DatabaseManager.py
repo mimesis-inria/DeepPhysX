@@ -50,7 +50,7 @@ class DatasetManager:
 
         # Dataset modes
         self.modes: List[str] = ['training', 'validation', 'running']
-        self.mode: str = 'training' if produce_data else 'running'
+        self.mode: str = 'training' if produce_data or pipeline == 'training' else 'running'
         self.mode = self.mode if dataset_config.mode is None else dataset_config.mode
 
         # Dataset partitions
@@ -61,7 +61,7 @@ class DatasetManager:
 
         # Dataset indexing
         self.shuffle_pattern: ndarray = arange(0)
-        self.current_sample: int = 0
+        self.current_sample: int = 1
         self.first_add = True
 
         # Dataset json file
@@ -175,6 +175,23 @@ class DatasetManager:
                 self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
             self.update_json(update_normalization=True)
 
+        # 5. Load the Database
+        partition_path = self.partitions[self.mode][self.partition_index[self.mode]]
+        self.database = Database(database_dir=self.dataset_dir,
+                                 database_name=partition_path).load()
+
+    def load_next_partition(self):
+
+        # 1. Define next partition
+        self.partition_index[self.mode] = (self.partition_index[self.mode] + 1) % len(self.partitions[self.mode])
+        partition_path = self.partitions[self.mode][self.partition_index[self.mode]]
+        self.database = Database(database_dir=self.dataset_dir,
+                                 database_name=partition_path).load()
+
+        # 2. Shuffle
+        if self.shuffle:
+            self.shuffle_samples()
+
     def search_partitions(self):
         """
 
@@ -246,7 +263,7 @@ class DatasetManager:
     def nb_samples(self) -> int:
         return self.database.nb_lines(table_name='Training')
 
-    def shuffle(self):
+    def shuffle_samples(self):
         """
 
         """
@@ -273,13 +290,15 @@ class DatasetManager:
                 self.update_json(update_partitions_lists=True, update_nb_samples=True)
 
     def get_data(self,
-                 batch_size: int) -> ndarray:
+                 batch_size: int) -> List[int]:
         """
 
         """
 
         # 1. Check if dataset is loaded and if the current sample is not the last
-        # TODO
+        if self.current_sample > self.nb_samples:
+            self.load_next_partition()
+            self.current_sample = 1
 
         # 2. Update dataset index
         idx = self.current_sample
@@ -288,7 +307,7 @@ class DatasetManager:
         # 3. Get a batch of data
         if self.shuffle:
             return self.shuffle_pattern[idx:self.current_sample]
-        return arange(idx, self.current_sample)
+        return list(arange(idx, self.current_sample))
 
     def close(self):
         """
@@ -348,6 +367,10 @@ class DatasetManager:
 
         return normalization
 
+    @property
+    def normalization(self) -> Dict[str, List[float]]:
+        return None if self.json_content['normalization'] == {} else self.json_content['normalization']
+
     def load_partitions_fields(self,
                                partition: str,
                                fields: List[str]):
@@ -362,5 +385,6 @@ class DatasetManager:
         description = "\n"
         description += f"# {self.name}\n"
         description += f"    Dataset Repository: {self.dataset_dir}\n"
-        description += f"    Partitions size: {self.max_file_size * 1e-9} Go\n"
+        size = f"No limits" if self.max_file_size is None else f"{self.max_file_size * 1e-9} Go"
+        description += f"    Partitions size: {size}\n"
         return description

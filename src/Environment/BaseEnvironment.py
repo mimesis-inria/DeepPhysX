@@ -1,5 +1,5 @@
 from typing import Any, Optional, Dict, Union, Tuple, List
-from numpy import array, ndarray
+from numpy import ndarray
 
 from SSD.Core.Storage.Database import Database
 
@@ -43,8 +43,8 @@ class BaseEnvironment(TcpIpClient):
         self.__first_add: List[bool] = [True, True]
 
         # Variables to store samples from Dataset
-        self.sample_in: Optional[ndarray] = None
-        self.sample_out: Optional[ndarray] = None
+        self.sample_training: Optional[Dict[str, Any]] = None
+        self.sample_additional: Optional[Dict[str, Any]] = None
         # Loss data
         self.loss_data: Any = None
         # Manager if the Environment is not a TcpIpClient
@@ -209,49 +209,46 @@ class BaseEnvironment(TcpIpClient):
             self.__training_data = kwargs
             self.__training_data['env_id'] = self.instance_id
 
+    def set_additional_data(self,
+                            **kwargs) -> None:
+        # Additional data is also set if the Environment can compute data
+        if self.compute_training_data:
+            self.__additional_data = kwargs
+            self.__additional_data['env_id'] = self.instance_id
+
     def _reset_training_data(self) -> None:
         self.__training_data = {}
+        self.__additional_data = {}
+        self.sample_training = None
+        self.sample_additional = None
 
     def _send_training_data(self) -> None:
         line_id = self.database.add_data(table_name='Training',
                                          data=self.__training_data)
-        self.database.add_data(table_name='Sync',
-                               data={'env': line_id})
         self.database.add_data(table_name='Additional',
                                data=self.__additional_data)
+        self.database.add_data(table_name='Sync',
+                               data={'env': line_id})
 
-    def set_loss_data(self,
-                      loss_data: Any) -> None:
-        """
-        Set the loss data to send to the TcpIpServer or the EnvironmentManager.
+    def _update_training_data(self,
+                              line_id: int) -> None:
+        self.database.update(table_name='Training',
+                             data=self.__training_data,
+                             line_id=line_id)
+        if self.sample_additional is not None:
+            self.database.update(table_name='Additional',
+                                 data=self.__additional_data,
+                                 line_id=line_id)
+        self.database.add_data(table_name='Sync',
+                               data={'env': line_id})
 
-        :param loss_data: Optional data to compute loss.
-        """
-
-        # Training data is set if the Environment can compute data
-        if self.compute_essential_data:
-            self.loss_data = loss_data if type(loss_data) in [list, ndarray] else array([loss_data])
-
-    def set_additional_dataset(self,
-                               label: str,
-                               data: ndarray) -> None:
-        """
-        Set additional data fields to store in the dataset.
-
-        :param label: Name of the data field.
-        :param data: Data to store.
-        """
-
-        # Training data is set if the Environment can compute data
-        if self.compute_essential_data:
-            self.additional_fields[label] = data if type(data) in [list, ndarray] else array([data])
-
-    def reset_additional_datasets(self) -> None:
-        """
-        Reset the additional dataset dictionaries.
-        """
-
-        self.additional_fields = {}
+    def _get_training_data(self,
+                           line: int) -> None:
+        self.sample_training = self.database.get_line(table_name='Training',
+                                                      line_id=line)
+        self.sample_additional = self.database.get_line(table_name='Additional',
+                                                        line_id=line)
+        self.sample_additional = None if len(self.sample_additional) == 1 else self.sample_additional
 
     ##########################################################################################
     ##########################################################################################

@@ -105,14 +105,12 @@ class Manager:
         :return: The network prediction and the associated loss value
         """
 
-        # Normalize input and output data
-        data = self.data_manager.data
-        for field in ['input', 'output']:
-            if field in data:
-                data[field] = self.data_manager.normalize_data(data[field], field)
         # Forward pass and optimization step
-        prediction, loss_dict = self.network_manager.compute_prediction_and_loss(data, optimize=True)
-        return prediction, loss_dict
+        data_pred, data_loss = self.network_manager.compute_prediction_and_loss(
+            data_lines=self.data_manager.data_lines,
+            normalization=self.data_manager.normalization,
+            optimize=True)
+        return data_pred, data_loss
 
     def save_network(self) -> None:
         """
