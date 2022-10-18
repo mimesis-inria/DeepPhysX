@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 from numpy import ndarray
 from asyncio import run as async_run
 from copy import copy
@@ -13,8 +13,8 @@ from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 class EnvironmentManager:
 
     def __init__(self,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
-                 data_manager: Any = None,
+                 environment_config: BaseEnvironmentConfig,
+                 data_manager: Optional[Any] = None,
                  session: str = 'sessions/default',
                  data_db: Optional[Database] = None,
                  batch_size: int = 1):
@@ -65,6 +65,7 @@ class EnvironmentManager:
                                                                      visu_db=visu_db)
 
         # Define get_data and dispatch methods
+        self.change_database = self.change_database_in_server if self.server else self.change_database_in_environment
         self.get_data = self.get_data_from_server if self.server else self.get_data_from_environment
         self.dispatch_batch = self.dispatch_batch_to_server if self.server else self.dispatch_batch_to_environment
 
@@ -74,17 +75,14 @@ class EnvironmentManager:
                 self.visualizer.get_database().load()
             self.visualizer.init_visualizer()
 
-    def get_data_manager(self) -> Any:
-        """
-        Get the DataManager of this EnvironmentManager.
+    def change_database_in_server(self, database: Database):
+        self.server.change_database(database.get_path())
 
-        :return: The DataManager of this EnvironmentManager.
-        """
-
-        return self.data_manager
+    def change_database_in_environment(self, database):
+        self.environment.database = database
 
     def get_data_from_server(self,
-                             animate: bool = True) -> None:
+                             animate: bool = True) -> List[int]:
         """
         Compute a batch of data from Environments requested through TcpIpServer.
 
@@ -92,10 +90,11 @@ class EnvironmentManager:
         """
 
         # Get data from server
-        self.server.get_batch(animate)
+        # TODO: return the indices of samples
+        return self.server.get_batch(animate)
 
     def get_data_from_environment(self,
-                                  animate: bool = True) -> None:
+                                  animate: bool = True) -> List[int]:
         """
         Compute a batch of data directly from Environment.
 
@@ -134,6 +133,9 @@ class EnvironmentManager:
                 nb_sample += 1
                 self.environment._send_training_data()
                 self.environment._reset_training_data()
+
+        # TODO: return the indices of samples
+        return []
 
     def dispatch_batch_to_server(self,
                                  batch: Dict[str, Union[ndarray, dict]],

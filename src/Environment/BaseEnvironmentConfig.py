@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Type
 from os import cpu_count
 from os.path import join, dirname
 from threading import Thread
-from subprocess import run as subprocessRun
+from subprocess import run
 from sys import modules, executable
 
 from SSD.Core.Storage.Database import Database
@@ -167,16 +167,9 @@ class BaseEnvironmentConfig:
 
         script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcherBaseEnvironment.py')
         # Usage: python3 script.py <file_path> <environment_class> <ip_address> <port> <idx> <nb_threads> <visu_db>"
-        subprocessRun([executable,
-                       script,
-                       self.environment_file,
-                       self.environment_class.__name__,
-                       self.ip_address,
-                       str(self.port),
-                       str(idx),
-                       str(self.number_of_thread),
-                       str(data_db),
-                       str(visu_db)])
+        run([executable, script, self.environment_file, self.environment_class.__name__,
+             self.ip_address, str(self.port), str(idx), str(self.number_of_thread),
+             str(data_db), str(visu_db)])
 
     def create_environment(self,
                            environment_manager: Any,
@@ -195,6 +188,9 @@ class BaseEnvironmentConfig:
                                              as_tcp_ip_client=False,
                                              data_db=data_db,
                                              visu_db=visu_db)
+        if not isinstance(environment, BaseEnvironment):
+            raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "
+                            f"BaseEnvironment.")
         # Create & Init Environment
         environment.recv_parameters(self.param_dict)
         environment.create()

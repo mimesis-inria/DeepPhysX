@@ -1,6 +1,8 @@
 from typing import Optional, Dict, Any
 from numpy import array, ndarray
 
+from SSD.Core.Storage.Database import Database
+
 
 class AbstractEnvironment:
 
@@ -34,6 +36,7 @@ class AbstractEnvironment:
         self.compute_training_data: bool = True
 
         # Dataset data variables
+        self.database: Optional[Database] = None
         self.sample_in: Optional[ndarray] = None
         self.sample_out: Optional[ndarray] = None
         self.additional_fields: Dict[str, Any] = {}

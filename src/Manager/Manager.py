@@ -1,7 +1,5 @@
-from typing import Any, Dict, Tuple, Optional
-from os.path import join as osPathJoin
-from os.path import isfile, basename, exists
-from datetime import datetime
+from typing import Dict, Tuple, Optional
+from os.path import join, exists
 from numpy import ndarray
 
 from DeepPhysX.Core.Manager.DataManager import DataManager
@@ -19,13 +17,13 @@ class Manager:
                  network_config: Optional[BaseNetworkConfig] = None,
                  dataset_config: Optional[BaseDatasetConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
-                 pipeline: Optional[Any] = None,
-                 session_dir: Optional[str] = None,
-                 session_name: str = 'DPX_default',
+                 session_dir: str = 'sessions',
+                 session_name: str = 'default',
                  new_session: bool = True,
-                 is_training: bool = True,
+                 pipeline: str = '',
                  produce_data: bool = True,
-                 batch_size: int = 1):
+                 batch_size: int = 1,
+                 debug_session: bool = False):
         """
         Collection of all the specialized managers. Allows for some basic functions call.
         More specific behaviour have to be directly call from the corresponding manager.
@@ -41,60 +39,68 @@ class Manager:
         :param int batch_size: Number of samples in a batch.
         """
 
-        self.pipeline: Optional[Any] = pipeline
+        self.name = self.__class__.__name__
 
-        # Constructing the session with the provided arguments
-        if session_name is None:
-            raise ValueError("[Manager] The session name cannot be set to None (will raise error).")
-        if session_dir is None:
-            # Create manager directory from the session name
-            self.session: str = osPathJoin(get_first_caller(), session_name)
-        else:
-            self.session: str = osPathJoin(session_dir, session_name)
+        # Define the session repository
+        root = get_first_caller()
+        session_dir = join(root, session_dir)
 
-        # Trainer: must create a new session to avoid overwriting
-        if is_training:
+        if pipeline in ['data_generation', 'training']:
             # Avoid unwanted overwritten data
             if new_session:
-                self.session: str = create_dir(self.session, dir_name=session_name)
-        # Prediction: work in an existing session
+                self.session = create_dir(session_dir=session_dir,
+                                          session_name=session_name)
+            else:
+                self.session = join(session_dir, session_name)
         else:
+            self.session = join(session_dir, session_name)
             if not exists(self.session):
-                raise ValueError("[Manager] The session directory {} does not exists.".format(self.session))
+                raise ValueError(f"[{self.name}] The running session directory {self.session} does not exist.")
 
-        # Always create the NetworkMmanager
-        self.network_manager = NetworkManager(manager=self,
-                                              network_config=network_config,
-                                              session=self.session,
-                                              new_session=new_session,
-                                              training=training)
-        # Always create the DataManager for same reason
-        self.data_manager = DataManager(manager=self,
-                                        dataset_config=dataset_config,
+        # Create a DataManager
+        self.data_manager = DataManager(dataset_config=dataset_config,
                                         environment_config=environment_config,
+                                        manager=self,
                                         session=self.session,
                                         new_session=new_session,
-                                        training=training,
-                                        store_data=store_data,
+                                        pipeline=pipeline,
+                                        produce_data=produce_data,
                                         batch_size=batch_size)
-        # Create the StatsManager for training
-        self.stats_manager = StatsManager(manager=self,
-                                          session=self.session) if training else None
+        database = self.data_manager.get_database()
+        self.batch_size = batch_size
 
-    def get_data(self, epoch: int = 0, batch_size: int = 1, animate: bool = True) -> None:
+        # Create a NetworkMmanager
+        self.network_manager = NetworkManager(network_config=network_config,
+                                              manager=self,
+                                              session=self.session,
+                                              new_session=new_session,
+                                              pipeline=pipeline,
+                                              data_db=database)
+
+        # Create a StatsManager for training only
+        self.debug_session = debug_session
+        self.stats_manager = StatsManager(manager=self,
+                                          session=self.session) if pipeline == 'training' else None
+
+    def change_database(self, database):
+        self.network_manager.change_database(database)
+
+    def get_data(self,
+                 epoch: int = 0,
+                 animate: bool = True) -> None:
         """
-        | Fetch data from the DataManager.
+        Fetch data from the DataManager.
 
         :param int epoch: Epoch ID
-        :param int batch_size: Size of a batch
         :param bool animate: If True allows running environment step
         """
 
-        self.data_manager.get_data(epoch=epoch, batch_size=batch_size, animate=animate)
+        self.data_manager.get_data(epoch=epoch,
+                                   animate=animate)
 
     def optimize_network(self) -> Tuple[ndarray, Dict[str, float]]:
         """
-        | Compute a prediction and run a back propagation with the current batch.
+        Compute a prediction and run a back propagation with the current batch.
 
         :return: The network prediction and the associated loss value
         """
@@ -110,14 +116,14 @@ class Manager:
 
     def save_network(self) -> None:
         """
-        | Save network weights as a pth file
+        Save network parameters.
         """
 
         self.network_manager.save_network()
 
     def close(self) -> None:
         """
-        | Call all managers close procedure
+        Call all managers close procedure.
         """
 
         if self.network_manager is not None:
@@ -127,30 +133,7 @@ class Manager:
         if self.data_manager is not None:
             self.data_manager.close()
 
-    def save_info_file(self) -> None:
-        """
-        | Called by the Trainer to save a .txt file which provides a quick description template to the user and lists
-          the description of all the components.
-        """
-
-        filename = osPathJoin(self.session, 'infos.txt')
-        date_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        if not isfile(filename):
-            f = open(filename, "w+")
-            # Session description template for user
-            f.write("## DeepPhysX Training Session ##\n")
-            f.write(date_time + "\n\n")
-            f.write("Purpose of the training session:\nNetwork Input:\nNetwork Output:\nComments:\n\n")
-            # Listing every component descriptions
-            f.write("## List of Components Parameters ##\n")
-            f.write(str(self.pipeline))
-            f.write(str(self))
-            f.close()
-
     def __str__(self) -> str:
-        """
-        :return: A string containing valuable information about the Managers
-        """
 
         manager_description = ""
         if self.network_manager is not None:

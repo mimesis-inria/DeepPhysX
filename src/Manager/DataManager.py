@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict, List, Union
 from numpy import ndarray
 
 from DeepPhysX.Core.Manager.DatabaseManager import DatasetManager, Database
@@ -15,7 +15,7 @@ class DataManager:
                  manager: Optional[Any] = None,
                  session: str = 'sessions/default',
                  new_session: bool = True,
-                 is_training: bool = True,
+                 pipeline: str = '',
                  produce_data: bool = True,
                  batch_size: int = 1):
 
@@ -68,19 +68,19 @@ class DataManager:
         #                     self.normalization[field] = json_dict['normalization'][field]
 
         # Create a DatasetManager if required
-        create_dataset = is_training or produce_data
+        create_dataset = pipeline in ['data_generation', 'training'] or produce_data
         database = None
         if create_dataset:
             self.dataset_manager = DatasetManager(dataset_config=dataset_config,
                                                   session=session,
                                                   data_manager=self,
                                                   new_session=new_session,
-                                                  is_training=is_training,
+                                                  pipeline=pipeline,
                                                   produce_data=produce_data)
             database = self.dataset_manager.database
 
         # Create an EnvironmentManager if required
-        create_environment = produce_data or environment_config is not None
+        create_environment = environment_config is not None
         if create_environment:
             self.environment_manager = EnvironmentManager(environment_config=environment_config,
                                                           data_manager=self,
@@ -89,8 +89,10 @@ class DataManager:
                                                           batch_size=batch_size)
 
         # DataManager variables
+        self.pipeline = pipeline
         self.produce_data = produce_data
-        self.data: Optional[Dict[str, ndarray]] = None
+        self.batch_size = batch_size
+        self.data_lines: Union[List[int], int] = []
 
     def get_manager(self) -> Any:
         """
@@ -104,42 +106,48 @@ class DataManager:
     def get_database(self) -> Database:
         return self.dataset_manager.database
 
+    def change_database(self) -> None:
+        # self.manager.change_database(self.dataset_manager.database)
+        self.environment_manager.change_database(self.dataset_manager.database)
+
     def get_data(self,
                  epoch: int = 0,
-                 batch_size: int = 1,
                  animate: bool = True) -> None:
         """
         Fetch data from the EnvironmentManager or the DatasetManager according to the context.
 
         :param epoch: Current epoch number.
-        :param batch_size: Size of the desired batch.
         :param animate: Allow EnvironmentManager to generate a new sample.
         :return: Dict containing the newly computed data.
         """
 
-        # Training
-        if self.produce_data:
-            # Get data from environment if used and if the data should be created at this epoch
+        # Data generation case
+        if self.pipeline == 'data_generation':
+            self.data_lines = self.environment_manager.get_data(animate=animate)
+            self.dataset_manager.add_data()
+
+        # Training case
+        elif self.pipeline == 'training':
+
+            # Get data from Environment(s) if used and if the data should be created at this epoch
             if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data):
-                self.environment_manager.get_data(animate=animate)
-                # self.dataset_manager.add_data(data)
-            # Force data from the dataset
+                self.data_lines = self.environment_manager.get_data(animate=animate)
+                self.dataset_manager.add_data()
+
+            # Get data from Dataset
             else:
-                data = self.dataset_manager.get_data(batch_size=batch_size, get_inputs=True, get_outputs=True)
+                self.data_lines = self.dataset_manager.get_data(batch_size=self.batch_size)
+                print(self.data_lines)
+                # Dispatch a batch to clients
                 if self.environment_manager is not None and self.environment_manager.use_dataset_in_environment:
-                    new_data = self.environment_manager.dispatch_batch(batch=data)
-                    if len(new_data['input']) != 0:
-                        data['input'] = new_data['input']
-                    if len(new_data['output']) != 0:
-                        data['output'] = new_data['output']
-                    if 'loss' in new_data:
-                        data['loss'] = new_data['loss']
+                    self.data_lines = self.environment_manager.dispatch_batch(batch=self.data_lines)
+
+                # Environment is no longer used
                 elif self.environment_manager is not None:
-                    # EnvironmentManager is no longer used
                     self.environment_manager.close()
                     self.environment_manager = None
 
-        # Prediction
+        # Prediction pipeline
         else:
             if self.dataset_manager is not None and not self.dataset_manager.new_dataset():
                 # Get data from dataset

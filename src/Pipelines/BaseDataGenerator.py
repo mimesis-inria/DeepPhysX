@@ -65,7 +65,7 @@ class BaseDataGenerator(BasePipeline):
                                         environment_config=environment_config,
                                         session=join(session_dir, session_name),
                                         new_session=new_session,
-                                        is_training=False,
+                                        pipeline='data_generation',
                                         produce_data=True,
                                         batch_size=batch_size)
 
@@ -121,7 +121,7 @@ class BaseDataGenerator(BasePipeline):
 
     def batch_end(self) -> None:
         """
-        Called once at the beginning of a batch production.
+        Called once at the end of a batch production.
         """
 
         stdout.write("\033[K")

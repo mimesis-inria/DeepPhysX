@@ -15,16 +15,16 @@ Convertible = Union[type(None), bytes, str, bool, int, float, List, ndarray]
 
 
 class TcpIpObject:
-    """
-    | TcpIpObject defines communication protocols to send and receive data and commands.
-
-    :param str ip_address: IP address of the TcpIpObject
-    :param int port: Port number of the TcpIpObject
-    """
 
     def __init__(self,
                  ip_address: str = 'localhost',
                  port: int = 10000):
+        """
+        TcpIpObject defines communication protocols to send and receive data and commands.
+
+        :param ip_address: IP address of the TcpIpObject.
+        :param port: Port number of the TcpIpObject.
+        """
 
         self.name: str = self.__class__.__name__
 
@@ -39,7 +39,7 @@ class TcpIpObject:
         # Available commands
         self.command_dict: Dict[str, bytes] = {'exit': b'exit', 'step': b'step', 'done': b'done', 'finished': b'fini',
                                                'prediction': b'pred', 'read': b'read', 'sample': b'samp',
-                                               'visualisation': b'visu'}
+                                               'visualisation': b'visu', 'db': b'chdb'}
         self.action_on_command: Dict[bytes, Any] = {
             self.command_dict["exit"]: self.action_on_exit,
             self.command_dict["step"]: self.action_on_step,
@@ -49,6 +49,7 @@ class TcpIpObject:
             self.command_dict["read"]: self.action_on_read,
             self.command_dict["sample"]: self.action_on_sample,
             self.command_dict["visualisation"]: self.action_on_visualisation,
+            self.command_dict['db']: self.action_on_change_db
         }
         # Synchronous variables
         # self.send_lock = Lock()
@@ -60,15 +61,16 @@ class TcpIpObject:
     ##########################################################################################
     ##########################################################################################
 
-    async def send_data(self, data_to_send: Convertible, loop: Optional[EventLoop] = None,
+    async def send_data(self,
+                        data_to_send: Convertible,
+                        loop: Optional[EventLoop] = None,
                         receiver: Optional[socket] = None) -> None:
         """
-        | Send data through the given socket.
+        Send data through the given socket.
 
-        :param data_to_send: Data that will be sent on socket
-        :type data_to_send: Union[type(None), bytes, str, bool, int, float, List, ndarray]
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: socket receiver
+        :param data_to_send: Data that will be sent on socket.
+        :param loop: Asyncio event loop.
+        :param receiver: Socket receiver.
         """
 
         loop = get_event_loop() if loop is None else loop
@@ -79,14 +81,15 @@ class TcpIpObject:
         if await loop.sock_sendall(sock=receiver, data=data_as_bytes) is not None:
             ValueError(f"[{self.name}] Could not send all of the data for an unknown reason")
 
-    def sync_send_data(self, data_to_send: Convertible, receiver: Optional[socket] = None) -> None:
+    def sync_send_data(self,
+                       data_to_send: Convertible,
+                       receiver: Optional[socket] = None) -> None:
         """
-        | Send data through the given socket.
-        | Synchronous version of 'TcpIpObject.send_data'.
+        Send data through the given socket.
+        Synchronous version of 'TcpIpObject.send_data'.
 
-        :param data_to_send: Data that will be sent on socket*
-        :type data_to_send: Union[type(None), bytes, str, bool, int, float, List, ndarray]
-        :param Optional[socket] receiver: socket receiver
+        :param data_to_send: Data that will be sent on socket.
+        :param receiver: Socket receiver.
         """
 
         receiver = self.sock if receiver is None else receiver
@@ -95,13 +98,15 @@ class TcpIpObject:
         # Send the whole message
         receiver.sendall(data_as_bytes)
 
-    async def receive_data(self, loop: EventLoop, sender: socket) -> Convertible:
+    async def receive_data(self,
+                           loop: EventLoop,
+                           sender: socket) -> Convertible:
         """
-        | Receive data from a socket.
+        Receive data from a socket.
 
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: socket sender
-        :return: Converted data
+        :param loop: Asyncio event loop.
+        :param sender: Socket sender.
+        :return: Converted data.
         """
 
         # Receive the number of fields to receive
@@ -117,10 +122,10 @@ class TcpIpObject:
 
     def sync_receive_data(self) -> Convertible:
         """
-        | Receive data from a socket.
-        | Synchronous version of 'TcpIpObject.receive_data'.
+        Receive data from a socket.
+        Synchronous version of 'TcpIpObject.receive_data'.
 
-        :return: Converted data
+        :return: Converted data.
         """
 
         self.sock.setblocking(True)
@@ -135,14 +140,17 @@ class TcpIpObject:
         # Return the data in the expected format
         return self.data_converter.bytes_to_data(bytes_fields)
 
-    async def read_data(self, loop: EventLoop, sender: socket, read_size: int) -> bytes:
+    async def read_data(self,
+                        loop: EventLoop,
+                        sender: socket,
+                        read_size: int) -> bytes:
         """
-        | Read the data on the socket with value of buffer size as relatively small powers of 2.
+        Read the data on the socket with value of buffer size as relatively small powers of 2.
 
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: socket sender
-        :param int read_size: Amount of data to read on the socket
-        :return: Bytes field with 'read_size' length
+        :param loop: Asyncio event loop.
+        :param sender: Socket sender.
+        :param read_size: Amount of data to read on the socket.
+        :return: Bytes field with 'read_size' length.
         """
 
         # Maximum read size
@@ -165,13 +173,14 @@ class TcpIpObject:
 
         return bytes_field
 
-    def sync_read_data(self, read_size: int) -> bytes:
+    def sync_read_data(self,
+                       read_size: int) -> bytes:
         """
-        | Read the data on the socket with value of buffer size as relatively small powers of 2.
-        | Synchronous version of 'TcpIpObject.read_data'.
+        Read the data on the socket with value of buffer size as relatively small powers of 2.
+        Synchronous version of 'TcpIpObject.read_data'.
 
-        :param int read_size: Amount of data to read on the socket
-        :return: Bytes field with 'read_size' length
+        :param read_size: Amount of data to read on the socket.
+        :return: Bytes field with 'read_size' length.
         """
 
         # Maximum read sizes array
@@ -199,17 +208,20 @@ class TcpIpObject:
     ##########################################################################################
     ##########################################################################################
 
-    async def send_labeled_data(self, data_to_send: Convertible, label: str, loop: Optional[EventLoop] = None,
-                                receiver: Optional[socket] = None, send_read_command: bool = True) -> None:
+    async def send_labeled_data(self,
+                                data_to_send: Convertible,
+                                label: str,
+                                loop: Optional[EventLoop] = None,
+                                receiver: Optional[socket] = None,
+                                send_read_command: bool = True) -> None:
         """
-        | Send data with an associated label.
+        Send data with an associated label.
 
-        :param data_to_send: Data that will be sent on socket
-        :type data_to_send: Union[type(None), bytes, str, bool, int, float, List, ndarray]
-        :param str label: Associated label
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
-        :param bool send_read_command: If True, the command 'read' is sent before sending data
+        :param data_to_send: Data that will be sent on socket.
+        :param label: Associated label.
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
+        :param send_read_command: If True, the command 'read' is sent before sending data.
         """
 
         loop = get_event_loop() if loop is None else loop
@@ -222,18 +234,19 @@ class TcpIpObject:
         # Send data
         await self.send_data(data_to_send=data_to_send, loop=loop, receiver=receiver)
 
-    def sync_send_labeled_data(self, data_to_send: Convertible, label: str, receiver: Optional[socket] = None,
+    def sync_send_labeled_data(self,
+                               data_to_send: Convertible,
+                               label: str,
+                               receiver: Optional[socket] = None,
                                send_read_command: bool = True) -> None:
         """
-        | Send data with an associated label.
-        | Synchronous version of 'TcpIpObject.send_labeled_data'.
+        Send data with an associated label.
+        Synchronous version of 'TcpIpObject.send_labeled_data'.
 
-        :param data_to_send: Data that will be sent on socket
-        :type data_to_send: Union[type(None), bytes, str, bool, int, float, List, ndarray]
-        :param str label: Associated label
-        :param Optional[socket] receiver: TcpIpObject receiver
-        :param bool send_read_command: If True, the command 'read' is sent before sending data
-        :return:
+        :param data_to_send: Data that will be sent on socket.
+        :param label: Associated label.
+        :param receiver: TcpIpObject receiver.
+        :param send_read_command: If True, the command 'read' is sent before sending data.
         """
 
         receiver = self.sock if receiver is None else receiver
@@ -245,13 +258,15 @@ class TcpIpObject:
         # Send data
         self.sync_send_data(data_to_send=data_to_send, receiver=receiver)
 
-    async def receive_labeled_data(self, loop: EventLoop, sender: socket) -> Tuple[str, Convertible]:
+    async def receive_labeled_data(self,
+                                   loop: EventLoop,
+                                   sender: socket) -> Tuple[str, Convertible]:
         """
-        | Receive data and an associated label.
+        Receive data and an associated label.
 
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
-        :return: Label, Data
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        :return: Label, Data.
         """
 
         # Listen to sender
@@ -267,10 +282,10 @@ class TcpIpObject:
 
     def sync_receive_labeled_data(self) -> Tuple[str, Convertible]:
         """
-        | Receive data and an associated label.
-        | Synchronous version of 'TcpIpObject.receive_labeled_data'.
+        Receive data and an associated label.
+        Synchronous version of 'TcpIpObject.receive_labeled_data'.
 
-        :return: Label, Data
+        :return: Label, Data.
         """
 
         # Listen to sender
@@ -284,15 +299,18 @@ class TcpIpObject:
         data = self.sync_receive_data()
         return label, data
 
-    async def send_dict(self, name: str, dict_to_send: Dict[Any, Any], loop: Optional[EventLoop] = None,
+    async def send_dict(self,
+                        name: str,
+                        dict_to_send: Dict[Any, Any],
+                        loop: Optional[EventLoop] = None,
                         receiver: Optional[socket] = None) -> None:
         """
-        | Send a whole dictionary field by field as labeled data.
+        Send a whole dictionary field by field as labeled data.
 
-        :param str name: Name of the dictionary
-        :param Dict[Any, Any] dict_to_send: Dictionary to send
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param name: Name of the dictionary.
+        :param dict_to_send: Dictionary to send.
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         loop = get_event_loop() if loop is None else loop
@@ -324,14 +342,17 @@ class TcpIpObject:
         await self.send_command_finished(loop=loop, receiver=receiver)
         await self.send_command_finished(loop=loop, receiver=receiver)
 
-    def sync_send_dict(self, name: str, dict_to_send: Dict[Any, Any], receiver: Optional[socket] = None) -> None:
+    def sync_send_dict(self,
+                       name: str,
+                       dict_to_send: Dict[Any, Any],
+                       receiver: Optional[socket] = None) -> None:
         """
-        | Send a whole dictionary field by field as labeled data.
-        | Synchronous version of 'TcpIpObject.receive_labeled_data'.
+        Send a whole dictionary field by field as labeled data.
+        Synchronous version of 'TcpIpObject.receive_labeled_data'.
 
-        :param str name: Name of the dictionary
-        :param Dict[Any, Any] dict_to_send: Dictionary to send
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param name: Name of the dictionary.
+        :param dict_to_send: Dictionary to send.
+        :param receiver: TcpIpObject receiver.
         """
 
         receiver = self.sock if receiver is None else receiver
@@ -362,14 +383,16 @@ class TcpIpObject:
         self.sync_send_command_finished(receiver=receiver)
         self.sync_send_command_finished(receiver=receiver)
 
-    async def __send_unnamed_dict(self, dict_to_send: Dict[Any, Any], loop: Optional[EventLoop] = None,
+    async def __send_unnamed_dict(self,
+                                  dict_to_send: Dict[Any, Any],
+                                  loop: Optional[EventLoop] = None,
                                   receiver: Optional[socket] = None) -> None:
         """
-        | Send a whole dictionary field by field as labeled data. Dictionary will be unnamed.
+        Send a whole dictionary field by field as labeled data. Dictionary will be unnamed.
 
-        :param dict dict_to_send: Dictionary to send
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param dict_to_send: Dictionary to send
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         loop = get_event_loop() if loop is None else loop
@@ -391,13 +414,15 @@ class TcpIpObject:
         # The sending is finished
         await self.send_command_finished(loop=loop, receiver=receiver)
 
-    def __sync_send_unnamed_dict(self, dict_to_send: Dict[Any, Any], receiver: Optional[socket] = None) -> None:
+    def __sync_send_unnamed_dict(self,
+                                 dict_to_send: Dict[Any, Any],
+                                 receiver: Optional[socket] = None) -> None:
         """
-        | Send a whole dictionary field by field as labeled data. Dictionary will be unnamed.
-        | Synchronous version of 'TcpIpObject.receive_labeled_data'.
+        Send a whole dictionary field by field as labeled data. Dictionary will be unnamed.
+        Synchronous version of 'TcpIpObject.receive_labeled_data'.
 
-        :param Dict[Any, Any] dict_to_send: Dictionary to send
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param dict_to_send: Dictionary to send.
+        :param receiver: TcpIpObject receiver.
         """
 
         receiver = self.sock if receiver is None else receiver
@@ -420,14 +445,16 @@ class TcpIpObject:
         # The sending is finished
         self.sync_send_command_finished(receiver=receiver)
 
-    async def receive_dict(self, recv_to: Dict[Any, Any], loop: Optional[EventLoop] = None,
+    async def receive_dict(self,
+                           recv_to: Dict[Any, Any],
+                           loop: Optional[EventLoop] = None,
                            sender: Optional[socket] = None) -> None:
         """
-        | Receive a whole dictionary field by field as labeled data.
+        Receive a whole dictionary field by field as labeled data.
 
-        :param Dict[Any, Any] recv_to: Dictionary to fill with received fields
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] sender: TcpIpObject sender
+        :param recv_to: Dictionary to fill with received fields.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         loop = get_event_loop() if loop is None else loop
@@ -445,13 +472,15 @@ class TcpIpObject:
             else:
                 recv_to[label] = param
 
-    def sync_receive_dict(self, recv_to: Dict[Any, Any], sender: Optional[socket] = None) -> None:
+    def sync_receive_dict(self,
+                          recv_to: Dict[Any, Any],
+                          sender: Optional[socket] = None) -> None:
         """
-        | Receive a whole dictionary field by field as labeled data.
-        | Synchronous version of 'TcpIpObject.receive_labeled_data'.
+        Receive a whole dictionary field by field as labeled data.
+        Synchronous version of 'TcpIpObject.receive_labeled_data'.
 
-        :param Dict[Any, Any] recv_to: Dictionary to fill with received fields
-        :param Optional[socket] sender: TcpIpObject sender
+        :param recv_to: Dictionary to fill with received fields.
+        :param sender: TcpIpObject sender.
         """
 
         sender = self.sock if sender is None else sender
@@ -474,14 +503,17 @@ class TcpIpObject:
     ##########################################################################################
     ##########################################################################################
 
-    async def __send_command(self, loop: EventLoop, receiver: socket, command: str = '') -> None:
+    async def __send_command(self,
+                             loop: EventLoop,
+                             receiver: socket,
+                             command: str = '') -> None:
         """
-        | Send a bytes command among the available commands.
-        | Do not use this one. Use the dedicated function 'send_command_{cmd}(...)'.
+        Send a bytes command among the available commands.
+        Do not use this one. Use the dedicated function 'send_command_{cmd}(...)'.
 
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket receiver: TcpIpObject receiver
-        :param str command: Name of the command, must be in 'self.command_dict'
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
+        :param command: Name of the command, must be in 'self.command_dict'.
         """
 
         # Check if the command exists
@@ -492,14 +524,16 @@ class TcpIpObject:
         # Send command as a byte data
         await self.send_data(data_to_send=cmd, loop=loop, receiver=receiver)
 
-    def __sync_send_command(self, receiver: socket, command: str = '') -> None:
+    def __sync_send_command(self,
+                            receiver: socket,
+                            command: str = '') -> None:
         """
-        | Send a bytes command among the available commands.
-        | Do not use this one. Use the dedicated function 'sync_send_command_{cmd}(...)'.
-        | Synchronous version of 'TcpIpObject.send_command'.
+        Send a bytes command among the available commands.
+        Do not use this one. Use the dedicated function 'sync_send_command_{cmd}(...)'.
+        Synchronous version of 'TcpIpObject.send_command'.
 
-        :param str command: name of the command to send
-        :param socket receiver: TcpIpObject receiver
+        :param command: Name of the command to send.
+        :param receiver: TcpIpObject receiver.
         """
 
         # Check if the command exists
@@ -510,187 +544,235 @@ class TcpIpObject:
         # Send command as a byte data
         self.sync_send_data(data_to_send=cmd, receiver=receiver)
 
-    async def send_command_compute(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_compute(self,
+                                   loop: Optional[EventLoop] = None,
+                                   receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'compute' command.
+        Send the 'compute' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='compute')
 
-    def sync_send_command_compute(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_compute(self,
+                                  receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'compute' command.
-        | Synchronous version of 'TcpIpObject.send_command_compute'.
+        Send the 'compute' command.
+        Synchronous version of 'TcpIpObject.send_command_compute'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='compute')
 
-    async def send_command_done(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_done(self,
+                                loop: Optional[EventLoop] = None,
+                                receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'done' command.
+        Send the 'done' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='done')
 
-    def sync_send_command_done(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_done(self,
+                               receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'done' command.
-        | Synchronous version of 'TcpIpObject.send_command_done'.
+        Send the 'done' command.
+        Synchronous version of 'TcpIpObject.send_command_done'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='done')
 
-    async def send_command_exit(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_exit(self,
+                                loop: Optional[EventLoop] = None,
+                                receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'exit' command.
+        Send the 'exit' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='exit')
 
-    def sync_send_command_exit(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_exit(self,
+                               receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'exit' command.
-        | Synchronous version of 'TcpIpObject.send_command_exit'.
+        Send the 'exit' command.
+        Synchronous version of 'TcpIpObject.send_command_exit'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='exit')
 
-    async def send_command_finished(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_finished(self,
+                                    loop: Optional[EventLoop] = None,
+                                    receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'finished' command.
+        Send the 'finished' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='finished')
 
-    def sync_send_command_finished(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_finished(self,
+                                   receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'finished' command.
-        | Synchronous version of 'TcpIpObject.send_command_finished'.
+        Send the 'finished' command.
+        Synchronous version of 'TcpIpObject.send_command_finished'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='finished')
 
-    async def send_command_prediction(self, loop: Optional[EventLoop] = None,
+    async def send_command_prediction(self,
+                                      loop: Optional[EventLoop] = None,
                                       receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'prediction' command.
+        Send the 'prediction' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='prediction')
 
-    def sync_send_command_prediction(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_prediction(self,
+                                     receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'prediction' command.
-        | Synchronous version of 'TcpIpObject.send_command_prediction'.
+        Send the 'prediction' command.
+        Synchronous version of 'TcpIpObject.send_command_prediction'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='prediction')
 
-    async def send_command_read(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_read(self,
+                                loop: Optional[EventLoop] = None,
+                                receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'read' command.
+        Send the 'read' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='read')
 
-    def sync_send_command_read(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_read(self,
+                               receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'read' command.
-        | Synchronous version of 'TcpIpObject.send_command_read'.
+        Send the 'read' command.
+        Synchronous version of 'TcpIpObject.send_command_read'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='read')
 
-    async def send_command_sample(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_sample(self,
+                                  loop: Optional[EventLoop] = None,
+                                  receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'sample' command.
+        Send the 'sample' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='sample')
 
-    def sync_send_command_sample(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_sample(self,
+                                 receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'sample' command.
-        | Synchronous version of 'TcpIpObject.send_command_sample'.
+        Send the 'sample' command.
+        Synchronous version of 'TcpIpObject.send_command_sample'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='sample')
 
-    async def send_command_step(self, loop: Optional[EventLoop] = None, receiver: Optional[socket] = None) -> None:
+    async def send_command_step(self,
+                                loop: Optional[EventLoop] = None,
+                                receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'step' command.
+        Send the 'step' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='step')
 
-    def sync_send_command_step(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_step(self,
+                               receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'step' command.
-        | Synchronous version of 'TcpIpObject.send_command_step'.
+        Send the 'step' command.
+        Synchronous version of 'TcpIpObject.send_command_step'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='step')
 
-    async def send_command_visualisation(self, loop: Optional[EventLoop] = None,
+    async def send_command_visualisation(self,
+                                         loop: Optional[EventLoop] = None,
                                          receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'visualisation' command.
+        Send the 'visualisation' command.
 
-        :param Optional[EventLoop] loop: asyncio.get_event_loop() return
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
         """
 
         await self.__send_command(loop=loop, receiver=receiver, command='visualisation')
 
-    def sync_send_command_visualisation(self, receiver: Optional[socket] = None) -> None:
+    def sync_send_command_visualisation(self,
+                                        receiver: Optional[socket] = None) -> None:
         """
-        | Send the 'visualisation' command.
-        | Synchronous version of 'TcpIpObject.send_command_visualisation'.
+        Send the 'visualisation' command.
+        Synchronous version of 'TcpIpObject.send_command_visualisation'.
 
-        :param Optional[socket] receiver: TcpIpObject receiver
+        :param receiver: TcpIpObject receiver.
         """
 
         self.__sync_send_command(receiver=receiver, command='visualisation')
+
+    async def send_command_change_db(self,
+                                     loop: Optional[EventLoop] = None,
+                                     receiver: Optional[socket] = None) -> None:
+        """
+        Send the 'change_database' command.
+
+        :param loop: Asyncio event loop.
+        :param receiver: TcpIpObject receiver.
+        """
+
+        await self.__send_command(loop=loop, receiver=receiver, command='db')
+
+    def sync_send_command_change_db(self,
+                                    receiver: Optional[socket] = None) -> None:
+        """
+        Send the 'change_database' command.
+        Synchronous version of 'TcpIpObject.send_command_change_database'.
+
+        :param receiver: TcpIpObject receiver.
+        """
+
+        self.__sync_send_command(receiver=receiver, command='db')
 
     ##########################################################################################
     ##########################################################################################
@@ -698,15 +780,18 @@ class TcpIpObject:
     ##########################################################################################
     ##########################################################################################
 
-    async def listen_while_not_done(self, loop: EventLoop, sender: socket, data_dict: Dict[Any, Any],
+    async def listen_while_not_done(self,
+                                    loop: EventLoop,
+                                    sender: socket,
+                                    data_dict: Dict[Any, Any],
                                     client_id: int = None) -> Dict[Any, Any]:
         """
-        | Compute actions until 'done' command is received.
+        Compute actions until 'done' command is received.
 
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
-        :param Dict[Any, Any] data_dict: Dictionary to collect data
-        :param int client_id: ID of a Client
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        :param data_dict: Dictionary to collect data.
+        :param client_id: ID of a Client.
         """
 
         # Compute actions until 'done' command is received
@@ -717,74 +802,98 @@ class TcpIpObject:
         # Return collected data
         return data_dict
 
-    async def action_on_compute(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_compute(self,
+                                data: Dict[Any, Any],
+                                client_id: int,
+                                sender: socket,
+                                loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'compute' command.
+        Action to run when receiving the 'compute' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
-        """
-
-        pass
-
-    async def action_on_done(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
-        """
-        | Action to run when receiving the 'done' command.
-
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         pass
 
-    async def action_on_exit(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_done(self,
+                             data: Dict[Any, Any],
+                             client_id: int,
+                             sender: socket,
+                             loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'exit' command.
+        Action to run when receiving the 'done' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
-        """
-
-        pass
-
-    async def action_on_finished(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
-        """
-        | Action to run when receiving the 'finished' command.
-
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         pass
 
-    async def action_on_prediction(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_exit(self,
+                             data: Dict[Any, Any],
+                             client_id: int,
+                             sender: socket,
+                             loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'prediction' command.
+        Action to run when receiving the 'exit' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         pass
 
-    async def action_on_read(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_finished(self,
+                                 data: Dict[Any, Any],
+                                 client_id: int,
+                                 sender: socket,
+                                 loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'read' command.
+        Action to run when receiving the 'finished' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        """
+
+        pass
+
+    async def action_on_prediction(self,
+                                   data: Dict[Any, Any],
+                                   client_id: int,
+                                   sender: socket,
+                                   loop: EventLoop) -> None:
+        """
+        Action to run when receiving the 'prediction' command.
+
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        """
+
+        pass
+
+    async def action_on_read(self,
+                             data: Dict[Any, Any],
+                             client_id: int,
+                             sender: socket,
+                             loop: EventLoop) -> None:
+        """
+        Action to run when receiving the 'read' command.
+
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         # Receive labeled data
@@ -797,39 +906,66 @@ class TcpIpObject:
         else:
             data[client_id][label] = param
 
-    async def action_on_sample(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
+    async def action_on_sample(self,
+                               data: Dict[Any, Any],
+                               client_id: int,
+                               sender: socket,
+                               loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'sample' command.
+        Action to run when receiving the 'sample' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
-        """
-
-        pass
-
-    async def action_on_step(self, data: Dict[Any, Any], client_id: int, sender: socket, loop: EventLoop) -> None:
-        """
-        | Action to run when receiving the 'step' command.
-
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         pass
 
-    async def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket,
+    async def action_on_step(self,
+                             data: Dict[Any, Any],
+                             client_id: int,
+                             sender: socket,
+                             loop: EventLoop) -> None:
+        """
+        Action to run when receiving the 'step' command.
+
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        """
+
+        pass
+
+    async def action_on_visualisation(self,
+                                      data: Dict[Any, Any],
+                                      client_id: int,
+                                      sender: socket,
                                       loop: EventLoop) -> None:
         """
-        | Action to run when receiving the 'visualisation' command.
+        Action to run when receiving the 'visualisation' command.
 
-        :param Dict[Any, Any] data: Dict storing data
-        :param int client_id: ID of the TcpIpClient
-        :param EventLoop loop: asyncio.get_event_loop() return
-        :param socket sender: TcpIpObject sender
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        """
+
+        pass
+
+    async def action_on_change_db(self,
+                                  data: Dict[Any, Any],
+                                  client_id: int,
+                                  sender: socket,
+                                  loop: EventLoop) -> None:
+        """
+        Action to run when receiving the 'change_database' command.
+
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
         """
 
         pass

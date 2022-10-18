@@ -39,7 +39,7 @@ class StatsManager:
         self.writer: SummaryWriter = SummaryWriter(self.log_dir)
 
         # Open Tensorboard
-        if not self.manager.pipeline.debug:
+        if not self.manager.debug_session:
             tb = program.TensorBoard()
             tb.configure(argv=[None, '--logdir', self.log_dir])
             url = tb.launch()

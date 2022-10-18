@@ -238,6 +238,30 @@ class TcpIpServer(TcpIpObject):
         # Define batch from dataset
         self.batch_from_dataset = batch.copy()
 
+    def change_database(self,
+                        database: str):
+        """
+        Change the Database to connect to for each Client.
+
+        :param database: Path to the new Database.
+        """
+
+        async_run(self.__change_database(database))
+
+    async def __change_database(self,
+                                database: str):
+        """
+        Change the Database to connect to for each Client.
+
+        :param database: Path to the new Database.
+        """
+
+        loop = get_event_loop()
+        for client_id, client in self.clients:
+            await self.send_command_change_db(loop=loop, receiver=client)
+            await self.send_data(data_to_send=database[0], loop=loop, receiver=client)
+            await self.send_data(data_to_send=database[1], loop=loop, receiver=client)
+
     ##########################################################################################
     ##########################################################################################
     #                                 Server & Client shutdown                               #

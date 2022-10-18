@@ -1,12 +1,12 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from socket import socket
 from asyncio import get_event_loop
 from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
-from numpy import ndarray, array
+from numpy import ndarray
 
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
-from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
+from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment, Database
 
 
 class TcpIpClient(TcpIpObject, AbstractEnvironment):
@@ -211,7 +211,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
+        :param loop: Asyncio event loop.
         :param sender: TcpIpObject sender.
         """
 
@@ -228,7 +228,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
+        :param loop: Asyncio event loop.
         :param sender: TcpIpObject sender.
         """
 
@@ -247,7 +247,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
+        :param loop: Asyncio event loop.
         :param sender: TcpIpObject sender.
         """
 
@@ -276,7 +276,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
+        :param loop: Asyncio event loop.
         :param sender: TcpIpObject sender.
         """
 
@@ -298,3 +298,21 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         self._send_training_data()
         self._reset_training_data()
         await self.send_command_done()
+
+    async def action_on_change_db(self, 
+                                  data: Dict[Any, Any], 
+                                  client_id: int, sender: socket,
+                                  loop: EventLoop) -> None:
+        """
+        Action to run when receiving the 'step' command.
+
+        :param data: Dict storing data.
+        :param client_id: ID of the TcpIpClient.
+        :param loop: Asyncio event loop.
+        :param sender: TcpIpObject sender.
+        """
+        
+        new_database = (await self.receive_data(loop=loop, sender=sender),
+                        await self.receive_data(loop=loop, sender=sender))
+        self.database = Database(database_dir=new_database[0],
+                                 database_name=new_database[1]).load()

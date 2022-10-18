@@ -64,7 +64,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         elif isinstance(o, dict):
             self.indentation_level += 1
             output = [f"{self.indent_str}{json.dumps(key)}: {self.encode(value)}" for key, value in o.items()]
-            join_output = ",\n".join(output)
+            join_output = ",\n".join(output) if self.indentation_level != 1 else ",\n\n".join(output)
             self.indentation_level -= 1
             return f"\n{self.indent_str}{'{'}\n{join_output}\n{self.indent_str}{'}'}"
 
