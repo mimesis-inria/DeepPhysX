@@ -218,13 +218,14 @@ class BaseEnvironment(TcpIpClient):
             self.__additional_data = kwargs
             self.__additional_data['env_id'] = self.instance_id
 
-    def _send_training_data(self) -> None:
+    def _send_training_data(self) -> int:
         line_id = self.database.add_data(table_name='Training',
                                          data=self.__training_data)
         self.database.add_data(table_name='Additional',
                                data=self.__additional_data)
         self.database.add_data(table_name='Sync',
                                data={'env': line_id})
+        return line_id
 
     def _reset_training_data(self) -> None:
         self.__training_data = {}

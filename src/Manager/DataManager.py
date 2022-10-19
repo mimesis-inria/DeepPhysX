@@ -108,7 +108,7 @@ class DataManager:
             if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data)\
                     and self.produce_data:
                 self.data_lines = self.environment_manager.get_data(animate=animate)
-                self.dataset_manager.add_data()
+                self.dataset_manager.add_data(self.data_lines)
 
             # Get data from Dataset
             else:

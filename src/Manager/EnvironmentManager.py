@@ -101,6 +101,7 @@ class EnvironmentManager:
 
         # 1. Produce batch while batch size is not complete
         nb_sample = 0
+        dataset_lines = []
         while nb_sample < self.batch_size:
 
             # 1.1 Send a sample if a batch from dataset is given
@@ -120,13 +121,14 @@ class EnvironmentManager:
             if self.environment.check_sample():
                 nb_sample += 1
                 if update_line is None:
-                    self.environment._send_training_data()
+                    new_line = self.environment._send_training_data()
+                    dataset_lines.append(new_line)
                 else:
                     self.environment._update_training_data(update_line)
+                    dataset_lines.append(update_line)
                 self.environment._reset_training_data()
 
-        # TODO: return the indices of samples
-        return []
+        return dataset_lines
 
     def dispatch_batch_to_server(self,
                                  data_lines: List[int],
@@ -194,6 +196,5 @@ class EnvironmentManager:
         # description += f"    Record wrong samples: {self.record_wrong_samples}\n"
         description += f"    Number of threads: {self.number_of_thread}\n"
         # description += f"    Managed objects: Environment: {self.environment.env_name}\n"
-        # Todo: manage the print log of each Environment since they can have different parameters
         # description += str(self.environment)
         return description

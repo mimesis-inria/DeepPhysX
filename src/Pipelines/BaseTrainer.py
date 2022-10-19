@@ -60,7 +60,7 @@ class BaseTrainer(BasePipeline):
         self.debug = debug_session
 
         # Configure 'produce_data' flag
-        if environment_config is not None and dataset_config.existing_dir is None:
+        if environment_config is None and dataset_config.existing_dir is None:
             raise ValueError(f"[{self.name}] No data source provided.")
         produce_data = dataset_config.existing_dir is None
 

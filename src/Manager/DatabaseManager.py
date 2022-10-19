@@ -46,6 +46,7 @@ class DatasetManager:
         self.shuffle: bool = dataset_config.shuffle
         self.produce_data = produce_data
         self.normalize: bool = dataset_config.normalize
+        self.total_nb_sample: int = 0
         self.recompute_normalization: bool = dataset_config.recompute_normalization
 
         # Dataset modes
@@ -58,6 +59,7 @@ class DatasetManager:
         self.partition_template: Dict[str, str] = {mode: f'{session_name}_{mode}_' + '{}' for mode in self.modes}
         self.partitions: Dict[str, List[str]] = {mode: [] for mode in self.modes}
         self.partition_index: Dict[str, int] = {mode: 0 for mode in self.modes}
+        self.current_partition: str = ''
 
         # Dataset indexing
         self.shuffle_pattern: ndarray = arange(0)
@@ -112,15 +114,15 @@ class DatasetManager:
 
         """
 
-        partition_path = self.partition_template[self.mode].format(self.partition_index[self.mode])
+        self.current_partition = self.partition_template[self.mode].format(self.partition_index[self.mode])
         self.database = Database(database_dir=self.dataset_dir,
-                                 database_name=partition_path).new()
+                                 database_name=self.current_partition).new()
         self.database.create_table(table_name='Sync',
                                    storing_table=False,
                                    fields=[('env', int), ('net', int)])
         self.database.create_table(table_name='Training')
         self.database.create_table(table_name='Additional')
-        self.partitions[self.mode].append(partition_path)
+        self.partitions[self.mode].append(self.current_partition)
         self.partition_index[self.mode] += 1
 
     def additional_partition(self):
@@ -176,17 +178,21 @@ class DatasetManager:
             self.update_json(update_normalization=True)
 
         # 5. Load the Database
-        partition_path = self.partitions[self.mode][self.partition_index[self.mode]]
+        self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
         self.database = Database(database_dir=self.dataset_dir,
-                                 database_name=partition_path).load()
+                                 database_name=self.current_partition).load()
+
+        # 6. Shuffle Database indices
+        if self.shuffle:
+            self.shuffle_samples()
 
     def load_next_partition(self):
 
         # 1. Define next partition
         self.partition_index[self.mode] = (self.partition_index[self.mode] + 1) % len(self.partitions[self.mode])
-        partition_path = self.partitions[self.mode][self.partition_index[self.mode]]
+        self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
         self.database = Database(database_dir=self.dataset_dir,
-                                 database_name=partition_path).load()
+                                 database_name=self.current_partition).load()
 
         # 2. Shuffle
         if self.shuffle:
@@ -272,7 +278,8 @@ class DatasetManager:
         if self.shuffle:
             shuffle(self.shuffle_pattern)
 
-    def add_data(self):
+    def add_data(self,
+                 data_lines: Optional[List[int]] = None):
         """
 
         """
@@ -282,12 +289,18 @@ class DatasetManager:
         if self.first_add:
             self.update_json(update_partitions_lists=True, update_shapes=True, update_architecture=True)
             self.first_add = False
+        if self.normalize and self.mode == 'training' and self.pipeline == 'training' and data_lines is not None:
+            self.json_content['normalization'] = self.update_normalization(data_lines=data_lines)
+            self.update_json()
 
         # 2. Check the size of the partition
         if self.max_file_size is not None:
             if self.database.memory_size > self.max_file_size:
                 self.additional_partition()
                 self.update_json(update_partitions_lists=True, update_nb_samples=True)
+
+        # 3. Update sample counter
+        self.current_sample = self.nb_samples + 1
 
     def get_data(self,
                  batch_size: int) -> List[int]:
@@ -306,7 +319,7 @@ class DatasetManager:
 
         # 3. Get a batch of data
         if self.shuffle:
-            return self.shuffle_pattern[idx:self.current_sample]
+            return list(self.shuffle_pattern[idx:self.current_sample])
         return list(arange(idx, self.current_sample))
 
     def close(self):
@@ -314,7 +327,7 @@ class DatasetManager:
 
         """
 
-        if self.normalize and self.produce_data:
+        if self.normalize and self.pipeline == 'data_generation':
             self.update_json(update_normalization=True)
         self.database.close()
 
@@ -366,6 +379,46 @@ class DatasetManager:
                                                 for n, std in zip(nb_samples, stds[field])]))
 
         return normalization
+
+    def update_normalization(self,
+                             data_lines: List[int]) -> Dict[str, List[float]]:
+
+        previous_normalization = self.normalization
+        previous_nb_samples = self.total_nb_sample
+        self.total_nb_sample += len(data_lines)
+
+        # First update
+        if previous_normalization is None:
+            return self.compute_normalization()
+        new_normalization = previous_normalization.copy()
+
+        # Compute the mean for each field
+        fields = list(previous_normalization.keys())
+        data_to_normalize = self.database.get_lines(table_name='Training',
+                                                    fields=fields,
+                                                    lines_id=data_lines,
+                                                    batched=True)
+        for field in fields:
+            data = array(data_to_normalize[field])
+            m = (previous_nb_samples / self.total_nb_sample) * previous_normalization[field][0] + \
+                (len(data_lines) / self.total_nb_sample) * data.mean()
+            new_normalization[field][0] = m
+
+        # Compute standard deviation for each field
+        stds = {field: [] for field in fields}
+        nb_samples = []
+        for partition in self.partitions['training']:
+            data_to_normalize = self.load_partitions_fields(partition=partition,
+                                                            fields=fields)
+            nb_samples.append(data_to_normalize['id'][-1])
+            for field in fields:
+                data = array(data_to_normalize[field])
+                stds[field].append(mean(abs(data - new_normalization[field][0]) ** 2))
+        for field in fields:
+            new_normalization[field][1] = sqrt(sum([(n / sum(nb_samples)) * std
+                                                    for n, std in zip(nb_samples, stds[field])]))
+
+        return new_normalization
 
     @property
     def normalization(self) -> Dict[str, List[float]]:
