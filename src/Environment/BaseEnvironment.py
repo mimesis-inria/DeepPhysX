@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, Union, Tuple, List
+from typing import Any, Optional, Dict, Union, Tuple, List, Type
 from numpy import ndarray
 
 from SSD.Core.Storage.Database import Database
@@ -62,6 +62,8 @@ class BaseEnvironment(TcpIpClient):
                 self.database = data_db
             if self.instance_id == 0:
                 self.database.create_fields(table_name='Training',
+                                            fields=('env_id', int))
+                self.database.create_fields(table_name='Additional',
                                             fields=('env_id', int))
 
         # Connect the Factory to the visualization Database
@@ -185,6 +187,14 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
     ##########################################################################################
 
+    def define_training_fields(self,
+                               fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+        self.database.create_fields(table_name='Training', fields=fields)
+
+    def define_additional_fields(self,
+                                 fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+        self.database.create_fields(table_name='Additional', fields=fields)
+
     def set_training_data(self,
                           **kwargs) -> None:
         """
@@ -200,11 +210,11 @@ class BaseEnvironment(TcpIpClient):
             for field in kwargs.keys():
                 if field not in required_fields:
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
-                                     f"Required fields are {required_fields}.{self.instance_id}")
+                                     f"Required fields are {required_fields}.")
             for field in required_fields:
                 if field not in kwargs.keys():
                     raise ValueError(f"[{self.name}] The field '{field}' was not defined in training data."
-                                     f"Required fields are {required_fields}.{self.instance_id}")
+                                     f"Required fields are {required_fields}.")
 
         # Training data is set if the Environment can compute data
         if self.compute_training_data:
@@ -262,13 +272,24 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
 
     def get_prediction(self,
-                       input_array: ndarray) -> ndarray:
+                       **kwargs) -> ndarray:
         """
         Request a prediction from Network.
 
         :param input_array: Network input.
         :return: Network prediction.
         """
+
+        # Check kwargs
+        if self.__first_add[1]:
+            if self.instance_id != 0:
+                self.database.load()
+            self.__first_add[1] = False
+            required_fields = list(set(self.database.get_fields(table_name='Prediction')) - {'id'})
+            for field in kwargs.keys():
+                if field not in required_fields:
+                    raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
+                                     f"Required fields are {required_fields}.")
 
         # If Environment is a TcpIpClient, send request to the Server
         if self.as_tcp_ip_client:
@@ -277,15 +298,15 @@ class BaseEnvironment(TcpIpClient):
         # Otherwise, check the hierarchy of managers
         if self.environment_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
-        elif self.environment_manager.data_manager.manager is None:
-            raise ValueError("Cannot request prediction if Manager does not exist")
-        elif not hasattr(self.environment_manager.data_manager.manager, 'network_manager'):
-            raise AttributeError("Cannot request prediction if NetworkManager does not exist. If using a data "
-                                 "generation pipeline, please disable get_prediction requests.")
-        elif self.environment_manager.data_manager.manager.network_manager is None:
-            raise ValueError("Cannot request prediction if NetworkManager does not exist")
         # Get a prediction
-        return self.environment_manager.data_manager.get_prediction(network_input=input_array[None, ])
+        self.database.update(table_name='Prediction',
+                             data=kwargs,
+                             line_id=self.instance_id)
+        self.environment_manager.data_manager.get_prediction(self.instance_id)
+        data_pred = self.database.get_line(table_name='Prediction',
+                                           line_id=self.instance_id)
+        del data_pred['id']
+        return data_pred
 
     def update_visualisation(self) -> None:
         """

@@ -84,6 +84,12 @@ class DataManager:
         self.manager.change_database(self.dataset_manager.database)
         self.environment_manager.change_database(self.dataset_manager.database)
 
+    @property
+    def nb_environment(self):
+        if self.environment_manager is None:
+            return None
+        return 1 if self.environment_manager.server is None else self.environment_manager.number_of_thread
+
     def get_data(self,
                  epoch: int = 0,
                  animate: bool = True) -> None:
@@ -147,20 +153,18 @@ class DataManager:
                     self.dataset_manager.add_data(data)
 
     def get_prediction(self,
-                       network_input: ndarray) -> ndarray:
+                       instance_id: int) -> None:
         """
         Get a Network prediction from an input array. Normalization is applied on input and prediction.
 
-        :param network_input: Input array of the Network.
         :return: Network prediction.
         """
 
-        # Apply normalization
-        network_input = self.normalize_data(network_input, 'input')
         # Get a prediction
-        prediction = self.manager.network_manager.compute_online_prediction(network_input=network_input)
-        # Unapply normalization on prediction
-        return self.normalize_data(prediction, 'output', reverse=True)
+        if self.manager is None:
+            raise ValueError("Cannot request prediction if Manager (and then NetworkManager) does not exist.")
+        self.manager.network_manager.compute_online_prediction(instance_id=instance_id,
+                                                               normalization=self.normalization)
 
     def apply_prediction(self,
                          prediction: ndarray) -> None:

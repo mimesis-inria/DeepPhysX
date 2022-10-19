@@ -122,6 +122,7 @@ class DatasetManager:
                                    fields=[('env', int), ('net', int)])
         self.database.create_table(table_name='Training')
         self.database.create_table(table_name='Additional')
+        self.database.create_table(table_name='Prediction')
         self.partitions[self.mode].append(self.current_partition)
         self.partition_index[self.mode] += 1
 
@@ -131,7 +132,7 @@ class DatasetManager:
         fields = {}
         types = {'INT': int, 'FLOAT': float, 'STR': str, 'BOOL': bool, 'NUMPY': ndarray}
         if self.partition_index[self.mode] > 0:
-            for table_name in ['Training', 'Additional']:
+            for table_name in ['Training', 'Additional', 'Prediction']:
                 fields[table_name] = []
                 F = self.database.get_fields(table_name=table_name,
                                              only_names=False)

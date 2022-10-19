@@ -50,6 +50,7 @@ class TcpIpServer(TcpIpObject):
         self.sample_to_client_id: List[int] = []
         self.batch_from_dataset: Optional[List[int]] = None
         self.first_time: bool = True
+        self.data_lines: List[int] = []
 
         # Reference to EnvironmentManager
         self.environment_manager: Optional[Any] = manager
@@ -135,7 +136,7 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
 
     def get_batch(self,
-                  animate: bool = True) -> None:
+                  animate: bool = True) -> List[int]:
         """
         Build a batch from clients samples.
 
@@ -144,6 +145,7 @@ class TcpIpServer(TcpIpObject):
 
         # Trigger communication protocol
         async_run(self.__request_data_to_clients(animate=animate))
+        return self.data_lines
 
     async def __request_data_to_clients(self,
                                         animate: bool = True) -> None:
@@ -155,6 +157,7 @@ class TcpIpServer(TcpIpObject):
         """
 
         nb_sample = 0
+        self.data_lines = []
         # Launch the communication protocol while the batch needs to be filled
         while nb_sample < self.batch_size:
             # Run communicate protocol for each client and wait for the last one to finish
@@ -196,6 +199,8 @@ class TcpIpServer(TcpIpObject):
             # Receive data
             await self.listen_while_not_done(loop=loop, sender=client, data_dict=self.data_dict,
                                              client_id=client_id)
+            line = await self.receive_data(loop=loop, sender=client)
+            self.data_lines.append(line)
 
     def set_dataset_batch(self,
                           data_lines: List[int]) -> None:

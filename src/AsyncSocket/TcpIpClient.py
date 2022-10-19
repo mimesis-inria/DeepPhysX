@@ -283,11 +283,13 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         # Sent training data to Server
         if self.update_line is None:
-            self._send_training_data()
+            line = self._send_training_data()
         else:
             self._update_training_data(self.update_line)
+            line = self.update_line
         self._reset_training_data()
         await self.send_command_done()
+        await self.send_data(data_to_send=line, loop=loop, receiver=sender)
 
     async def action_on_change_db(self, 
                                   data: Dict[Any, Any], 

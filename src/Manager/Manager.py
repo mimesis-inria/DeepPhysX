@@ -76,6 +76,7 @@ class Manager:
                                               new_session=new_session,
                                               pipeline=pipeline,
                                               data_db=database)
+        self.network_manager.link_clients(self.data_manager.nb_environment)
 
         # Create a StatsManager for training only
         self.debug_session = debug_session

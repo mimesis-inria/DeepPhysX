@@ -88,7 +88,6 @@ class EnvironmentManager:
         """
 
         # Get data from server
-        # TODO: return the indices of samples
         return self.server.get_batch(animate)
 
     def get_data_from_environment(self,

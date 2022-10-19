@@ -129,7 +129,7 @@ class BaseEnvironmentConfig:
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i, data_db, visu_db))
+            client_thread = Thread(target=self.start_client, args=(i + 1, data_db, visu_db))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()

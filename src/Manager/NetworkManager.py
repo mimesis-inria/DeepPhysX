@@ -1,7 +1,7 @@
 from typing import Any, Dict, Tuple, Optional, List
 from os import listdir
 from os.path import join, isdir, isfile
-from numpy import copy, ndarray, array
+from numpy import ndarray, array
 
 from SSD.Core.Storage.Database import Database
 
@@ -80,6 +80,14 @@ class NetworkManager:
     def change_database(self, database):
         self.data_db = database
 
+    def link_clients(self,
+                     nb_clients: Optional[int] = None):
+        if nb_clients is not None:
+            fields = [(field_name, ndarray) for field_name in self.network.net_fields + self.network.pred_fields]
+            self.data_db.create_fields(table_name='Prediction', fields=fields)
+            for _ in range(nb_clients):
+                self.data_db.add_data(table_name='Prediction', data={})
+
     def load_network(self,
                      which_network: int = -1) -> None:
         """
@@ -157,10 +165,15 @@ class NetworkManager:
         data_pred = self.data_transformation.transform_before_apply(data_pred)
         for field in data_pred:
             data_pred[field] = self.network.tensor_to_numpy(data_pred[field])
+            if field in normalization.keys():
+                data_pred[field] = self.normalize_data(data=data_pred[field],
+                                                       normalization=normalization[field],
+                                                       reverse=True)
         return data_pred, data_loss
 
     def compute_online_prediction(self,
-                                  network_input: ndarray) -> ndarray:
+                                  instance_id: int,
+                                  normalization: Optional[Dict[str, List[float]]] = None) -> None:
         """
         Make a prediction with the data passed as argument.
 
@@ -168,16 +181,38 @@ class NetworkManager:
         :return: The prediction
         """
 
-        # Getting data from the data manager
-        data_in = self.network.transform_from_numpy(copy(network_input), grad=False)
+        # Get Network data
+        normalization = {} if normalization is None else normalization
+        sample = self.data_db.get_line(table_name='Prediction',
+                                       fields=self.network.net_fields,
+                                       line_id=instance_id)
+        del sample['id']
+
+        # Apply normalization and convert to tensor
+        for field in sample.keys():
+            sample[field] = array(sample[field])
+            if field in normalization.keys():
+                sample[field] = self.normalize_data(data=sample[field],
+                                                    normalization=normalization[field])
+            sample[field] = self.network.numpy_to_tensor(data=sample[field])
 
         # Compute prediction
-        data_in = self.data_transformation.transform_before_prediction(data_in)
-        pred = self.network.predict(data_in)
-        pred, _ = self.data_transformation.transform_before_loss(pred)
-        pred = self.data_transformation.transform_before_apply(pred)
-        pred = self.network.transform_to_numpy(pred)
-        return pred.reshape(-1)
+        data_net = self.data_transformation.transform_before_prediction(sample)
+        data_pred = self.network.predict(data_net)
+        data_pred, _ = self.data_transformation.transform_before_loss(data_pred)
+        data_pred = self.data_transformation.transform_before_apply(data_pred)
+
+        # Return the prediction
+        for field in data_pred.keys():
+            data_pred[field] = self.network.tensor_to_numpy(data=data_pred[field])
+            if field in normalization.keys():
+                data_pred[field] = self.normalize_data(data=data_pred[field],
+                                                       normalization=normalization[field],
+                                                       reverse=True)
+            data_pred[field].reshape(-1)
+        self.data_db.update(table_name='Prediction',
+                            data=data_pred,
+                            line_id=instance_id)
 
     @classmethod
     def normalize_data(cls,
