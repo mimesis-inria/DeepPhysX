@@ -37,16 +37,18 @@ class BaseEnvironment(TcpIpClient):
                              ip_address=ip_address,
                              port=port)
 
-        # Input and output to give to the network
+        # Training data variables
         self.__training_data: Dict[str, ndarray] = {}
         self.__additional_data: Dict[str, ndarray] = {}
-        self.__first_add: List[bool] = [True, True]
+        self.compute_training_data: bool = True
 
-        # Variables to store samples from Dataset
+        # Dataset data variables
+        self.database: Optional[Database] = None
+        self.update_line: Optional[int] = None
         self.sample_training: Optional[Dict[str, Any]] = None
         self.sample_additional: Optional[Dict[str, Any]] = None
-        # Loss data
-        self.loss_data: Any = None
+        self.__first_add: List[bool] = [True, True]
+
         # Manager if the Environment is not a TcpIpClient
         self.environment_manager: Any = environment_manager
 
@@ -216,12 +218,6 @@ class BaseEnvironment(TcpIpClient):
             self.__additional_data = kwargs
             self.__additional_data['env_id'] = self.instance_id
 
-    def _reset_training_data(self) -> None:
-        self.__training_data = {}
-        self.__additional_data = {}
-        self.sample_training = None
-        self.sample_additional = None
-
     def _send_training_data(self) -> None:
         line_id = self.database.add_data(table_name='Training',
                                          data=self.__training_data)
@@ -229,6 +225,13 @@ class BaseEnvironment(TcpIpClient):
                                data=self.__additional_data)
         self.database.add_data(table_name='Sync',
                                data={'env': line_id})
+
+    def _reset_training_data(self) -> None:
+        self.__training_data = {}
+        self.__additional_data = {}
+        self.sample_training = None
+        self.sample_additional = None
+        self.update_line = None
 
     def _update_training_data(self,
                               line_id: int) -> None:
@@ -244,6 +247,7 @@ class BaseEnvironment(TcpIpClient):
 
     def _get_training_data(self,
                            line: int) -> None:
+        self.update_line = line
         self.sample_training = self.database.get_line(table_name='Training',
                                                       line_id=line)
         self.sample_additional = self.database.get_line(table_name='Additional',

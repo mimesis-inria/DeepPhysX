@@ -251,20 +251,8 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         :param sender: TcpIpObject sender.
         """
 
-        # Receive input sample
-        if await self.receive_data(loop=loop, sender=sender):
-            self.sample_in = await self.receive_data(loop=loop, sender=sender)
-        # Receive output sample
-        if await self.receive_data(loop=loop, sender=sender):
-            self.sample_out = await self.receive_data(loop=loop, sender=sender)
-
-        additional_fields = {}
-        # Receive additional input sample if there are any
-        if await self.receive_data(loop=loop, sender=sender):
-            await self.receive_dict(recv_to=additional_fields, loop=loop, sender=sender)
-
-        # Set the samples from Dataset
-        self.additional_fields = additional_fields.get('additional_fields', {})
+        dataset_batch = await self.receive_data(loop=loop, sender=sender)
+        self._get_training_data(dataset_batch)
 
     async def action_on_step(self,
                              data: ndarray,
@@ -287,15 +275,17 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
             await self.step()
 
         # If produced sample is not usable, run again
-        if self.sample_in is None and self.sample_out is None:
-            while not self.check_sample():
-                for step in range(self.simulations_per_step):
-                    # Compute data only on final step
-                    self.compute_training_data = step == self.simulations_per_step - 1
-                    await self.step()
+        while not self.check_sample():
+            for step in range(self.simulations_per_step):
+                # Compute data only on final step
+                self.compute_training_data = step == self.simulations_per_step - 1
+                await self.step()
 
         # Sent training data to Server
-        self._send_training_data()
+        if self.update_line is None:
+            self._send_training_data()
+        else:
+            self._update_training_data(self.update_line)
         self._reset_training_data()
         await self.send_command_done()
 

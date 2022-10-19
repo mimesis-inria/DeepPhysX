@@ -3,7 +3,6 @@ from asyncio import get_event_loop, gather
 from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
 from socket import socket
-from numpy import ndarray
 from queue import SimpleQueue
 
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
@@ -49,7 +48,7 @@ class TcpIpServer(TcpIpObject):
         self.data_fifo: SimpleQueue = SimpleQueue()
         self.data_dict: Dict[Any, Any] = {}
         self.sample_to_client_id: List[int] = []
-        self.batch_from_dataset: Optional[Dict[str, ndarray]] = None
+        self.batch_from_dataset: Optional[List[int]] = None
         self.first_time: bool = True
 
         # Reference to EnvironmentManager
@@ -181,40 +180,15 @@ class TcpIpServer(TcpIpObject):
 
         loop = get_event_loop()
 
-        # # 1) If a sample from Dataset is given, sent it to the TcpIpClient
-        # if self.batch_from_dataset is not None:
-        #     # Check if there is remaining samples, otherwise client is not used
-        #     if len(self.batch_from_dataset['input']) == 0 or len(self.batch_from_dataset['output']) == 0:
-        #         return
-        #     # Send the sample to the TcpIpClient
-        #     await self.send_command_sample(loop=loop, receiver=client)
-        #     # Pop the first sample of the numpy batch for network in / out
-        #     for field in ['input', 'output']:
-        #         # Tell if there is something to read
-        #         await self.send_data(data_to_send=field in self.batch_from_dataset, loop=loop, receiver=client)
-        #         if field in self.batch_from_dataset:
-        #             # Pop sample from array if there are some
-        #             sample = self.batch_from_dataset[field][0]
-        #             self.batch_from_dataset[field] = self.batch_from_dataset[field][1:]
-        #             # Keep the sample in memory
-        #             self.data_dict[client_id][field] = sample
-        #             # Send network in / out sample
-        #             await self.send_data(data_to_send=sample, loop=loop, receiver=client)
-        #     # Pop the first sample of the numpy batch for each additional dataset field
-        #     field = 'additional_fields'
-        #     # Tell TcpClient if there is additional data for this field
-        #     await self.send_data(data_to_send=field in self.batch_from_dataset, loop=loop, receiver=client)
-        #     if field in self.batch_from_dataset:
-        #         sample = {}
-        #         # Get each additional data field
-        #         for key in self.batch_from_dataset[field]:
-        #             # Pop sample from array
-        #             sample[key] = self.batch_from_dataset[field][key][0]
-        #             self.batch_from_dataset[field][key] = self.batch_from_dataset[field][key][1:]
-        #             # Keep the sample in memory
-        #             self.data_dict[client_id][field + '_' + key] = sample[key]
-        #         # Send additional in / out sample
-        #         await self.send_dict(name="additional_fields", dict_to_send=sample, loop=loop, receiver=client)
+        # 1. Send a sample to the Client if a batch from the Dataset is given
+        if self.batch_from_dataset is not None:
+            # Check if there is remaining samples, otherwise the Client is not used
+            if len(self.batch_from_dataset) == 0:
+                return
+            # Send the sample to the Client
+            await self.send_command_sample(loop=loop, receiver=client)
+            line = int(self.batch_from_dataset.pop(0))
+            await self.send_data(data_to_send=line, loop=loop, receiver=client)
 
         # 2. Execute n steps, the last one send data computation signal
         if animate:

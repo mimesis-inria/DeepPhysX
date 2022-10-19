@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from numpy import array, ndarray
+from numpy import ndarray
 
 from SSD.Core.Storage.Database import Database
 
@@ -30,16 +30,15 @@ class AbstractEnvironment:
         self.number_of_instances: int = number_of_instances
 
         # Training data variables
-        self.input: ndarray = array([])
-        self.output: ndarray = array([])
-        self.loss_data: Any = None
+        self.__training_data: Dict[str, ndarray] = {}
+        self.__additional_data: Dict[str, ndarray] = {}
         self.compute_training_data: bool = True
 
         # Dataset data variables
         self.database: Optional[Database] = None
-        self.sample_in: Optional[ndarray] = None
-        self.sample_out: Optional[ndarray] = None
-        self.additional_fields: Dict[str, Any] = {}
+        self.update_line: Optional[int] = None
+        self.sample_training: Optional[Dict[str, Any]] = None
+        self.sample_additional: Optional[Dict[str, Any]] = None
 
     def create(self) -> None:
         """
@@ -135,4 +134,12 @@ class AbstractEnvironment:
         raise NotImplementedError
 
     def _reset_training_data(self) -> None:
+        raise NotImplementedError
+
+    def _update_training_data(self,
+                              line_id: int) -> None:
+        raise NotImplementedError
+
+    def _get_training_data(self,
+                           line: int) -> None:
         raise NotImplementedError

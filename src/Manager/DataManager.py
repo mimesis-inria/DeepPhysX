@@ -114,11 +114,10 @@ class DataManager:
             else:
                 self.data_lines = self.dataset_manager.get_data(batch_size=self.batch_size)
                 # Dispatch a batch to clients
-                # TODO
-                if self.environment_manager is not None and self.environment_manager.use_dataset_in_environment:
+                if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data)\
+                        and self.environment_manager.use_dataset_in_environment:
                     self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                             animate=animate)
-
                 # Environment is no longer used
                 elif self.environment_manager is not None:
                     self.environment_manager.close()
