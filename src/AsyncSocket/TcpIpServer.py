@@ -300,25 +300,10 @@ class TcpIpServer(TcpIpObject):
         :param sender: TcpIpObject sender.
         """
 
-        # Receive network input
-        label, network_input = await self.receive_labeled_data(loop=loop, sender=sender)
-
-        # Check that manager hierarchy is well-defined
         if self.environment_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
-        elif self.environment_manager.data_manager.manager is None:
-            raise ValueError("Cannot request prediction if Manager does not exist")
-        elif not hasattr(self.environment_manager.data_manager.manager, 'network_manager'):
-            raise AttributeError("Cannot request prediction if NetworkManager does not exist. If using a data "
-                                 "generation pipeline, please disable get_prediction requests.")
-        elif self.environment_manager.data_manager.manager.network_manager is None:
-            raise ValueError("Cannot request prediction if NetworkManager does not exist")
-
-        # Get the prediction from NetworkPrediction
-        prediction = self.environment_manager.data_manager.get_prediction(network_input=network_input[None, ])
-        # Send back the prediction to the Client
-        await self.send_labeled_data(data_to_send=prediction, label="prediction", receiver=sender,
-                                     send_read_command=False)
+        self.environment_manager.data_manager.get_prediction(client_id)
+        await self.send_data(data_to_send=True, receiver=sender)
 
     async def action_on_visualisation(self,
                                       data: Dict[Any, Any],

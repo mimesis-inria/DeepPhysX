@@ -60,7 +60,7 @@ class BaseEnvironment(TcpIpClient):
                                          database_name=data_db[1]).load()
             else:
                 self.database = data_db
-            if self.instance_id == 0:
+            if self.instance_id == 1:
                 self.database.create_fields(table_name='Training',
                                             fields=('env_id', int))
                 self.database.create_fields(table_name='Additional',
@@ -163,7 +163,7 @@ class BaseEnvironment(TcpIpClient):
         return True
 
     def apply_prediction(self,
-                         prediction: ndarray) -> None:
+                         prediction: Dict[str, ndarray]) -> None:
         """
         Apply network prediction in environment.
         Not mandatory.
@@ -272,7 +272,7 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
 
     def get_prediction(self,
-                       **kwargs) -> ndarray:
+                       **kwargs) -> Dict[str, ndarray]:
         """
         Request a prediction from Network.
 
@@ -293,7 +293,7 @@ class BaseEnvironment(TcpIpClient):
 
         # If Environment is a TcpIpClient, send request to the Server
         if self.as_tcp_ip_client:
-            return TcpIpClient.request_get_prediction(self, input_array=input_array)
+            return TcpIpClient.get_prediction(self, **kwargs)
 
         # Otherwise, check the hierarchy of managers
         if self.environment_manager.data_manager is None:

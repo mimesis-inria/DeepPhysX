@@ -76,7 +76,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         # Create the environment
         self.create()
         self.init()
-        if self.instance_id == 0:
+        if self.instance_id == 1:
             self.init_database()
         self.init_visualization()
 
@@ -175,8 +175,8 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
     ##########################################################################################
     ##########################################################################################
 
-    def request_get_prediction(self,
-                               input_array: ndarray) -> ndarray:
+    def get_prediction(self,
+                       **kwargs) -> Dict[str, ndarray]:
         """
         Request a prediction from Network.
 
@@ -184,7 +184,16 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         :return: Prediction of the Network.
         """
 
-        return self.send_prediction_data(network_input=input_array)
+        # Get a prediction
+        self.database.update(table_name='Prediction',
+                             data=kwargs,
+                             line_id=self.instance_id)
+        self.sync_send_command_prediction()
+        _ = self.sync_receive_data()
+        data_pred = self.database.get_line(table_name='Prediction',
+                                           line_id=self.instance_id)
+        del data_pred['id']
+        return data_pred
 
     def request_update_visualization(self) -> None:
         """
