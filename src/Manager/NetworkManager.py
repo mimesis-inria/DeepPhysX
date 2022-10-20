@@ -84,7 +84,7 @@ class NetworkManager:
                      nb_clients: Optional[int] = None):
         if nb_clients is not None:
             fields = [(field_name, ndarray) for field_name in self.network.net_fields + self.network.pred_fields]
-            self.data_db.create_fields(table_name='Prediction', fields=fields)
+            self.data_db.create_table(table_name='Prediction', fields=fields)
             for _ in range(nb_clients):
                 self.data_db.add_data(table_name='Prediction', data={})
 
@@ -243,8 +243,8 @@ class NetworkManager:
 
         # Final session saving
         if last_save:
-            path = self.network_dir + "network"
-            print(f"[{self.name}] Saving final network at {path}.")
+            path = join(self.network_dir, 'network')
+            print(f"[{self.name}] Saving final network at {self.network_dir}.")
             self.network.save_parameters(path)
 
         # Intermediate states saving

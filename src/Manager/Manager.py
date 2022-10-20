@@ -6,7 +6,7 @@ from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
 from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
@@ -15,12 +15,12 @@ class Manager:
 
     def __init__(self,
                  network_config: Optional[BaseNetworkConfig] = None,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'default',
-                 new_session: bool = True,
                  pipeline: str = '',
+                 new_session: bool = True,
                  produce_data: bool = True,
                  batch_size: int = 1,
                  debug_session: bool = False):
@@ -29,7 +29,7 @@ class Manager:
         More specific behaviour have to be directly call from the corresponding manager.
 
         :param network_config: Specialisation containing the parameters of the network manager.
-        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_name: Name of the newly created directory if session is not defined.
         :param session_dir: Name of the directory in which to write all the necessary data.
@@ -58,7 +58,7 @@ class Manager:
                 raise ValueError(f"[{self.name}] The running session directory {self.session} does not exist.")
 
         # Create a DataManager
-        self.data_manager = DataManager(dataset_config=dataset_config,
+        self.data_manager = DataManager(database_config=database_config,
                                         environment_config=environment_config,
                                         manager=self,
                                         session=self.session,

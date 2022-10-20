@@ -1,16 +1,16 @@
 from typing import Any, Optional, Dict, List
 from numpy import ndarray
 
-from DeepPhysX.Core.Manager.DatabaseManager import DatasetManager, Database
+from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager, Database
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 
 
 class DataManager:
 
     def __init__(self,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  manager: Optional[Any] = None,
                  session: str = 'sessions/default',
@@ -21,10 +21,10 @@ class DataManager:
 
         """
         DataManager deals with the generation, storage and loading of training data.
-        A batch is given with a call to 'get_data' on either the DatasetManager or the EnvironmentManager according to
+        A batch is given with a call to 'get_data' on either the DatabaseManager or the EnvironmentManager according to
         the context.
 
-        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param manager: Manager that handle the DataManager
         :param session: Path to the session directory.
@@ -38,28 +38,24 @@ class DataManager:
 
         # Managers variables
         self.manager: Optional[Any] = manager
-        self.dataset_manager: Optional[DatasetManager] = None
+        self.database_manager: Optional[DatabaseManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
 
-        # Create a DatasetManager if required
-        create_dataset = pipeline in ['data_generation', 'training'] or produce_data
-        database = None
-        if create_dataset:
-            self.dataset_manager = DatasetManager(dataset_config=dataset_config,
-                                                  session=session,
-                                                  data_manager=self,
-                                                  new_session=new_session,
-                                                  pipeline=pipeline,
-                                                  produce_data=produce_data)
-            database = self.dataset_manager.database
+        # Create a DatabaseManager
+        self.database_manager = DatabaseManager(database_config=database_config,
+                                                session=session,
+                                                data_manager=self,
+                                                new_session=new_session,
+                                                pipeline=pipeline,
+                                                produce_data=produce_data)
+        training_db = self.database_manager.database
 
         # Create an EnvironmentManager if required
-        create_environment = environment_config is not None
-        if create_environment:
+        if environment_config is not None:
             self.environment_manager = EnvironmentManager(environment_config=environment_config,
                                                           data_manager=self,
                                                           session=session,
-                                                          data_db=database,
+                                                          training_db=training_db,
                                                           batch_size=batch_size)
 
         # DataManager variables
@@ -78,11 +74,11 @@ class DataManager:
         return self.manager
 
     def get_database(self) -> Database:
-        return self.dataset_manager.database
+        return self.database_manager.database
 
     def change_database(self) -> None:
-        self.manager.change_database(self.dataset_manager.database)
-        self.environment_manager.change_database(self.dataset_manager.database)
+        self.manager.change_database(self.database_manager.database)
+        self.environment_manager.change_database(self.database_manager.database)
 
     @property
     def nb_environment(self):
@@ -94,7 +90,7 @@ class DataManager:
                  epoch: int = 0,
                  animate: bool = True) -> None:
         """
-        Fetch data from the EnvironmentManager or the DatasetManager according to the context.
+        Fetch data from the EnvironmentManager or the DatabaseManager according to the context.
 
         :param epoch: Current epoch number.
         :param animate: Allow EnvironmentManager to generate a new sample.
@@ -104,23 +100,23 @@ class DataManager:
         # Data generation case
         if self.pipeline == 'data_generation':
             self.environment_manager.get_data(animate=animate)
-            self.dataset_manager.add_data()
+            self.database_manager.add_data()
 
         # Training case
         elif self.pipeline == 'training':
 
             # Get data from Environment(s) if used and if the data should be created at this epoch
-            if self.environment_manager is not None and (epoch == 0 or self.environment_manager.always_create_data)\
+            if self.environment_manager is not None and (epoch == 0 or self.environment_manager.only_first_epoch) \
                     and self.produce_data:
                 self.data_lines = self.environment_manager.get_data(animate=animate)
-                self.dataset_manager.add_data(self.data_lines)
+                self.database_manager.add_data(self.data_lines)
 
             # Get data from Dataset
             else:
-                self.data_lines = self.dataset_manager.get_data(batch_size=self.batch_size)
+                self.data_lines = self.database_manager.get_data(batch_size=self.batch_size)
                 # Dispatch a batch to clients
                 if self.environment_manager is not None and (epoch == 0 or
-                                                             self.environment_manager.use_dataset_in_environment):
+                                                             self.environment_manager.load_samples):
                     self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                             animate=animate)
                 # Environment is no longer used
@@ -131,9 +127,9 @@ class DataManager:
         # Prediction pipeline
         # TODO
         else:
-            if self.dataset_manager is not None and not self.dataset_manager.new_dataset():
+            if self.database_manager is not None and not self.database_manager.new_dataset():
                 # Get data from dataset
-                data = self.dataset_manager.get_data(batch_size=1, get_inputs=True, get_outputs=True)
+                data = self.database_manager.get_data(batch_size=1, get_inputs=True, get_outputs=True)
                 if self.environment_manager is not None:
                     new_data = self.environment_manager.dispatch_batch(batch=data, animate=animate)
                 else:
@@ -148,8 +144,8 @@ class DataManager:
                 # Get data from environment
                 data = self.environment_manager.get_data(animate=animate, get_inputs=True, get_outputs=True)
                 # Record data
-                if self.dataset_manager is not None:
-                    self.dataset_manager.add_data(data)
+                if self.database_manager is not None:
+                    self.database_manager.add_data(data)
 
     def get_prediction(self,
                        instance_id: int) -> None:
@@ -181,7 +177,7 @@ class DataManager:
 
     @property
     def normalization(self) -> Dict[str, List[float]]:
-        return self.dataset_manager.normalization
+        return self.database_manager.normalization
 
     def close(self) -> None:
         """
@@ -190,8 +186,8 @@ class DataManager:
 
         if self.environment_manager is not None:
             self.environment_manager.close()
-        if self.dataset_manager is not None:
-            self.dataset_manager.close()
+        if self.database_manager is not None:
+            self.database_manager.close()
 
     def __str__(self) -> str:
         """
@@ -201,6 +197,6 @@ class DataManager:
         data_manager_str = ""
         if self.environment_manager:
             data_manager_str += str(self.environment_manager)
-        if self.dataset_manager:
-            data_manager_str += str(self.dataset_manager)
+        if self.database_manager:
+            data_manager_str += str(self.database_manager)
         return data_manager_str

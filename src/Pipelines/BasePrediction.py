@@ -2,66 +2,60 @@ from typing import Optional
 from numpy import ndarray
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.Manager import Manager
 
 
-class BaseRunner(BasePipeline):
-    """
-    | BaseRunner is a pipeline defining the running process of an artificial neural network.
-    | It provides a highly tunable learning process that can be used with any machine learning library.
-
-    :param BaseNetworkConfig network_config: Specialisation containing the parameters of the network manager
-    :param BaseEnvironmentConfig environment_config: Specialisation containing the parameters of the environment manager
-    :param Optional[BaseDatasetConfig] dataset_config: Specialisation containing the parameters of the dataset manager
-    :param str session_name: Name of the newly created directory if session is not defined
-    :param Optional[str] session_dir: Name of the directory in which to write all the necessary data
-    :param int nb_steps: Number of simulation step to play
-    :param bool record_inputs: Save or not the input in a numpy file
-    :param bool record_outputs: Save or not the output in a numpy file
-    """
+class BasePrediction(BasePipeline):
 
     def __init__(self,
                  network_config: BaseNetworkConfig,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
-                 session_name: str = 'default',
-                 session_dir: Optional[str] = None,
-                 nb_steps: int = 0,
-                 record_inputs: bool = False,
-                 record_outputs: bool = False):
+                 database_config: Optional[BaseDatabaseConfig] = None,
+                 session_dir: str = 'session',
+                 session_name: str = 'training',
+                 nb_steps: int = -1,
+                 record: bool = False):
+        """
+        BasePrediction is a pipeline defining the running process of an artificial neural network.
+        It provides a highly tunable learning process that can be used with any machine learning library.
+
+        :param network_config: Specialisation containing the parameters of the network manager.
+        :param environment_config: Specialisation containing the parameters of the environment manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
+        :param session_name: Name of the newly created directory if session is not defined.
+        :param session_dir: Name of the directory in which to write all the necessary data.
+        :param nb_steps: Number of simulation step to play.
+        :param record: Save or not the prediction data.
+        """
 
         BasePipeline.__init__(self,
                               network_config=network_config,
-                              dataset_config=dataset_config,
+                              database_config=database_config,
                               environment_config=environment_config,
-                              session_name=session_name,
                               session_dir=session_dir,
+                              session_name=session_name,
                               pipeline='prediction')
 
-        self.name = self.__class__.__name__
-
-        if type(nb_steps) != int or nb_steps < 0:
-            raise TypeError("[BaseRunner] The number of steps must be a positive int")
-
+        # Prediction variables
         self.nb_samples = nb_steps
         self.idx_step = 0
 
-        # Tell if data is recording while predicting (output is recorded only if input too)
-        self.record_data = {'input': False, 'output': False}
-        if dataset_config is not None:
-            self.record_data = {'input': record_inputs, 'output': record_outputs and record_inputs}
+        # Tell if data is recording while predicting
+        self.record_data = record
         self.is_environment = environment_config is not None
 
-        self.manager = Manager(pipeline=self,
-                               network_config=self.network_config,
-                               dataset_config=dataset_config,
+        self.manager = Manager(network_config=self.network_config,
+                               database_config=database_config,
                                environment_config=self.environment_config,
-                               session_name=session_name,
                                session_dir=session_dir,
-                               new_session=True)
+                               session_name=session_name,
+                               new_session=False,
+                               pipeline='prediction',
+                               produce_data=environment_config is not None and record,
+                               batch_size=1)
 
     def execute(self) -> None:
         """

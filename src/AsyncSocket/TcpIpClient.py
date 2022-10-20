@@ -53,36 +53,26 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
     def initialize(self) -> None:
         """
-        Run __initialize method with asyncio.
+        Receive parameters from the server to create environment.
         """
 
         async_run(self.__initialize())
 
     async def __initialize(self) -> None:
         """
-        Receive parameters from the server to create environment, send parameters to the server in exchange.
+        Receive parameters from the server to create environment.
         """
 
         loop = get_event_loop()
+
         # Receive number of sub-steps
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
-        # Receive parameters
-        recv_param_dict = {}
-        await self.receive_dict(recv_to=recv_param_dict, sender=self.sock, loop=loop)
-        # Use received parameters
-        if 'parameters' in recv_param_dict:
-            self.recv_parameters(recv_param_dict['parameters'])
 
         # Create the environment
         self.create()
         self.init()
-        if self.instance_id == 1:
-            self.init_database()
+        self.init_database()
         self.init_visualization()
-
-        # Send parameters
-        param_dict = self.send_parameters()
-        await self.send_dict(name="parameters", dict_to_send=param_dict, loop=loop, receiver=self.sock)
 
         # Initialization done
         await self.send_command_done(loop=loop, receiver=self.sock)

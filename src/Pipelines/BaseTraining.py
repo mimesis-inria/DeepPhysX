@@ -6,16 +6,16 @@ from datetime import datetime
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.Manager import Manager
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Utils.progressbar import Progressbar
 
 
-class BaseTrainer(BasePipeline):
+class BaseTraining(BasePipeline):
 
     def __init__(self,
                  network_config: BaseNetworkConfig,
-                 dataset_config: BaseDatasetConfig,
+                 database_config: BaseDatabaseConfig,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'training',
@@ -25,12 +25,12 @@ class BaseTrainer(BasePipeline):
                  new_session: bool = True,
                  debug_session: bool = False):
         """
-        BaseTrainer implements the main loop that defines the training process of an artificial neural network.
+        BaseTraining implements the main loop that defines the training process of an artificial neural network.
         Training can be launched with several data sources (from a Dataset, from an Environment, from combined sources).
         It provides a highly tunable learning process that can be used with any machine learning library.
 
         :param network_config: Specialisation containing the parameters of the network manager.
-        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Relative path to the directory which contains sessions directories.
         :param session_name: Name of the new the session directory.
@@ -43,7 +43,7 @@ class BaseTrainer(BasePipeline):
 
         BasePipeline.__init__(self,
                               network_config=network_config,
-                              dataset_config=dataset_config,
+                              database_config=database_config,
                               environment_config=environment_config,
                               session_dir=session_dir,
                               session_name=session_name,
@@ -60,9 +60,9 @@ class BaseTrainer(BasePipeline):
         self.debug = debug_session
 
         # Configure 'produce_data' flag
-        if environment_config is None and dataset_config.existing_dir is None:
+        if environment_config is None and database_config.existing_dir is None:
             raise ValueError(f"[{self.name}] No data source provided.")
-        produce_data = dataset_config.existing_dir is None
+        produce_data = database_config.existing_dir is None
 
         # Progressbar
         if not self.debug:
@@ -75,7 +75,7 @@ class BaseTrainer(BasePipeline):
                                             title=f'Epoch n°{epoch_id}/{epoch_nb} - Batch n°{batch_id}/{batch_nb}')
 
         self.manager = Manager(network_config=self.network_config,
-                               dataset_config=self.dataset_config,
+                               database_config=self.database_config,
                                environment_config=self.environment_config,
                                session_dir=session_dir,
                                session_name=session_name,

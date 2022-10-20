@@ -2,14 +2,14 @@ from typing import Optional
 from os.path import isdir, sep, join
 
 
-class BaseDatasetConfig:
+class BaseDatabaseConfig:
 
     def __init__(self,
                  existing_dir: Optional[str] = None,
                  mode: Optional[str] = None,
                  max_file_size: Optional[float] = None,
-                 shuffle: bool = True,
-                 normalize: bool = True,
+                 shuffle: bool = False,
+                 normalize: bool = False,
                  recompute_normalization: bool = False):
         """
         Configuration class to parameterize the Dataset and its Manager.
@@ -51,7 +51,7 @@ class BaseDatasetConfig:
             raise TypeError(f"[{self.name}] The given 'recompute_normalization'={recompute_normalization} must be a "
                             f"bool.")
 
-        # DatasetManager parameterization
+        # DatabaseManager parameterization
         self.existing_dir: Optional[str] = existing_dir
         self.mode: Optional[str] = mode
         self.max_file_size: int = max_file_size

@@ -1,13 +1,13 @@
 from typing import Optional, Any, List, Union
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
-from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Manager.Manager import Manager
-from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
 from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Manager.StatsManager import StatsManager
-from DeepPhysX.Core.Manager.DatasetManager import DatasetManager
+from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
+from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 
 
@@ -15,7 +15,7 @@ class BasePipeline:
 
     def __init__(self,
                  network_config: Optional[BaseNetworkConfig] = None,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'default',
@@ -24,7 +24,7 @@ class BasePipeline:
         Pipelines implement the main loop that defines data flow through components (Environment, Dataset, Network...).
 
         :param network_config: Specialisation containing the parameters of the network manager.
-        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Name of the directory in which to write all the necessary data.
         :param session_name: Name of the newly created directory if session is not defined.
@@ -36,8 +36,8 @@ class BasePipeline:
         # Check the configurations
         if network_config is not None and not isinstance(network_config, BaseNetworkConfig):
             raise TypeError(f"[{self.name}] The Network configuration must be a BaseNetworkConfig object.")
-        if dataset_config is not None and not isinstance(dataset_config, BaseDatasetConfig):
-            raise TypeError(f"[{self.name}] The Dataset configuration must be a BaseDatasetConfig object.")
+        if database_config is not None and not isinstance(database_config, BaseDatabaseConfig):
+            raise TypeError(f"[{self.name}] The Dataset configuration must be a BaseDatabaseConfig object.")
         if environment_config is not None and not isinstance(environment_config, BaseEnvironmentConfig):
             raise TypeError(f"[{self.name}] The Environment configuration must be a BaseEnvironmentConfig object.")
 
@@ -52,7 +52,7 @@ class BasePipeline:
             session_name = pipeline
 
         # Configuration variables
-        self.dataset_config: BaseDatasetConfig = dataset_config
+        self.database_config: BaseDatabaseConfig = database_config
         self.network_config: BaseNetworkConfig = network_config
         self.environment_config: BaseEnvironmentConfig = environment_config
 
@@ -123,14 +123,14 @@ class BasePipeline:
 
         return self.__get_any_manager(manager_names='stats_manager')
 
-    def get_dataset_manager(self) -> Optional[DatasetManager]:
+    def get_dataset_manager(self) -> Optional[DatabaseManager]:
         """
-        Return the DatasetManager associated with the pipeline if it exists.
+        Return the DatabaseManager associated with the pipeline if it exists.
 
-        :return: The DatasetManager associated with the pipeline.
+        :return: The DatabaseManager associated with the pipeline.
         """
 
-        return self.__get_any_manager(manager_names=['data_manager', 'dataset_manager'])
+        return self.__get_any_manager(manager_names=['data_manager', 'database_manager'])
 
     def get_environment_manager(self) -> Optional[EnvironmentManager]:
         """

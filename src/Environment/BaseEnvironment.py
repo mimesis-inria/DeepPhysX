@@ -1,5 +1,6 @@
 from typing import Any, Optional, Dict, Union, Tuple, List, Type
 from numpy import ndarray
+from os.path import isfile, join
 
 from SSD.Core.Storage.Database import Database
 
@@ -16,8 +17,8 @@ class BaseEnvironment(TcpIpClient):
                  number_of_instances: int = 1,
                  as_tcp_ip_client: bool = True,
                  environment_manager: Optional[Any] = None,
-                 data_db: Optional[Union[Database, Tuple[str, str]]] = None,
-                 visu_db: Optional[Union[Database, Tuple[str, str]]] = None):
+                 training_db: Optional[Union[Database, Tuple[str, str]]] = None,
+                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         BaseEnvironment is an environment class to compute simulated data for the network and its optimization process.
 
@@ -27,7 +28,7 @@ class BaseEnvironment(TcpIpClient):
         :param number_of_instances: Number of simultaneously launched instances.
         :param as_tcp_ip_client: Environment is owned by a TcpIpClient if True, by an EnvironmentManager if False.
         :param environment_manager: EnvironmentManager that handles the Environment if 'as_tcp_ip_client' is False.
-        :param visu_db: The path to the visualization Database or the visualization Database object to connect to.
+        :param visualization_db: The path to the visualization Database or the visualization Database object to connect to.
         """
 
         TcpIpClient.__init__(self,
@@ -54,12 +55,12 @@ class BaseEnvironment(TcpIpClient):
 
         # Connect the Environment to the data Database
         self.database: Optional[Database] = None
-        if data_db is not None:
-            if type(data_db) == list:
-                self.database = Database(database_dir=data_db[0],
-                                         database_name=data_db[1]).load()
+        if training_db is not None:
+            if type(training_db) == list:
+                self.database = Database(database_dir=training_db[0],
+                                         database_name=training_db[1]).load()
             else:
-                self.database = data_db
+                self.database = training_db
             if self.instance_id == 1:
                 self.database.create_fields(table_name='Training',
                                             fields=('env_id', int))
@@ -68,13 +69,13 @@ class BaseEnvironment(TcpIpClient):
 
         # Connect the Factory to the visualization Database
         self.factory: Optional[VedoFactory] = None
-        if visu_db is not None:
-            if type(visu_db) == list:
-                self.factory = VedoFactory(database_path=visu_db,
+        if visualization_db is not None:
+            if type(visualization_db) == list:
+                self.factory = VedoFactory(database_path=visualization_db,
                                            idx_instance=instance_id,
                                            remote=True)
             else:
-                self.factory = VedoFactory(database=visu_db,
+                self.factory = VedoFactory(database=visualization_db,
                                            idx_instance=instance_id)
 
     ##########################################################################################
@@ -83,20 +84,9 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
     ##########################################################################################
 
-    def recv_parameters(self,
-                        param_dict: Dict[Any, Any]) -> None:
-        """
-        Exploit received parameters before scene creation.
-        Not mandatory.
-
-        :param param_dict: Dictionary of parameters.
-        """
-
-        pass
-
     def create(self) -> None:
         """
-        Create the Environment.
+        Create the Environment. Automatically called when Environment is launched.
         Must be implemented by user.
         """
 
@@ -104,36 +94,24 @@ class BaseEnvironment(TcpIpClient):
 
     def init(self) -> None:
         """
-        Initialize the Environment.
+        Initialize the Environment. Automatically called when Environment is launched.
         Not mandatory.
         """
 
         pass
 
-    def send_parameters(self) -> Dict[Any, Any]:
-        """
-        Create a dictionary of parameters to send to the manager.
-        Not mandatory.
-
-        :return: Dictionary of parameters
-        """
-
-        return {}
-
     def init_database(self) -> None:
         """
-        Define the fields of the training dataset.
-        Required.
+        Define the fields of the training dataset. Automatically called when Environment is launched.
+        Must be implemented by user.
         """
 
         raise NotImplementedError
 
     def init_visualization(self) -> None:
         """
-        Define the visualization objects to send to the Visualizer.
+        Define the visualization objects to send to the Visualizer. Automatically called when Environment is launched.
         Not mandatory.
-
-        :return: Dictionary of visualization data
         """
 
         pass
@@ -162,8 +140,7 @@ class BaseEnvironment(TcpIpClient):
 
         return True
 
-    def apply_prediction(self,
-                         prediction: Dict[str, ndarray]) -> None:
+    def apply_prediction(self, prediction: Dict[str, ndarray]) -> None:
         """
         Apply network prediction in environment.
         Not mandatory.
@@ -175,7 +152,7 @@ class BaseEnvironment(TcpIpClient):
 
     def close(self) -> None:
         """
-        Close the Environment.
+        Close the Environment. Automatically called when Environment is shut down.
         Not mandatory.
         """
 
@@ -187,16 +164,48 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
     ##########################################################################################
 
-    def define_training_fields(self,
-                               fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.database.create_fields(table_name='Training', fields=fields)
+    def save_parameters(self, **kwargs) -> None:
+        """
+        Save a set of parameters in the Database.
+        """
 
-    def define_additional_fields(self,
-                                 fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.database.create_fields(table_name='Additional', fields=fields)
+        database_dir = self.database.get_path()[0]
+        if isfile(join(database_dir, 'environment_parameters.db')):
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').load()
+        else:
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').new()
+        fields = [(field, type(value)) for field, value in kwargs.items()]
+        database.create_table(table_name=f'Environment_{self.instance_id}', fields=fields)
+        database.add_data(table_name=f'Environment_{self.instance_id}', data=kwargs)
+        database.close()
 
-    def set_training_data(self,
-                          **kwargs) -> None:
+    def load_parameters(self) -> Dict[str, Any]:
+        """
+        Load a set of parameters from the Database.
+        """
+
+        database_dir = self.database.get_path()[0]
+        if isfile(join(database_dir, 'environment_parameters.db')):
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').load()
+            parameters = database.get_line(table_name=f'Environment_{self.instance_id}')
+            del parameters['id']
+            return parameters
+        return {}
+
+    def define_training_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+        self.database.load()
+        if len(self.database.get_fields(table_name='Training')) == 2:
+            self.database.create_fields(table_name='Training', fields=fields)
+
+    def define_additional_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+        self.database.load()
+        if len(self.database.get_fields(table_name='Additional')) == 2:
+            self.database.create_fields(table_name='Additional', fields=fields)
+
+    def set_training_data(self, **kwargs) -> None:
         """
         Set the training data to send to the TcpIpServer or the EnvironmentManager.
         """
@@ -233,8 +242,6 @@ class BaseEnvironment(TcpIpClient):
                                          data=self.__training_data)
         self.database.add_data(table_name='Additional',
                                data=self.__additional_data)
-        self.database.add_data(table_name='Sync',
-                               data={'env': line_id})
         return line_id
 
     def _reset_training_data(self) -> None:
@@ -254,8 +261,6 @@ class BaseEnvironment(TcpIpClient):
             self.database.update(table_name='Additional',
                                  data=self.__additional_data,
                                  line_id=line_id)
-        self.database.add_data(table_name='Sync',
-                               data={'env': line_id})
 
     def _get_training_data(self,
                            line: int) -> None:
@@ -272,12 +277,10 @@ class BaseEnvironment(TcpIpClient):
     ##########################################################################################
     ##########################################################################################
 
-    def get_prediction(self,
-                       **kwargs) -> Dict[str, ndarray]:
+    def get_prediction(self, **kwargs) -> Dict[str, ndarray]:
         """
         Request a prediction from Network.
 
-        :param input_array: Network input.
         :return: Network prediction.
         """
 
@@ -320,9 +323,6 @@ class BaseEnvironment(TcpIpClient):
         self.factory.render()
 
     def __str__(self) -> str:
-        """
-        :return: String containing information about the BaseEnvironment object
-        """
 
         description = "\n"
         description += f"  {self.name}\n"

@@ -63,7 +63,7 @@ class TcpIpServer(TcpIpObject):
 
     def connect(self) -> None:
         """
-        Run __connect method with asyncio.
+        Accept connections from clients.
         """
 
         print(f"[{self.name}] Waiting for clients...")
@@ -90,43 +90,26 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def initialize(self,
-                   param_dict: Dict[Any, Any]) -> Dict[Any, Any]:
+    def initialize(self) -> None:
         """
-        Run __initialize method with asyncio. Manage parameters exchange.
-
-        :param param_dict: Dictionary of parameters to send to the client's environment.
-        :return: Dictionary of parameters for each environment to send the manager.
+        Send parameters to the clients to create their environments.
         """
 
         print(f"[{self.name}] Initializing clients...")
-        async_run(self.__initialize(param_dict))
-        # Return param dict
-        param_dict = {}
-        for client_id in self.data_dict:
-            if 'parameters' in self.data_dict[client_id]:
-                param_dict[client_id] = self.data_dict[client_id]['parameters']
-        return param_dict
+        async_run(self.__initialize())
 
-    async def __initialize(self, param_dict: Dict[Any, Any]) -> None:
+    async def __initialize(self) -> None:
         """
-        Send parameters to the clients to create their environments, receive parameters from clients in exchange.
-
-        :param param_dict: Dictionary of parameters to send to the client's environment.
+        Send parameters to the clients to create their environments.
         """
 
         loop = get_event_loop()
-        # Empty dictionaries for received parameters from clients
-        self.data_dict = {client_ID: {} for client_ID in range(len(self.clients))}
+
         # Initialisation process for each client
         for client_id, client in self.clients:
             # Send number of sub-steps
             nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
             await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)
-            # Send parameters to client
-            await self.send_dict(name="parameters", dict_to_send=param_dict, loop=loop, receiver=client)
-            # Receive visualization data and parameters
-            await self.listen_while_not_done(loop=loop, sender=client, data_dict=self.data_dict, client_id=client_id)
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
     ##########################################################################################

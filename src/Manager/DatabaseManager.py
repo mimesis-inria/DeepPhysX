@@ -8,25 +8,25 @@ from numpy.random import shuffle
 
 from SSD.Core.Storage.Database import Database
 
-from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Utils.path import create_dir, copy_dir, get_first_caller
 from DeepPhysX.Core.Utils.jsonUtils import CustomJSONEncoder
 
 
-class DatasetManager:
+class DatabaseManager:
 
     def __init__(self,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 database_config: Optional[BaseDatabaseConfig] = None,
                  session: str = 'sessions/default',
                  data_manager: Optional[Any] = None,
                  new_session: bool = True,
                  pipeline: str = '',
                  produce_data: bool = True):
         """
-        DatasetManager handle all operations with input / output files. Allows saving and read tensors from files.
+        DatabaseManager handle all operations with input / output files. Allows saving and read tensors from files.
 
-        :param dataset_config: Specialisation containing the parameters of the dataset manager
-        :param data_manager: DataManager that handles the DatasetManager
+        :param database_config: Specialisation containing the parameters of the dataset manager
+        :param data_manager: DataManager that handles the DatabaseManager
         :param new_session: Define the creation of new directories to store data
         :param is_training: True if the session is done offline
         :param produce_data: True if this session is a network training
@@ -35,24 +35,24 @@ class DatasetManager:
         self.name: str = self.__class__.__name__
 
         # Manager variables
-        dataset_config = BaseDatasetConfig() if dataset_config is None else dataset_config
+        database_config = BaseDatabaseConfig() if database_config is None else database_config
         self.data_manager: Optional[Any] = data_manager
         self.dataset_dir: str = join(session, 'dataset')
         self.database: Optional[Database] = None
         self.pipeline: str = pipeline
 
         # Dataset parameters
-        self.max_file_size: int = dataset_config.max_file_size
-        self.shuffle: bool = dataset_config.shuffle
+        self.max_file_size: int = database_config.max_file_size
+        self.shuffle: bool = database_config.shuffle
         self.produce_data = produce_data
-        self.normalize: bool = dataset_config.normalize
+        self.normalize: bool = database_config.normalize
         self.total_nb_sample: int = 0
-        self.recompute_normalization: bool = dataset_config.recompute_normalization
+        self.recompute_normalization: bool = database_config.recompute_normalization
 
         # Dataset modes
         self.modes: List[str] = ['training', 'validation', 'running']
         self.mode: str = 'training' if produce_data or pipeline == 'training' else 'running'
-        self.mode = self.mode if dataset_config.mode is None else dataset_config.mode
+        self.mode = self.mode if database_config.mode is None else database_config.mode
 
         # Dataset partitions
         session_name = session.split(sep)[-1]
@@ -81,14 +81,14 @@ class DatasetManager:
             if new_session:
                 # Produce training data in a new session from scratch
                 # --> Create a new  '/dataset' directory
-                if dataset_config.existing_dir is None:
+                if database_config.existing_dir is None:
                     create_dir(session_dir=session,
                                session_name='dataset')
                     self.create_partition()
                 # Produce training data in a new session from an existing Dataset
                 # --> Copy the 'existing_dir/dataset' directory then load the 'session/dataset' directory
                 else:
-                    copy_dir(src_dir=join(root, dataset_config.existing_dir),
+                    copy_dir(src_dir=join(root, database_config.existing_dir),
                              dest_dir=session,
                              sub_folders='dataset')
                     self.load_directory()
@@ -101,7 +101,7 @@ class DatasetManager:
             # Load training data in a new session
             # --> Link to the 'existing_dir/dataset' directory the load the 'session/dataset' directory
             if new_session:
-                symlink(src=join(root, dataset_config.existing_dir, 'dataset'),
+                symlink(src=join(root, database_config.existing_dir, 'dataset'),
                         dst=join(session, 'dataset'))
                 self.load_directory()
             # Load training data in an existing session
@@ -117,12 +117,8 @@ class DatasetManager:
         self.current_partition = self.partition_template[self.mode].format(self.partition_index[self.mode])
         self.database = Database(database_dir=self.dataset_dir,
                                  database_name=self.current_partition).new()
-        self.database.create_table(table_name='Sync',
-                                   storing_table=False,
-                                   fields=[('env', int), ('net', int)])
         self.database.create_table(table_name='Training')
         self.database.create_table(table_name='Additional')
-        self.database.create_table(table_name='Prediction')
         self.partitions[self.mode].append(self.current_partition)
         self.partition_index[self.mode] += 1
 
@@ -132,12 +128,14 @@ class DatasetManager:
         fields = {}
         types = {'INT': int, 'FLOAT': float, 'STR': str, 'BOOL': bool, 'NUMPY': ndarray}
         if self.partition_index[self.mode] > 0:
-            for table_name in ['Training', 'Additional', 'Prediction']:
+            for table_name in self.database.get_tables():
                 fields[table_name] = []
                 F = self.database.get_fields(table_name=table_name,
                                              only_names=False)
                 for field in [f for f in F if f not in ['id', '_dt_']]:
                     fields[table_name].append((field, types[F[field].field_type]))
+            if 'Prediction' in fields.keys():
+                self.database.remove_table(table_name='Prediction')
 
         # 2. Create a new Database
         self.create_partition()
@@ -242,21 +240,23 @@ class DatasetManager:
         # Update DB architecture
         if update_architecture:
             architecture = self.database.get_architecture()
+            if 'Prediction' in architecture.keys():
+                del architecture['Prediction']
             for fields in architecture.values():
                 for field in fields.copy():
                     if field.split(' ')[0] in ['id', '_dt_']:
                         fields.remove(field)
-            architecture.pop('Sync')
             self.json_content['architecture'] = architecture
 
         # Update data shapes
         if update_shapes:
             for table_name, fields in self.json_content['architecture'].items():
-                data = self.database.get_line(table_name=table_name)
-                for field in fields:
-                    if 'NUMPY' in field:
-                        field_name = field.split(' ')[0]
-                        self.json_content['data_shape'][f'{table_name}.{field_name}'] = data[field_name].shape
+                if self.database.nb_lines(table_name=table_name) > 0:
+                    data = self.database.get_line(table_name=table_name)
+                    for field in fields:
+                        if 'NUMPY' in field:
+                            field_name = field.split(' ')[0]
+                            self.json_content['data_shape'][f'{table_name}.{field_name}'] = data[field_name].shape
 
         # Update normalization coefficients
         if update_normalization:

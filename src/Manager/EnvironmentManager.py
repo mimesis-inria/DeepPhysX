@@ -14,7 +14,7 @@ class EnvironmentManager:
                  environment_config: BaseEnvironmentConfig,
                  data_manager: Optional[Any] = None,
                  session: str = 'sessions/default',
-                 data_db: Optional[Database] = None,
+                 training_db: Optional[Database] = None,
                  batch_size: int = 1):
         """
         Deals with the online generation of data for both training and running of the neural networks.
@@ -32,20 +32,20 @@ class EnvironmentManager:
 
         # Data producing parameters
         self.batch_size: int = batch_size
-        self.always_create_data: bool = environment_config.always_create_data
-        self.use_dataset_in_environment: bool = environment_config.use_dataset_in_environment
+        self.only_first_epoch: bool = environment_config.only_first_epoch
+        self.load_samples: bool = environment_config.load_samples
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
         self.dataset_batch: Optional[List[int]] = None
 
         # Create the Visualizer
         self.visualizer: Optional[VedoVisualizer] = None
-        visu_db = None
+        visualization_db = None
         if environment_config.visualizer is not None:
             self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
                                                             database_name='Visualization',
                                                             remote=environment_config.as_tcp_ip_client)
-            visu_db = self.visualizer.get_database()
+            visualization_db = self.visualizer.get_database()
 
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = environment_config.number_of_thread
@@ -54,13 +54,13 @@ class EnvironmentManager:
         if environment_config.as_tcp_ip_client:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           data_db=data_db if data_db is None else data_db.get_path(),
-                                                           visu_db=visu_db if visu_db is None else visu_db.get_path())
+                                                           training_db=training_db if training_db is None else training_db.get_path(),
+                                                           visualization_db=visualization_db if visualization_db is None else visualization_db.get_path())
             self.data_manager.get_database().load()
         else:
             self.environment = environment_config.create_environment(environment_manager=self,
-                                                                     data_db=data_db,
-                                                                     visu_db=visu_db)
+                                                                     training_db=training_db,
+                                                                     visualization_db=visualization_db)
 
         # Define get_data and dispatch methods
         self.change_database = self.change_database_in_server if self.server else self.change_database_in_environment
@@ -191,7 +191,7 @@ class EnvironmentManager:
 
         description = "\n"
         description += f"# {self.name}\n"
-        description += f"    Always create data: {self.always_create_data}\n"
+        description += f"    Always create data: {self.only_first_epoch}\n"
         # description += f"    Record wrong samples: {self.record_wrong_samples}\n"
         description += f"    Number of threads: {self.number_of_thread}\n"
         # description += f"    Managed objects: Environment: {self.environment.env_name}\n"

@@ -4,25 +4,25 @@ from sys import stdout
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.DataManager import DataManager
-from DeepPhysX.Core.Database.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Utils.progressbar import Progressbar
 from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
 
-class BaseDataGenerator(BasePipeline):
+class BaseDataGeneration(BasePipeline):
 
     def __init__(self,
                  environment_config: BaseEnvironmentConfig,
-                 dataset_config: Optional[BaseDatasetConfig] = None,
+                 database_config: Optional[BaseDatabaseConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
-        BaseDataGenerator implements the main loop that only produces and stores data (no Network training).
+        BaseDataGeneration implements the main loop that only produces and stores data (no Network training).
 
-        :param dataset_config: Specialisation containing the parameters of the dataset manager.
+        :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Relative path to the directory which contains sessions directories.
         :param session_name: Name of the new the session directory.
@@ -31,7 +31,7 @@ class BaseDataGenerator(BasePipeline):
         """
 
         BasePipeline.__init__(self,
-                              dataset_config=dataset_config,
+                              database_config=database_config,
                               environment_config=environment_config,
                               session_dir=session_dir,
                               session_name=session_name,
@@ -46,8 +46,8 @@ class BaseDataGenerator(BasePipeline):
         # Option 2: existing_dir == session_dir/session_name --> new_session = False
         # Option 3: existing_dir != session_dir/session_name --> new_session = True
         new_session = True
-        if dataset_config is not None and dataset_config.existing_dir is not None and \
-                join(session_dir, session_name) == join(root, dataset_config.existing_dir):
+        if database_config is not None and database_config.existing_dir is not None and \
+                join(session_dir, session_name) == join(root, database_config.existing_dir):
             new_session = False
 
         # Create a new session if required
@@ -61,7 +61,7 @@ class BaseDataGenerator(BasePipeline):
         self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
 
         # Create a DataManager
-        self.data_manager = DataManager(dataset_config=dataset_config,
+        self.data_manager = DataManager(database_config=database_config,
                                         environment_config=environment_config,
                                         session=join(session_dir, session_name),
                                         new_session=new_session,
