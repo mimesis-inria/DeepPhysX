@@ -40,6 +40,7 @@ class DatabaseManager:
         self.dataset_dir: str = join(session, 'dataset')
         self.database: Optional[Database] = None
         self.pipeline: str = pipeline
+        root = get_first_caller()
 
         # Dataset parameters
         self.max_file_size: int = database_config.max_file_size
@@ -50,8 +51,8 @@ class DatabaseManager:
         self.recompute_normalization: bool = database_config.recompute_normalization
 
         # Dataset modes
-        self.modes: List[str] = ['training', 'validation', 'running']
-        self.mode: str = 'training' if produce_data or pipeline == 'training' else 'running'
+        self.modes: List[str] = ['training', 'validation', 'prediction']
+        self.mode: str = 'training' if produce_data or pipeline == 'training' else 'prediction'
         self.mode = self.mode if database_config.mode is None else database_config.mode
 
         # Dataset partitions
@@ -74,40 +75,58 @@ class DatabaseManager:
                                                         'normalization': {}}
         self.json_content: Dict[str, Dict[str, Any]] = self.json_default.copy()
 
-        # Produce training data
-        root = get_first_caller()
-        if produce_data:
-            # Produce training data in a new session
+        # DataGeneration case
+        if self.pipeline == 'data_generation':
+            # Generate data in a new session
             if new_session:
-                # Produce training data in a new session from scratch
-                # --> Create a new  '/dataset' directory
+                # Generate data from scratch --> create a new directory
                 if database_config.existing_dir is None:
-                    create_dir(session_dir=session,
-                               session_name='dataset')
+                    create_dir(session_dir=session, session_name='dataset')
                     self.create_partition()
-                # Produce training data in a new session from an existing Dataset
-                # --> Copy the 'existing_dir/dataset' directory then load the 'session/dataset' directory
+                # Complete a Database in a new session
                 else:
-                    copy_dir(src_dir=join(root, database_config.existing_dir),
-                             dest_dir=session,
+                    copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
                              sub_folders='dataset')
-                    self.load_directory()
-            # Produce training data in an existing session
-            # --> Load the 'session/dataset' directory
+                    self.load_directory(last_partition=True)
+            # Complete a Database in the same session
             else:
-                self.load_directory()
-        # Load training data
+                self.load_directory(last_partition=True)
+
+
         else:
-            # Load training data in a new session
-            # --> Link to the 'existing_dir/dataset' directory the load the 'session/dataset' directory
-            if new_session:
-                symlink(src=join(root, database_config.existing_dir, 'dataset'),
-                        dst=join(session, 'dataset'))
-                self.load_directory()
-            # Load training data in an existing session
-            # --> Load the 'session/dataset' directory
+            # Produce training data
+            if produce_data:
+                # Produce training data in a new session
+                if new_session:
+                    # Produce training data in a new session from scratch
+                    # --> Create a new  '/dataset' directory
+                    if database_config.existing_dir is None:
+                        create_dir(session_dir=session,
+                                   session_name='dataset')
+                        self.create_partition()
+                    # Produce training data in a new session from an existing Dataset
+                    # --> Copy the 'existing_dir/dataset' directory then load the 'session/dataset' directory
+                    else:
+                        copy_dir(src_dir=join(root, database_config.existing_dir),
+                                 dest_dir=session,
+                                 sub_folders='dataset')
+                        self.load_directory()
+                # Produce training data in an existing session
+                # --> Load the 'session/dataset' directory
+                else:
+                    self.load_directory()
+            # Load training data
             else:
-                self.load_directory()
+                # Load training data in a new session
+                # --> Link to the 'existing_dir/dataset' directory the load the 'session/dataset' directory
+                if new_session:
+                    symlink(src=join(root, database_config.existing_dir, 'dataset'),
+                            dst=join(session, 'dataset'))
+                    self.load_directory()
+                # Load training data in an existing session
+                # --> Load the 'session/dataset' directory
+                else:
+                    self.load_directory()
 
     def create_partition(self):
         """
@@ -120,7 +139,6 @@ class DatabaseManager:
         self.database.create_table(table_name='Training')
         self.database.create_table(table_name='Additional')
         self.partitions[self.mode].append(self.current_partition)
-        self.partition_index[self.mode] += 1
 
     def additional_partition(self):
 
@@ -138,6 +156,7 @@ class DatabaseManager:
                 self.database.remove_table(table_name='Prediction')
 
         # 2. Create a new Database
+        self.partition_index[self.mode] += 1
         self.create_partition()
 
         # 3. Re-create the Fields if this is not the first partition
@@ -149,7 +168,8 @@ class DatabaseManager:
         # 4. Tell the other components to communicate on a new DB
         self.data_manager.change_database()
 
-    def load_directory(self):
+    def load_directory(self,
+                       last_partition: bool):
         """
 
         """
@@ -177,9 +197,13 @@ class DatabaseManager:
             self.update_json(update_normalization=True)
 
         # 5. Load the Database
-        self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
-        self.database = Database(database_dir=self.dataset_dir,
-                                 database_name=self.current_partition).load()
+        if len(self.partitions[self.mode]) == 0:
+            self.create_partition()
+        else:
+            self.partition_index[self.mode] = len(self.partitions[self.mode]) - 1 if last_partition else 0
+            self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
+            self.database = Database(database_dir=self.dataset_dir,
+                                     database_name=self.current_partition).load()
 
         # 6. Shuffle Database indices
         if self.shuffle:
@@ -232,7 +256,7 @@ class DatabaseManager:
 
         # Update number of samples
         if update_nb_samples:
-            if len(self.json_content['nb_samples'][self.mode]) == self.partition_index[self.mode]:
+            if len(self.json_content['nb_samples'][self.mode]) == self.partition_index[self.mode] + 1:
                 self.json_content['nb_samples'][self.mode][-1] = self.nb_samples
             else:
                 self.json_content['nb_samples'][self.mode].append(self.nb_samples)

@@ -37,7 +37,7 @@ class BaseDatabaseConfig:
         if mode is not None:
             if type(mode) != str:
                 raise TypeError(f"[{self.name}] The given 'mode'={mode} must be a str.")
-            if mode.lower() not in (available_modes := ['training', 'validation', 'running']):
+            if mode.lower() not in (available_modes := ['training', 'validation', 'prediction']):
                 raise ValueError(f"[{self.name}] The given 'mode'={mode} must be in {available_modes}.")
         if max_file_size is not None:
             if type(max_file_size) not in [int, float]:
