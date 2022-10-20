@@ -83,50 +83,45 @@ class DatabaseManager:
                 if database_config.existing_dir is None:
                     create_dir(session_dir=session, session_name='dataset')
                     self.create_partition()
-                # Complete a Database in a new session
+                # Complete a Database in a new session --> copy and load the existing directory
                 else:
                     copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
                              sub_folders='dataset')
                     self.load_directory(last_partition=True)
-            # Complete a Database in the same session
+            # Complete a Database in the same session --> load the directory
             else:
                 self.load_directory(last_partition=True)
 
-
+        # Training and prediction cases
         else:
-            # Produce training data
+
+            # Generate data
             if produce_data:
-                # Produce training data in a new session
+                # Generate data in a new session
                 if new_session:
-                    # Produce training data in a new session from scratch
-                    # --> Create a new  '/dataset' directory
+                    # Generate data from scratch --> create a new directory
                     if database_config.existing_dir is None:
-                        create_dir(session_dir=session,
-                                   session_name='dataset')
+                        create_dir(session_dir=session, session_name='dataset')
                         self.create_partition()
-                    # Produce training data in a new session from an existing Dataset
-                    # --> Copy the 'existing_dir/dataset' directory then load the 'session/dataset' directory
+                    # Complete a Database in a new session --> copy and load the existing directory
                     else:
-                        copy_dir(src_dir=join(root, database_config.existing_dir),
-                                 dest_dir=session,
+                        copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
                                  sub_folders='dataset')
-                        self.load_directory()
-                # Produce training data in an existing session
-                # --> Load the 'session/dataset' directory
+                        self.load_directory(last_partition=False)
+                # Complete a Database in the same directory --> load the directory
                 else:
-                    self.load_directory()
-            # Load training data
+                    self.load_directory(last_partition=False)
+
+            # Load data
             else:
-                # Load training data in a new session
-                # --> Link to the 'existing_dir/dataset' directory the load the 'session/dataset' directory
+                # Load data in a new session  --> link and load the existing directory
                 if new_session:
                     symlink(src=join(root, database_config.existing_dir, 'dataset'),
                             dst=join(session, 'dataset'))
-                    self.load_directory()
-                # Load training data in an existing session
-                # --> Load the 'session/dataset' directory
+                    self.load_directory(last_partition=False)
+                # Load data in the same session  --> load the directory
                 else:
-                    self.load_directory()
+                    self.load_directory(last_partition=False)
 
     def create_partition(self):
         """
