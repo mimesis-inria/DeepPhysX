@@ -246,10 +246,11 @@ class BaseEnvironment(TcpIpClient):
 
     def _update_training_data(self,
                               line_id: int) -> None:
-        self.database.update(table_name='Training',
-                             data=self.__training_data,
-                             line_id=line_id)
-        if self.sample_additional is not None:
+        if self.__training_data != {}:
+            self.database.update(table_name='Training',
+                                 data=self.__training_data,
+                                 line_id=line_id)
+        if self.__additional_data != {}:
             self.database.update(table_name='Additional',
                                  data=self.__additional_data,
                                  line_id=line_id)
