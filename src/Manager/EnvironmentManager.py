@@ -91,7 +91,8 @@ class EnvironmentManager:
         return self.server.get_batch(animate)
 
     def get_data_from_environment(self,
-                                  animate: bool = True) -> List[int]:
+                                  animate: bool = True,
+                                  request_prediction: bool = False) -> List[int]:
         """
         Compute a batch of data directly from Environment.
 
@@ -125,6 +126,8 @@ class EnvironmentManager:
                 else:
                     self.environment._update_training_data(update_line)
                     dataset_lines.append(update_line)
+                if request_prediction:
+                    self.environment._get_prediction()
                 self.environment._reset_training_data()
 
         return dataset_lines
@@ -147,7 +150,8 @@ class EnvironmentManager:
 
     def dispatch_batch_to_environment(self,
                                       data_lines: List[int],
-                                      animate: bool = True) -> None:
+                                      animate: bool = True,
+                                      request_prediction: bool = False) -> None:
         """
         Send samples from dataset to the Environments. Get back the training data.
 
@@ -159,7 +163,12 @@ class EnvironmentManager:
         # Define the batch to dispatch
         self.dataset_batch = data_lines.copy()
         # Get data
-        self.get_data_from_environment(animate=animate)
+        self.get_data_from_environment(animate=animate,
+                                       request_prediction=request_prediction)
+
+    def request_prediction(self):
+
+        self.environment._get_prediction()
 
     def update_visualizer(self,
                           instance: int) -> None:

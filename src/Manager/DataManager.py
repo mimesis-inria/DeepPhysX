@@ -88,7 +88,8 @@ class DataManager:
 
     def get_data(self,
                  epoch: int = 0,
-                 animate: bool = True) -> None:
+                 animate: bool = True,
+                 request_prediction: bool = False) -> None:
         """
         Fetch data from the EnvironmentManager or the DatabaseManager according to the context.
 
@@ -124,27 +125,20 @@ class DataManager:
                     self.environment_manager = None
 
         # Prediction pipeline
-        # TODO
         else:
-            if self.database_manager is not None and not self.database_manager.new_dataset():
-                # Get data from dataset
-                data = self.database_manager.get_data(batch_size=1, get_inputs=True, get_outputs=True)
-                if self.environment_manager is not None:
-                    new_data = self.environment_manager.dispatch_batch(batch=data, animate=animate)
-                else:
-                    new_data = data
-                if len(new_data['input']) != 0:
-                    data['input'] = new_data['input']
-                if len(new_data['output']) != 0:
-                    data['output'] = new_data['output']
-                if 'loss' in new_data:
-                    data['loss'] = new_data['loss']
+
+            # Get data from Dataset
+            if self.produce_data:
+                self.data_lines = self.database_manager.get_data(batch_size=1)
+                self.environment_manager.dispatch_batch(data_lines=self.data_lines,
+                                                        animate=animate,
+                                                        request_prediction=True)
+            # Get data from Environment
             else:
-                # Get data from environment
-                data = self.environment_manager.get_data(animate=animate, get_inputs=True, get_outputs=True)
-                # Record data
+                self.data_lines = self.environment_manager.get_data(animate=animate,
+                                                                    request_prediction=True)
                 if self.database_manager is not None:
-                    self.database_manager.add_data(data)
+                    self.database_manager.add_data(self.data_lines)
 
     def get_prediction(self,
                        instance_id: int) -> None:
@@ -159,20 +153,6 @@ class DataManager:
             raise ValueError("Cannot request prediction if Manager (and then NetworkManager) does not exist.")
         self.manager.network_manager.compute_online_prediction(instance_id=instance_id,
                                                                normalization=self.normalization)
-
-    def apply_prediction(self,
-                         prediction: ndarray) -> None:
-        """
-        Apply the Network prediction in the Environment.
-
-        :param prediction: Prediction of the Network to apply.
-        """
-
-        if self.environment_manager is not None:
-            # Unapply normalization on prediction
-            prediction = self.normalize_data(prediction, 'output', reverse=True)
-            # Apply prediction
-            self.environment_manager.environment.apply_prediction(prediction)
 
     @property
     def normalization(self) -> Dict[str, List[float]]:

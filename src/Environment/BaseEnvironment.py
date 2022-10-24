@@ -312,6 +312,18 @@ class BaseEnvironment(TcpIpClient):
         del data_pred['id']
         return data_pred
 
+    def _get_prediction(self):
+        """
+
+        """
+
+        training_data = self.__training_data.copy()
+        required_fields = self.database.get_fields(table_name='Prediction')
+        for field in self.__training_data.keys():
+            if field not in required_fields:
+                del training_data[field]
+        self.apply_prediction(self.get_prediction(**training_data))
+
     def update_visualisation(self) -> None:
         """
         Triggers the Visualizer update.

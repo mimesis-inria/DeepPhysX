@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from os.path import isfile, isdir, join
-from os import listdir, symlink, sep
+from os import listdir, symlink, sep, remove
 from json import dump as json_dump
 from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt
@@ -92,8 +92,8 @@ class DatabaseManager:
             else:
                 self.load_directory(last_partition=True)
 
-        # Training and prediction cases
-        else:
+        # Training case
+        elif self.pipeline == 'training':
 
             # Generate data
             if produce_data:
@@ -122,6 +122,16 @@ class DatabaseManager:
                 # Load data in the same session  --> load the directory
                 else:
                     self.load_directory(last_partition=False)
+
+        # Prediction case
+        else:
+
+            # Generate data
+            if produce_data:
+                self.load_directory(last_partition=True)
+
+            else:
+                self.load_directory(load_partition=False)
 
     def create_partition(self):
         """
@@ -164,7 +174,8 @@ class DatabaseManager:
         self.data_manager.change_database()
 
     def load_directory(self,
-                       last_partition: bool):
+                       last_partition: bool = True,
+                       load_partition: bool = True):
         """
 
         """
@@ -192,13 +203,19 @@ class DatabaseManager:
             self.update_json(update_normalization=True)
 
         # 5. Load the Database
-        if len(self.partitions[self.mode]) == 0:
-            self.create_partition()
+        if load_partition:
+            if len(self.partitions[self.mode]) == 0:
+                self.create_partition()
+            else:
+                self.partition_index[self.mode] = len(self.partitions[self.mode]) - 1 if last_partition else 0
+                self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
+                self.database = Database(database_dir=self.dataset_dir,
+                                         database_name=self.current_partition).load()
         else:
-            self.partition_index[self.mode] = len(self.partitions[self.mode]) - 1 if last_partition else 0
-            self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
             self.database = Database(database_dir=self.dataset_dir,
-                                     database_name=self.current_partition).load()
+                                     database_name='temp').new()
+            self.database.create_table(table_name='Training')
+            self.database.create_table(table_name='Additional')
 
         # 6. Shuffle Database indices
         if self.shuffle:
@@ -350,6 +367,9 @@ class DatabaseManager:
         if self.normalize and self.pipeline == 'data_generation':
             self.update_json(update_normalization=True)
         self.database.close()
+        if self.pipeline == 'prediction' and not self.produce_data:
+            path = self.database.get_path()
+            remove(join(path[0], f'{path[1]}.db'))
 
     def change_mode(self, mode: int) -> None:
         """
