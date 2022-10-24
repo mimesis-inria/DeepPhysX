@@ -106,7 +106,7 @@ class DataManager:
         elif self.pipeline == 'training':
 
             # Get data from Environment(s) if used and if the data should be created at this epoch
-            if self.environment_manager is not None and (epoch == 0 or self.environment_manager.only_first_epoch) \
+            if self.environment_manager is not None and (epoch == 0 or not self.environment_manager.only_first_epoch) \
                     and self.produce_data:
                 self.data_lines = self.environment_manager.get_data(animate=animate)
                 self.database_manager.add_data(self.data_lines)
@@ -115,8 +115,7 @@ class DataManager:
             else:
                 self.data_lines = self.database_manager.get_data(batch_size=self.batch_size)
                 # Dispatch a batch to clients
-                if self.environment_manager is not None and (epoch == 0 or
-                                                             self.environment_manager.load_samples):
+                if self.environment_manager is not None and (epoch == 0 or self.environment_manager.load_samples):
                     self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                             animate=animate)
                 # Environment is no longer used

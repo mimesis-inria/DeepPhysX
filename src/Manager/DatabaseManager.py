@@ -294,7 +294,7 @@ class DatabaseManager:
 
         """
 
-        self.shuffle_pattern = arange(self.nb_samples)
+        self.shuffle_pattern = arange(1, self.nb_samples + 1)
         if self.shuffle:
             shuffle(self.shuffle_pattern)
 
