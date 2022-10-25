@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, Tuple
 from numpy import ndarray
 
 from SSD.Core.Storage.Database import Database
@@ -9,33 +9,35 @@ class AbstractEnvironment:
     def __init__(self,
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 0,
-                 number_of_instances: int = 1):
+                 instance_nb: int = 1,
+                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         AbstractEnvironment sets the Environment API for TcpIpClient.
-        Do not use AbstractEnvironment to implement a personal Environment, use BaseEnvironment instead.
+        Do not use AbstractEnvironment to implement an Environment, use BaseEnvironment instead.
 
-        :param instance_id: ID of the instance.
-        :param number_of_instances: Number of simultaneously launched instances.
-        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
+        :param as_tcp_ip_client: If True, the Environment is a TcpIpObject, else it is owned by an EnvironmentManager.
+        :param instance_id: Index of this instance.
+        :param instance_nb: Number of simultaneously launched instances.
         """
 
         self.name: str = self.__class__.__name__ + f" n°{instance_id}"
 
         # TcpIpClient variables
-        if instance_id > number_of_instances:
+        if instance_id > instance_nb:
             raise ValueError(f"[{self.name}] Instance ID ({instance_id}) is bigger than max instances "
-                             f"({number_of_instances}).")
+                             f"({instance_nb}).")
         self.as_tcp_ip_client: bool = as_tcp_ip_client
         self.instance_id: int = instance_id
-        self.number_of_instances: int = number_of_instances
+        self.instance_nb: int = instance_nb
+
+        # Manager of the Environment
+        self.environment_manager: Any = None
+        self.tcp_ip_client: Any = None
 
         # Training data variables
-        self.__training_data: Dict[str, ndarray] = {}
-        self.__additional_data: Dict[str, ndarray] = {}
         self.compute_training_data: bool = True
 
         # Dataset data variables
-        self.database: Optional[Database] = None
         self.update_line: Optional[int] = None
         self.sample_training: Optional[Dict[str, Any]] = None
         self.sample_additional: Optional[Dict[str, Any]] = None
@@ -50,13 +52,13 @@ class AbstractEnvironment:
         raise NotImplementedError
 
     def init(self) -> None:
-        pass
+        raise NotImplementedError
 
     def init_database(self) -> None:
         raise NotImplementedError
 
     def init_visualization(self) -> None:
-        pass
+        raise NotImplementedError
 
     ##########################################################################################
     ##########################################################################################
@@ -68,13 +70,13 @@ class AbstractEnvironment:
         raise NotImplementedError
 
     def check_sample(self) -> bool:
-        return True
+        raise NotImplementedError
 
     def apply_prediction(self, prediction: Dict[str, ndarray]) -> None:
-        pass
+        raise NotImplementedError
 
     def close(self) -> None:
-        pass
+        raise NotImplementedError
 
     ##########################################################################################
     ##########################################################################################
@@ -91,5 +93,5 @@ class AbstractEnvironment:
     def _update_training_data(self, line_id: int) -> None:
         raise NotImplementedError
 
-    def _get_training_data(self, line: int) -> None:
+    def _get_training_data(self, line_id: int) -> None:
         raise NotImplementedError

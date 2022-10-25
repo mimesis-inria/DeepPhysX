@@ -3,6 +3,7 @@ from os.path import dirname
 from sys import argv, path
 
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment as Environment
+from DeepPhysX.Core.AsyncSocket.TcpIpClient import TcpIpClient
 
 if __name__ == '__main__':
 
@@ -20,12 +21,11 @@ if __name__ == '__main__':
     # Create, init and run Tcp-Ip environment
     training_db = None if argv[7] == 'None' else [s[1:-1] for s in argv[7][1:-1].split(', ')]
     visualization_db = None if argv[8] == 'None' else [s[1:-1] for s in argv[8][1:-1].split(', ')]
-    client = Environment(ip_address=argv[3],
+    client = TcpIpClient(environment=Environment,
+                         ip_address=argv[3],
                          port=int(argv[4]),
                          instance_id=int(argv[5]),
-                         number_of_instances=int(argv[6]),
-                         training_db=training_db,
-                         visualization_db=visualization_db)
+                         instance_nb=int(argv[6]))
     client.initialize()
     client.launch()
 

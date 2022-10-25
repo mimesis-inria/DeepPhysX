@@ -1,5 +1,5 @@
 from typing import Optional
-from os.path import join, sep
+from os.path import join, sep, exists
 from sys import stdout
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
@@ -17,6 +17,7 @@ class BaseDataGeneration(BasePipeline):
                  database_config: Optional[BaseDatabaseConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
+                 new_session: bool = True,
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
@@ -26,6 +27,7 @@ class BaseDataGeneration(BasePipeline):
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Relative path to the directory which contains sessions directories.
         :param session_name: Name of the new the session directory.
+        :param new_session: If True, the session will be run in a new repository.
         :param batch_nb: Number of batches to produce.
         :param batch_size: Number of samples in a single batch.
         """
@@ -35,30 +37,19 @@ class BaseDataGeneration(BasePipeline):
                               environment_config=environment_config,
                               session_dir=session_dir,
                               session_name=session_name,
+                              new_session=new_session,
                               pipeline='data_generation')
 
         # Define the session repository
         root = get_first_caller()
         session_dir = join(root, session_dir)
 
-        # Configure 'new_session' flags
-        # Option 1: existing_dir == None --> new_session = True
-        # Option 2: existing_dir == session_dir/session_name --> new_session = False
-        # Option 3: existing_dir != session_dir/session_name --> new_session = True
-        new_session = True
-        if database_config is not None and database_config.existing_dir is not None and \
-                join(session_dir, session_name) == join(root, database_config.existing_dir):
-            new_session = False
-
         # Create a new session if required
+        if not new_session:
+            new_session = not exists(session_dir)
         if new_session:
             session_name = create_dir(session_dir=session_dir,
                                       session_name=session_name).split(sep)[-1]
-
-        # Data generation variables
-        self.batch_nb: int = batch_nb
-        self.batch_id: int = 0
-        self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
 
         # Create a DataManager
         self.data_manager = DataManager(database_config=database_config,
@@ -68,6 +59,11 @@ class BaseDataGeneration(BasePipeline):
                                         pipeline='data_generation',
                                         produce_data=True,
                                         batch_size=batch_size)
+
+        # Data generation variables
+        self.batch_nb: int = batch_nb
+        self.batch_id: int = 0
+        self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
 
     def execute(self) -> None:
         """

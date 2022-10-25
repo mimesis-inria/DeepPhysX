@@ -5,67 +5,44 @@ from os.path import isfile, join
 from SSD.Core.Storage.Database import Database
 
 from DeepPhysX.Core.Visualization.VedoFactory import VedoFactory
-from DeepPhysX.Core.AsyncSocket.TcpIpClient import TcpIpClient
+from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
+from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
 
-class BaseEnvironment(TcpIpClient):
+class BaseEnvironment(AbstractEnvironment):
 
     def __init__(self,
-                 ip_address: str = 'localhost',
-                 port: int = 10000,
-                 instance_id: int = 0,
-                 number_of_instances: int = 1,
                  as_tcp_ip_client: bool = True,
-                 environment_manager: Optional[Any] = None,
-                 training_db: Optional[Union[Database, Tuple[str, str]]] = None,
+                 instance_id: int = 0,
+                 instance_nb: int = 1,
                  visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         BaseEnvironment is an environment class to compute simulated data for the network and its optimization process.
 
-        :param ip_address: IP address of the TcpIpObject.
-        :param port: Port number of the TcpIpObject.
         :param instance_id: ID of the instance.
-        :param number_of_instances: Number of simultaneously launched instances.
-        :param as_tcp_ip_client: Environment is owned by a TcpIpClient if True, by an EnvironmentManager if False.
-        :param environment_manager: EnvironmentManager that handles the Environment if 'as_tcp_ip_client' is False.
+        :param instance_nb: Number of simultaneously launched instances.
+        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
         :param visualization_db: The path to the visualization Database or the visualization Database object to connect to.
         """
 
-        TcpIpClient.__init__(self,
-                             instance_id=instance_id,
-                             number_of_instances=number_of_instances,
-                             as_tcp_ip_client=as_tcp_ip_client,
-                             ip_address=ip_address,
-                             port=port)
+        AbstractEnvironment.__init__(self,
+                                     as_tcp_ip_client=as_tcp_ip_client,
+                                     instance_id=instance_id,
+                                     instance_nb=instance_nb)
 
         # Training data variables
-        self.__training_data: Dict[str, ndarray] = {}
-        self.__additional_data: Dict[str, ndarray] = {}
+        self.__data_training: Dict[str, ndarray] = {}
+        self.__data_additional: Dict[str, ndarray] = {}
         self.compute_training_data: bool = True
 
         # Dataset data variables
-        self.database: Optional[Database] = None
         self.update_line: Optional[int] = None
         self.sample_training: Optional[Dict[str, Any]] = None
         self.sample_additional: Optional[Dict[str, Any]] = None
         self.__first_add: List[bool] = [True, True]
 
-        # Manager if the Environment is not a TcpIpClient
-        self.environment_manager: Any = environment_manager
-
         # Connect the Environment to the data Database
-        self.database: Optional[Database] = None
-        if training_db is not None:
-            if type(training_db) == list:
-                self.database = Database(database_dir=training_db[0],
-                                         database_name=training_db[1]).load()
-            else:
-                self.database = training_db
-            if self.instance_id == 1:
-                self.database.create_fields(table_name='Training',
-                                            fields=('env_id', int))
-                self.database.create_fields(table_name='Additional',
-                                            fields=('env_id', int))
+        self.__database_handler = DatabaseHandler(on_init_handler=self.__database_handler_init)
 
         # Connect the Factory to the visualization Database
         self.factory: Optional[VedoFactory] = None
@@ -83,6 +60,16 @@ class BaseEnvironment(TcpIpClient):
     #                                 Initializing Environment                               #
     ##########################################################################################
     ##########################################################################################
+
+    def __database_handler_init(self):
+        if self.instance_id == 1:
+            self.__database_handler.create_fields(table_name='Training',
+                                                  fields=('env_id', int))
+            self.__database_handler.create_fields(table_name='Additional',
+                                                  fields=('env_id', int))
+
+    def get_database_handler(self) -> DatabaseHandler:
+        return self.__database_handler
 
     def create(self) -> None:
         """
@@ -169,7 +156,7 @@ class BaseEnvironment(TcpIpClient):
         Save a set of parameters in the Database.
         """
 
-        database_dir = self.database.get_path()[0]
+        database_dir = self.__database_handler.get_database_dir()
         if isfile(join(database_dir, 'environment_parameters.db')):
             database = Database(database_dir=database_dir,
                                 database_name='environment_parameters').load()
@@ -186,7 +173,7 @@ class BaseEnvironment(TcpIpClient):
         Load a set of parameters from the Database.
         """
 
-        database_dir = self.database.get_path()[0]
+        database_dir = self.__database_handler.get_database_dir()
         if isfile(join(database_dir, 'environment_parameters.db')):
             database = Database(database_dir=database_dir,
                                 database_name='environment_parameters').load()
@@ -196,14 +183,12 @@ class BaseEnvironment(TcpIpClient):
         return {}
 
     def define_training_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.database.load()
-        if len(self.database.get_fields(table_name='Training')) == 2:
-            self.database.create_fields(table_name='Training', fields=fields)
+        self.__database_handler.define_fields(table_name='Training',
+                                              fields=fields)
 
     def define_additional_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.database.load()
-        if len(self.database.get_fields(table_name='Additional')) == 2:
-            self.database.create_fields(table_name='Additional', fields=fields)
+        self.__database_handler.define_fields(table_name='Additional',
+                                              fields=fields)
 
     def set_training_data(self, **kwargs) -> None:
         """
@@ -213,9 +198,9 @@ class BaseEnvironment(TcpIpClient):
         # Check kwargs
         if self.__first_add[0]:
             if self.instance_id != 0:
-                self.database.load()
+                self.__database_handler.load()
             self.__first_add[0] = False
-            required_fields = list(set(self.database.get_fields(table_name='Training')) - {'id', 'env_id'})
+            required_fields = list(set(self.__database_handler.get_fields(table_name='Training')) - {'id', 'env_id'})
             for field in kwargs.keys():
                 if field not in required_fields:
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
@@ -227,21 +212,21 @@ class BaseEnvironment(TcpIpClient):
 
         # Training data is set if the Environment can compute data
         if self.compute_training_data:
-            self.__training_data = kwargs
-            self.__training_data['env_id'] = self.instance_id
+            self.__data_training = kwargs
+            self.__data_training['env_id'] = self.instance_id
 
     def set_additional_data(self,
                             **kwargs) -> None:
         # Additional data is also set if the Environment can compute data
         if self.compute_training_data:
-            self.__additional_data = kwargs
-            self.__additional_data['env_id'] = self.instance_id
+            self.__data_additional = kwargs
+            self.__data_additional['env_id'] = self.instance_id
 
     def _send_training_data(self) -> int:
-        line_id = self.database.add_data(table_name='Training',
-                                         data=self.__training_data)
-        self.database.add_data(table_name='Additional',
-                               data=self.__additional_data)
+        line_id = self.__database_handler.add_data(table_name='Training',
+                                                   data=self.__data_training)
+        self.__database_handler.add_data(table_name='Additional',
+                                         data=self.__data_additional)
         return line_id
 
     def _reset_training_data(self) -> None:
@@ -254,21 +239,21 @@ class BaseEnvironment(TcpIpClient):
     def _update_training_data(self,
                               line_id: int) -> None:
         if self.__training_data != {}:
-            self.database.update(table_name='Training',
-                                 data=self.__training_data,
-                                 line_id=line_id)
+            self.__database_handler.update(table_name='Training',
+                                           data=self.__training_data,
+                                           line_id=line_id)
         if self.__additional_data != {}:
-            self.database.update(table_name='Additional',
-                                 data=self.__additional_data,
-                                 line_id=line_id)
+            self.__database_handler.update(table_name='Additional',
+                                           data=self.__additional_data,
+                                           line_id=line_id)
 
     def _get_training_data(self,
-                           line: int) -> None:
+                           line: List[int]) -> None:
         self.update_line = line
-        self.sample_training = self.database.get_line(table_name='Training',
-                                                      line_id=line)
-        self.sample_additional = self.database.get_line(table_name='Additional',
-                                                        line_id=line)
+        self.sample_training = self.__database_handler.get_line(table_name='Training',
+                                                                line_id=line)
+        self.sample_additional = self.__database_handler.get_line(table_name='Additional',
+                                                                  line_id=line)
         self.sample_additional = None if len(self.sample_additional) == 1 else self.sample_additional
 
     ##########################################################################################
@@ -287,9 +272,9 @@ class BaseEnvironment(TcpIpClient):
         # Check kwargs
         if self.__first_add[1]:
             if self.instance_id != 0:
-                self.database.load()
+                self.__database_handler.load()
             self.__first_add[1] = False
-            required_fields = list(set(self.database.get_fields(table_name='Prediction')) - {'id'})
+            required_fields = list(set(self.__database_handler.get_fields(table_name='Prediction')) - {'id'})
             for field in kwargs.keys():
                 if field not in required_fields:
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
@@ -303,12 +288,12 @@ class BaseEnvironment(TcpIpClient):
         if self.environment_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
         # Get a prediction
-        self.database.update(table_name='Prediction',
-                             data=kwargs,
-                             line_id=self.instance_id)
+        self.__database_handler.update(table_name='Prediction',
+                                       data=kwargs,
+                                       line_id=self.instance_id)
         self.environment_manager.data_manager.get_prediction(self.instance_id)
-        data_pred = self.database.get_line(table_name='Prediction',
-                                           line_id=self.instance_id)
+        data_pred = self.__database_handler.get_line(table_name='Prediction',
+                                                     line_id=[0, self.instance_id])
         del data_pred['id']
         return data_pred
 
@@ -318,7 +303,7 @@ class BaseEnvironment(TcpIpClient):
         """
 
         training_data = self.__training_data.copy()
-        required_fields = self.database.get_fields(table_name='Prediction')
+        required_fields = self.__database_handler.get_fields(table_name='Prediction')
         for field in self.__training_data.keys():
             if field not in required_fields:
                 del training_data[field]

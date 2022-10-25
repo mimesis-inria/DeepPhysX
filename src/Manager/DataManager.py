@@ -40,6 +40,7 @@ class DataManager:
         self.manager: Optional[Any] = manager
         self.database_manager: Optional[DatabaseManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
+        self.connected_managers: List[Any] = []
 
         # Create a DatabaseManager
         self.database_manager = DatabaseManager(database_config=database_config,
@@ -48,14 +49,12 @@ class DataManager:
                                                 new_session=new_session,
                                                 pipeline=pipeline,
                                                 produce_data=produce_data)
-        training_db = self.database_manager.database
 
         # Create an EnvironmentManager if required
         if environment_config is not None:
             self.environment_manager = EnvironmentManager(environment_config=environment_config,
                                                           data_manager=self,
                                                           session=session,
-                                                          training_db=training_db,
                                                           batch_size=batch_size)
 
         # DataManager variables
@@ -73,12 +72,18 @@ class DataManager:
 
         return self.manager
 
+    def connect_handler(self, handler):
+        self.database_manager.connect_handler(handler)
+
     def get_database(self) -> Database:
         return self.database_manager.database
 
+    def connect_manager(self, manager: Any):
+        self.connected_managers.append(manager)
+
     def change_database(self) -> None:
-        self.manager.change_database(self.database_manager.database)
-        self.environment_manager.change_database(self.database_manager.database)
+        for manager in self.connected_managers:
+            manager.change_database(self.database_manager.database)
 
     @property
     def nb_environment(self):

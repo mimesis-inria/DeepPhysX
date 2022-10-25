@@ -157,31 +157,20 @@ class BaseEnvironmentConfig:
              str(training_db), str(visualization_db)])
 
     def create_environment(self,
-                           environment_manager: Any,
-                           training_db: Optional[Database] = None,
                            visualization_db: Optional[Any] = None) -> BaseEnvironment:
         """
         Create an Environment that will not be a TcpIpObject.
 
-        :param environment_manager: EnvironmentManager that handles the Environment.
-        :param training_db: Path of the training Database to connect to.
         :param visualization_db: Path to the visualization Database to connect to.
         :return: Environment object.
         """
 
         # Create instance
-        environment = self.environment_class(environment_manager=environment_manager,
-                                             as_tcp_ip_client=False,
-                                             training_db=training_db,
+        environment = self.environment_class(as_tcp_ip_client=False,
                                              visualization_db=visualization_db)
         if not isinstance(environment, BaseEnvironment):
             raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "
                             f"BaseEnvironment.")
-        # Create & Init Environment
-        environment.create()
-        environment.init()
-        environment.init_database()
-        environment.init_visualization()
         return environment
 
     def __str__(self) -> str:

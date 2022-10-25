@@ -14,7 +14,6 @@ class EnvironmentManager:
                  environment_config: BaseEnvironmentConfig,
                  data_manager: Optional[Any] = None,
                  session: str = 'sessions/default',
-                 training_db: Optional[Database] = None,
                  batch_size: int = 1):
         """
         Deals with the online generation of data for both training and running of the neural networks.
@@ -54,15 +53,22 @@ class EnvironmentManager:
         if environment_config.as_tcp_ip_client:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           training_db=training_db if training_db is None else training_db.get_path(),
-                                                           visualization_db=visualization_db if visualization_db is None else visualization_db.get_path())
+                                                           visualization_db=None if visualization_db is None else visualization_db.get_path())
             self.data_manager.get_database().load()
         else:
-            self.environment = environment_config.create_environment(environment_manager=self,
-                                                                     training_db=training_db,
-                                                                     visualization_db=visualization_db)
+            self.environment = environment_config.create_environment(visualization_db=visualization_db)
+            self.environment.environment_manager = self
+            self.data_manager.connect_handler(self.environment.get_database_handler())
+
+            # Create & Init Environment
+            self.environment.create()
+            self.environment.init()
+            self.environment.init_database()
+            self.environment.init_visualization()
+
 
         # Define get_data and dispatch methods
+        self.get_database_handler = self.get_server_database_handler if self.server else self.get_environment_database_handler
         self.change_database = self.change_database_in_server if self.server else self.change_database_in_environment
         self.get_data = self.get_data_from_server if self.server else self.get_data_from_environment
         self.dispatch_batch = self.dispatch_batch_to_server if self.server else self.dispatch_batch_to_environment
@@ -72,6 +78,12 @@ class EnvironmentManager:
             if len(self.visualizer.get_database().get_tables()) == 1:
                 self.visualizer.get_database().load()
             self.visualizer.init_visualizer()
+
+    def get_server_database_handler(self):
+        return self.server.get_database_handler()
+
+    def get_environment_database_handler(self):
+        return self.environment.get_database_handler()
 
     def change_database_in_server(self, database: Database):
         self.server.change_database(database.get_path())

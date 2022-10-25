@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Type, Optional, Union, Tuple
 from socket import socket
 from asyncio import get_event_loop
 from asyncio import AbstractEventLoop as EventLoop
@@ -9,39 +9,41 @@ from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
 from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment, Database
 
 
-class TcpIpClient(TcpIpObject, AbstractEnvironment):
+class TcpIpClient(TcpIpObject):
 
     def __init__(self,
+                 environment: Type[AbstractEnvironment],
                  ip_address: str = 'localhost',
                  port: int = 10000,
-                 as_tcp_ip_client: bool = True,
                  instance_id: int = 0,
-                 number_of_instances: int = 1,):
+                 instance_nb: int = 1,
+                 training_db: Optional[Union[Database, Tuple[str, str]]] = None,
+                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         TcpIpClient is both a TcpIpObject which communicate with a TcpIpServer and an AbstractEnvironment to compute
         simulated data.
 
         :param ip_address: IP address of the TcpIpObject.
         :param port: Port number of the TcpIpObject.
-        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
-        :param instance_id: ID of the instance.
-        :param number_of_instances: Number of simultaneously launched instances.
+        :param instance_id: Index of this instance.
+        :param instance_nb: Number of simultaneously launched instances.
         """
 
-        AbstractEnvironment.__init__(self,
-                                     as_tcp_ip_client=as_tcp_ip_client,
-                                     instance_id=instance_id,
-                                     number_of_instances=number_of_instances)
+        TcpIpObject.__init__(self,
+                             ip_address=ip_address,
+                             port=port)
+
+        self.environment = environment(as_tcp_ip_client=True,
+                                       instance_id=instance_id,
+                                       instance_nb=instance_nb,
+                                       visualization_db=visualization_db)
+        self.environment.tcp_ip_client = self
 
         # Bind to client address
-        if self.as_tcp_ip_client:
-            TcpIpObject.__init__(self,
-                                 ip_address=ip_address,
-                                 port=port)
-            self.sock.connect((ip_address, port))
-            # Send ID
-            self.sync_send_labeled_data(data_to_send=instance_id, label="instance_ID", receiver=self.sock,
-                                        send_read_command=False)
+        self.sock.connect((ip_address, port))
+        # Send ID
+        self.sync_send_labeled_data(data_to_send=instance_id, label="instance_ID", receiver=self.sock,
+                                    send_read_command=False)
         # Flag to trigger client's shutdown
         self.close_client: bool = False
 
@@ -69,10 +71,10 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
 
         # Create the environment
-        self.create()
-        self.init()
-        self.init_database()
-        self.init_visualization()
+        self.environment.create()
+        self.environment.init()
+        self.environment.init_database()
+        self.environment.init_visualization()
 
         # Initialization done
         await self.send_command_done(loop=loop, receiver=self.sock)
@@ -85,7 +87,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
     def launch(self) -> None:
         """
-        Run __launch method with asyncio.
+        Trigger the main communication protocol with the server.
         """
 
         async_run(self.__launch())
@@ -124,7 +126,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
 
         # Close environment
         try:
-            self.close()
+            self.environment.close()
         except NotImplementedError:
             pass
         # Confirm exit command to the server
@@ -132,32 +134,6 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         await self.send_command_exit(loop=loop, receiver=self.sock)
         # Close socket
         self.sock.close()
-
-    ##########################################################################################
-    ##########################################################################################
-    #                                  Data sending to Server                                #
-    ##########################################################################################
-    ##########################################################################################
-
-    def send_prediction_data(self,
-                             network_input: ndarray,
-                             receiver: socket = None) -> ndarray:
-        """
-        Request a prediction from the Environment.
-
-        :param network_input: Data to send under the label 'input'.
-        :param receiver: TcpIpObject receiver.
-        :return: Prediction of the Network.
-        """
-
-        receiver = self.sock if receiver is None else receiver
-        # Send prediction command
-        self.sync_send_command_prediction()
-        # Send the network input
-        self.sync_send_labeled_data(data_to_send=network_input, label='input', receiver=receiver)
-        # Receive the network prediction
-        _, pred = self.sync_receive_labeled_data()
-        return pred
 
     ##########################################################################################
     ##########################################################################################
@@ -170,18 +146,17 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         """
         Request a prediction from Network.
 
-        :param input_array: Network input.
         :return: Prediction of the Network.
         """
 
         # Get a prediction
         self.database.update(table_name='Prediction',
                              data=kwargs,
-                             line_id=self.instance_id)
+                             line_id=self.environment.instance_id)
         self.sync_send_command_prediction()
         _ = self.sync_receive_data()
         data_pred = self.database.get_line(table_name='Prediction',
-                                           line_id=self.instance_id)
+                                           line_id=self.environment.instance_id)
         del data_pred['id']
         return data_pred
 
@@ -191,7 +166,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         """
 
         self.sync_send_command_visualisation()
-        self.sync_send_labeled_data(data_to_send=self.instance_id,
+        self.sync_send_labeled_data(data_to_send=self.environment.instance_id,
                                     label='instance')
 
     ##########################################################################################
@@ -234,7 +209,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         # Receive prediction
         prediction = await self.receive_data(loop=loop, sender=sender)
         # Apply the prediction in Environment
-        self.apply_prediction(prediction)
+        self.environment.apply_prediction(prediction)
 
     async def action_on_sample(self,
                                data: ndarray,
@@ -251,7 +226,7 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         """
 
         dataset_batch = await self.receive_data(loop=loop, sender=sender)
-        self._get_training_data(dataset_batch)
+        self.environment._get_training_data(dataset_batch)
 
     async def action_on_step(self,
                              data: ndarray,
@@ -271,22 +246,22 @@ class TcpIpClient(TcpIpObject, AbstractEnvironment):
         for step in range(self.simulations_per_step):
             # Compute data only on final step
             self.compute_training_data = step == self.simulations_per_step - 1
-            await self.step()
+            await self.environment.step()
 
         # If produced sample is not usable, run again
-        while not self.check_sample():
+        while not self.environment.check_sample():
             for step in range(self.simulations_per_step):
                 # Compute data only on final step
                 self.compute_training_data = step == self.simulations_per_step - 1
-                await self.step()
+                await self.environment.step()
 
         # Sent training data to Server
-        if self.update_line is None:
-            line = self._send_training_data()
+        if self.environment.update_line is None:
+            line = self.environment._send_training_data()
         else:
-            self._update_training_data(self.update_line)
-            line = self.update_line
-        self._reset_training_data()
+            self.environment._update_training_data(self.environment.update_line)
+            line = self.environment.update_line
+        self.environment._reset_training_data()
         await self.send_command_done()
         await self.send_data(data_to_send=line, loop=loop, receiver=sender)
 

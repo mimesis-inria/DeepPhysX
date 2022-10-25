@@ -19,6 +19,7 @@ class BasePipeline:
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'default',
+                 new_session: bool = True,
                  pipeline: str = ''):
         """
         Pipelines implement the main loop that defines data flow through components (Environment, Dataset, Network...).
@@ -28,6 +29,7 @@ class BasePipeline:
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Name of the directory in which to write all the necessary data.
         :param session_name: Name of the newly created directory if session is not defined.
+        :param new_session: If True, the session will be run in a new repository.
         :param pipeline: Name of the Pipeline.
         """
 
@@ -59,6 +61,7 @@ class BasePipeline:
         # Session variables
         self.session_dir = session_dir
         self.session_name = session_name
+        self.new_session = new_session
 
         # Main manager
         self.manager: Optional[Manager] = None

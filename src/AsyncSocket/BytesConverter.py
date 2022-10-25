@@ -6,12 +6,12 @@ Convertible = Union[type(None), bytes, str, bool, int, float, List, ndarray]
 
 
 class BytesConverter:
-    """
-    | Convert usual types to bytes and vice versa.
-    | Available types: None, bytes, str, bool, int, float, list, ndarray.
-    """
 
     def __init__(self):
+        """
+        Convert usual types to bytes and vice versa.
+        Available types: None, bytes, str, bool, int, float, list, ndarray.
+        """
 
         # Data to bytes conversions
         self.__data_to_bytes_conversion: Dict[type, Callable[[Convertible], bytes]] = {
@@ -42,17 +42,17 @@ class BytesConverter:
         self.size_from_bytes: Callable[[bytes], int] = lambda b: self.__bytes_to_data_conversion[int.__name__](b)
         self.int_size: int = calcsize("i")
 
-    def data_to_bytes(self, data: Convertible, as_list: bool = False) -> Union[bytes, List[bytes]]:
+    def data_to_bytes(self,
+                      data: Convertible,
+                      as_list: bool = False) -> Union[bytes, List[bytes]]:
         """
-        | Convert data to bytes.
-        | Available types: None, bytes, str, bool, signed int, float, list, ndarray.
+        Convert data to bytes.
+        Available types: None, bytes, str, bool, signed int, float, list, ndarray.
 
         :param data: Data to convert.
-        :type data: Union[type(None), bytes, str, bool, int, float, List, ndarray]
-        :param bool as_list: (For tests only, False by default)
-                             If False, the whole bytes message is returned.
-                             If True, the return will be a list of bytes fields.
-        :return: Concatenated bytes fields (Number of fields, Size of fields, Type, Data, Args)
+        :param as_list: (For tests only, False by default) If False, the whole bytes message is returned. If True, the
+                        return will be a list of bytes fields.
+        :return: Concatenated bytes fields (Number of fields, Size of fields, Type, Data, Args).
         """
 
         # Convert the type of 'data' from str to bytes
@@ -91,13 +91,14 @@ class BytesConverter:
             bytes_message += f
         return bytes_message
 
-    def bytes_to_data(self, bytes_fields: List[bytes]) -> Convertible:
+    def bytes_to_data(self,
+                      bytes_fields: List[bytes]) -> Convertible:
         """
-        | Recover data from bytes fields.
-        | Available types: None, bytes, str, bool, signed int, float, list, ndarray.
+        Recover data from bytes fields.
+        Available types: None, bytes, str, bool, signed int, float, list, ndarray.
 
-        :param List[bytes] bytes_fields: Bytes fields (Type, Data, Args)
-        :return: Converted data
+        :param bytes_fields: Bytes fields (Type, Data, Args).
+        :return: Converted data.
         """
 
         # Recover the data type

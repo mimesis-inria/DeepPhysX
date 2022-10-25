@@ -258,7 +258,7 @@ class DatasetManager:
         if data['input'].shape[0] != data['output'].shape[0]:
             raise ValueError(f"[{self.name}] Size of loaded batch mismatch for input and output "
                              f"(in: {data['input'].shape} / out: {data['output'].shape}")
-        if 'additional_data' in data.keys():
+        if '__data_additional' in data.keys():
             for field in data['additional_fields'].keys():
                 if data['additional_fields'][field].shape[0] != data['input'].shape[0]:
                     raise ValueError(f"[{self.name}] Size of loaded batch mismatch for additional field {field} "

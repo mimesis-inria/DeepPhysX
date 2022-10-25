@@ -51,9 +51,6 @@ class TcpIpObject:
             self.command_dict["visualisation"]: self.action_on_visualisation,
             self.command_dict['db']: self.action_on_change_db
         }
-        # Synchronous variables
-        # self.send_lock = Lock()
-        # self.receive_lock = Lock()
 
     ##########################################################################################
     ##########################################################################################
