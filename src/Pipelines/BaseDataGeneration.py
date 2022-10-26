@@ -46,7 +46,7 @@ class BaseDataGeneration(BasePipeline):
 
         # Create a new session if required
         if not new_session:
-            new_session = not exists(session_dir)
+            new_session = not exists(join(session_dir, session_name))
         if new_session:
             session_name = create_dir(session_dir=session_dir,
                                       session_name=session_name).split(sep)[-1]

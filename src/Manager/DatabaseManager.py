@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from os.path import isfile, isdir, join
-from os import listdir, symlink, sep, remove
+from os import listdir, symlink, sep, remove, rename
 from json import dump as json_dump
 from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt
@@ -92,10 +92,10 @@ class DatabaseManager:
                 else:
                     copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
                              sub_folders='dataset')
-                    self.load_directory(last_partition=True)
+                    self.load_directory(rename_partitions=True)
             # Complete a Database in the same session --> load the directory
             else:
-                self.load_directory(last_partition=True)
+                self.load_directory()
 
         # Training case
         elif self.pipeline == 'training':
@@ -112,10 +112,10 @@ class DatabaseManager:
                     else:
                         copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
                                  sub_folders='dataset')
-                        self.load_directory(last_partition=False)
+                        self.load_directory()
                 # Complete a Database in the same directory --> load the directory
                 else:
-                    self.load_directory(last_partition=False)
+                    self.load_directory()
 
             # Load data
             else:
@@ -123,20 +123,20 @@ class DatabaseManager:
                 if new_session:
                     symlink(src=join(root, database_config.existing_dir, 'dataset'),
                             dst=join(session, 'dataset'))
-                    self.load_directory(last_partition=False)
+                    self.load_directory()
                 # Load data in the same session  --> load the directory
                 else:
-                    self.load_directory(last_partition=False)
+                    self.load_directory()
 
         # Prediction case
         else:
 
             # Generate data
             if produce_data:
-                self.load_directory(last_partition=True)
+                self.load_directory()
 
             else:
-                self.load_directory(load_partition=False)
+                self.load_directory(load_partitions=False)
 
     def connect_handler(self,
                         handler: DatabaseHandler) -> None:
@@ -147,8 +147,8 @@ class DatabaseManager:
         self.database_handlers.append(handler)
 
     def load_directory(self,
-                       last_partition: bool = True,
-                       load_partition: bool = True):
+                       load_partitions: bool = True,
+                       rename_partitions: bool = False):
         """
 
         """
@@ -164,26 +164,36 @@ class DatabaseManager:
             with open(join(self.database_dir, 'dataset.json')) as json_file:
                 self.json_content = json_load(json_file)
 
-        # 3. Load partitions for each mode
-        self.partitions = self.json_content['partitions'] if json_found else self.search_partitions()
-
-        # 4. Update json file if not found
+        # 3. Update json file if not found
         if not json_found or self.json_content == self.json_default:
             self.search_partitions_info()
-            self.update_json(update_partitions_lists=True)
+            self.update_json()
         if self.recompute_normalization or (
                 self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
             self.update_json(update_normalization=True)
 
-        # 5. Load the Database
-        if load_partition:
-            if len(self.partitions[self.mode]) == 0:
+        # 4. Load partitions for each mode
+        self.partition_names = self.json_content['partitions']
+        self.partition_index = {mode: len(self.partition_names[mode]) for mode in self.modes}
+        if rename_partitions:
+            for mode in self.modes:
+                current_name = self.partition_template[mode].split(f'_{mode}_')[0]
+                for i, name in enumerate(self.partition_names[mode]):
+                    if name.split(f'_{mode}_')[0] != current_name:
+                        self.partition_names[mode][i] = current_name + f'_{mode}_{i}'
+                        rename(src=join(self.database_dir, f'{name}.db'),
+                               dst=join(self.database_dir, f'{self.partition_names[mode][i]}.db'))
+
+        # 5. Load the partitions
+        if load_partitions:
+            for mode in self.modes:
+                for name in self.partition_names[mode]:
+                    db = Database(database_dir=self.database_dir,
+                                  database_name=name).load()
+                    self.partitions[mode].append(db)
+            if len(self.partitions[self.mode]) == 0 or self.partitions[self.mode][-1].memory_size > self.max_file_size:
                 self.create_partition()
-            else:
-                self.partition_index[self.mode] = len(self.partitions[self.mode]) - 1 if last_partition else 0
-                self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
-                self.database = Database(database_dir=self.database_dir,
-                                         database_name=self.current_partition).load()
+
         else:
             self.database = Database(database_dir=self.database_dir,
                                      database_name='temp').new()
@@ -191,7 +201,7 @@ class DatabaseManager:
             self.database.create_table(table_name='Additional')
 
         # 6. Shuffle Database indices
-        if self.shuffle:
+        if self.shuffle and load_partitions:
             self.shuffle_samples()
 
     def create_partition(self):
@@ -230,6 +240,7 @@ class DatabaseManager:
         for handler in self.database_handlers:
             handler.update_list_partitions(self.partitions[self.mode][-1])
         self.partition_index[self.mode] += 1
+        self.update_json(update_partitions_lists=True, update_nb_samples=True)
 
     def get_partition_objects(self) -> List[Database]:
         return self.partitions[self.mode]
@@ -249,23 +260,70 @@ class DatabaseManager:
         if self.shuffle:
             self.shuffle_samples()
 
-    def search_partitions(self):
-        """
-
-        """
-
-        raw_partitions = {mode: [f for f in listdir(self.database_dir) if isfile(join(self.database_dir, f))
-                                 and f.endswith('.db') and f.__contains__(mode)] for mode in self.modes}
-        return {mode: sorted(raw_partitions[mode]) for mode in self.modes}
-
     def search_partitions_info(self):
         """
 
         """
 
-        # TODO: fill json
+        # 1. Get all the partitions
+        raw_partitions = {mode: [f for f in listdir(self.database_dir) if isfile(join(self.database_dir, f))
+                                 and f.endswith('.db') and f.__contains__(mode)] for mode in self.modes}
+        raw_partitions = {mode: [f.split('.')[0] for f in raw_partitions[mode]] for mode in self.modes}
+        self.json_content['partitions'] = {mode: sorted(raw_partitions[mode]) for mode in self.modes}
 
-        pass
+        # 2. Get the number of samples
+        for mode in self.modes:
+            for name in self.json_content['partitions'][mode]:
+                db = Database(database_dir=self.database_dir,
+                              database_name=name).load()
+                self.json_content['nb_samples'][mode].append(db.nb_lines(table_name='Training'))
+                db.close()
+
+        # 3. Get the Database architecture
+        self.json_content['architecture'] = self.get_database_architecture()
+        self.first_add = False
+
+        # 4. Get the data shapes
+        self.json_content['data_shape'] = self.get_data_shapes()
+
+    def get_database_architecture(self):
+        if len(self.json_content['partitions']['training']) != 0:
+            db = Database(database_dir=self.database_dir,
+                          database_name=self.json_content['partitions']['training'][0]).load()
+        elif len(self.json_content['partitions']['validation']) != 0:
+            db = Database(database_dir=self.database_dir,
+                          database_name=self.json_content['partitions']['validation'][0]).load()
+        else:
+            return {}
+        architecture = db.get_architecture()
+        if 'Prediction' in architecture.keys():
+            del architecture['Prediction']
+        for fields in architecture.values():
+            for field in fields.copy():
+                if field.split(' ')[0] in ['id', '_dt_']:
+                    fields.remove(field)
+        db.close()
+        return architecture
+
+    def get_data_shapes(self):
+        if len(self.json_content['partitions']['training']) != 0:
+            db = Database(database_dir=self.database_dir,
+                          database_name=self.json_content['partitions']['training'][0]).load()
+        elif len(self.json_content['partitions']['validation']) != 0:
+            db = Database(database_dir=self.database_dir,
+                          database_name=self.json_content['partitions']['validation'][0]).load()
+        else:
+            return {}
+        shapes = {}
+        for table_name, fields in self.json_content['architecture'].items():
+            if db.nb_lines(table_name=table_name) > 0:
+                data = db.get_line(table_name=table_name)
+                for field in fields:
+                    if 'NUMPY' in field:
+                        field_name = field.split(' ')[0]
+                        shapes[f'{table_name}.{field_name}'] = data[field_name].shape
+        db.close()
+        return shapes
 
     def remove_empty_partitions(self):
 
@@ -290,8 +348,6 @@ class DatabaseManager:
 
         """
 
-        database = self.partitions[self.mode][-1]
-
         # Update partitions lists
         if update_partitions_lists:
             self.json_content['partitions'] = self.partition_names
@@ -305,24 +361,11 @@ class DatabaseManager:
 
         # Update DB architecture
         if update_architecture:
-            architecture = database.get_architecture()
-            if 'Prediction' in architecture.keys():
-                del architecture['Prediction']
-            for fields in architecture.values():
-                for field in fields.copy():
-                    if field.split(' ')[0] in ['id', '_dt_']:
-                        fields.remove(field)
-            self.json_content['architecture'] = architecture
+            self.json_content['architecture'] = self.get_database_architecture()
 
         # Update data shapes
         if update_shapes:
-            for table_name, fields in self.json_content['architecture'].items():
-                if database.nb_lines(table_name=table_name) > 0:
-                    data = database.get_line(table_name=table_name)
-                    for field in fields:
-                        if 'NUMPY' in field:
-                            field_name = field.split(' ')[0]
-                            self.json_content['data_shape'][f'{table_name}.{field_name}'] = data[field_name].shape
+            self.json_content['data_shape'] = self.get_data_shapes()
 
         # Update normalization coefficients
         if update_normalization:
@@ -364,7 +407,6 @@ class DatabaseManager:
         if self.max_file_size is not None:
             if self.partitions[self.mode][-1].memory_size > self.max_file_size:
                 self.create_partition()
-                self.update_json(update_partitions_lists=True, update_nb_samples=True)
 
         # 3. Update sample counter
         self.current_sample = self.nb_samples + 1
