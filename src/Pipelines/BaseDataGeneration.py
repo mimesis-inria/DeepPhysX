@@ -52,11 +52,11 @@ class BaseDataGeneration(BasePipeline):
                                       session_name=session_name).split(sep)[-1]
 
         # Create a DataManager
-        self.data_manager = DataManager(database_config=database_config,
+        self.data_manager = DataManager(pipeline=self,
+                                        database_config=database_config,
                                         environment_config=environment_config,
                                         session=join(session_dir, session_name),
                                         new_session=new_session,
-                                        pipeline='data_generation',
                                         produce_data=True,
                                         batch_size=batch_size)
 

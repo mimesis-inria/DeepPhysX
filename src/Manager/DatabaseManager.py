@@ -3,7 +3,7 @@ from os.path import isfile, isdir, join
 from os import listdir, symlink, sep, remove, rename
 from json import dump as json_dump
 from json import load as json_load
-from numpy import arange, ndarray, array, abs, mean, sqrt
+from numpy import arange, ndarray, array, abs, mean, sqrt, empty, concatenate
 from numpy.random import shuffle
 
 from SSD.Core.Storage.Database import Database
@@ -18,10 +18,10 @@ class DatabaseManager:
 
     def __init__(self,
                  database_config: Optional[BaseDatabaseConfig] = None,
-                 session: str = 'sessions/default',
                  data_manager: Optional[Any] = None,
-                 new_session: bool = True,
                  pipeline: str = '',
+                 session: str = 'sessions/default',
+                 new_session: bool = True,
                  produce_data: bool = True):
         """
         DatabaseManager handle all operations with input / output files. Allows saving and read tensors from files.
@@ -68,8 +68,8 @@ class DatabaseManager:
         self.partitions: Dict[str, List[Database]] = {mode: [] for mode in self.modes}
 
         # Dataset indexing
-        self.shuffle_pattern: ndarray = arange(0)
-        self.current_sample: int = 1
+        self.sample_indices: ndarray = empty((0, 2), dtype=int)
+        self.sample_id: int = 0
         self.first_add = True
 
         # Dataset json file
@@ -82,6 +82,7 @@ class DatabaseManager:
 
         # DataGeneration case
         if self.pipeline == 'data_generation':
+
             # Generate data in a new session
             if new_session:
                 # Generate data from scratch --> create a new directory
@@ -138,13 +139,14 @@ class DatabaseManager:
             else:
                 self.load_directory(load_partitions=False)
 
-    def connect_handler(self,
-                        handler: DatabaseHandler) -> None:
-        if handler.remote:
-            handler.init_remote(self.get_partition_names())
-        else:
-            handler.init(self.get_partition_objects())
-        self.database_handlers.append(handler)
+        # Finally create an exchange database
+        self.exchange = Database(database_dir=self.database_dir,
+                                 database_name='Exchange').new()
+        self.exchange.create_table(table_name='Exchange')
+
+    #########################
+    # Partitions Management #
+    #########################
 
     def load_directory(self,
                        load_partitions: bool = True,
@@ -191,7 +193,9 @@ class DatabaseManager:
                     db = Database(database_dir=self.database_dir,
                                   database_name=name).load()
                     self.partitions[mode].append(db)
-            if len(self.partitions[self.mode]) == 0 or self.partitions[self.mode][-1].memory_size > self.max_file_size:
+            if len(self.partitions[self.mode]) == 0:
+                self.create_partition()
+            elif self.max_file_size is not None and self.partitions[self.mode][-1].memory_size > self.max_file_size:
                 self.create_partition()
 
         else:
@@ -200,9 +204,8 @@ class DatabaseManager:
             self.database.create_table(table_name='Training')
             self.database.create_table(table_name='Additional')
 
-        # 6. Shuffle Database indices
-        if self.shuffle and load_partitions:
-            self.shuffle_samples()
+        # 6. Index partitions
+        self.index_samples()
 
     def create_partition(self):
         """
@@ -248,17 +251,21 @@ class DatabaseManager:
     def get_partition_names(self) -> List[List[str]]:
         return [db.get_path() for db in self.partitions[self.mode]]
 
-    def load_next_partition(self):
+    def remove_empty_partitions(self):
 
-        # 1. Define next partition
-        self.partition_index[self.mode] = (self.partition_index[self.mode] + 1) % len(self.partitions[self.mode])
-        self.current_partition = self.partitions[self.mode][self.partition_index[self.mode]]
-        self.database = Database(database_dir=self.database_dir,
-                                 database_name=self.current_partition).load()
+        for mode in self.modes:
+            if len(self.partitions[mode]) > 0 and self.partitions[mode][-1].nb_lines(table_name='Training') == 0:
+                database = self.partitions[mode].pop(-1)
+                path = database.get_path()
+                remove(join(path[0], f'{path[1]}.db'))
+                self.partition_names[mode].pop(-1)
+                self.partition_index[mode] -= 1
+                self.json_content['nb_samples'][mode].pop(-1)
+                self.update_json(update_partitions_lists=True)
 
-        # 2. Shuffle
-        if self.shuffle:
-            self.shuffle_samples()
+    ##################
+    # JSON info file #
+    ##################
 
     def search_partitions_info(self):
         """
@@ -325,18 +332,6 @@ class DatabaseManager:
         db.close()
         return shapes
 
-    def remove_empty_partitions(self):
-
-        for mode in self.modes:
-            if len(self.partitions[mode]) > 0 and self.partitions[mode][-1].nb_lines(table_name='Training') == 0:
-                database = self.partitions[mode].pop(-1)
-                path = database.get_path()
-                remove(join(path[0], f'{path[1]}.db'))
-                self.partition_names[mode].pop(-1)
-                self.partition_index[mode] -= 1
-                self.json_content['nb_samples'][mode].pop(-1)
-                self.update_json(update_partitions_lists=True)
-
     def update_json(self,
                     update_partitions_lists: bool = False,
                     update_nb_samples: bool = False,
@@ -375,18 +370,34 @@ class DatabaseManager:
         with open(join(self.database_dir, 'dataset.json'), 'w') as json_file:
             json_dump(self.json_content, json_file, indent=3, cls=CustomJSONEncoder)
 
+    #########################
+    # Database read / write #
+    #########################
+
+    def connect_handler(self,
+                        handler: DatabaseHandler) -> None:
+        if handler.remote:
+            handler.init_remote(storing_partitions=self.get_partition_names(),
+                                exchange_db=self.exchange.get_path())
+        else:
+            handler.init(storing_partitions=self.get_partition_objects(),
+                         exchange_db=self.exchange)
+        self.database_handlers.append(handler)
+
+    def index_samples(self):
+
+        for i, nb_sample in enumerate(self.json_content['nb_samples'][self.mode]):
+            partition_indices = empty((nb_sample, 2), dtype=int)
+            partition_indices[:, 0] = i
+            partition_indices[:, 1] = arange(1, nb_sample + 1)
+            self.sample_indices = concatenate((self.sample_indices, partition_indices))
+        self.sample_id = 0
+        if self.shuffle:
+            shuffle(self.sample_indices)
+
     @property
     def nb_samples(self) -> int:
         return self.partitions[self.mode][-1].nb_lines(table_name='Training')
-
-    def shuffle_samples(self):
-        """
-
-        """
-
-        self.shuffle_pattern = arange(1, self.nb_samples + 1)
-        if self.shuffle:
-            shuffle(self.shuffle_pattern)
 
     def add_data(self,
                  data_lines: Optional[List[int]] = None):
@@ -408,28 +419,31 @@ class DatabaseManager:
             if self.partitions[self.mode][-1].memory_size > self.max_file_size:
                 self.create_partition()
 
-        # 3. Update sample counter
-        self.current_sample = self.nb_samples + 1
-
     def get_data(self,
-                 batch_size: int) -> List[int]:
+                 batch_size: int) -> List[List[int]]:
         """
 
         """
 
         # 1. Check if dataset is loaded and if the current sample is not the last
-        if self.current_sample > self.nb_samples:
-            self.load_next_partition()
-            self.current_sample = 1
+        if self.sample_id >= len(self.sample_indices):
+            self.index_samples()
 
         # 2. Update dataset index
-        idx = self.current_sample
-        self.current_sample += batch_size
+        idx = self.sample_id
+        self.sample_id += batch_size
 
         # 3. Get a batch of data
-        if self.shuffle:
-            return list(self.shuffle_pattern[idx:self.current_sample])
-        return list(arange(idx, self.current_sample))
+        lines = self.sample_indices[idx:self.sample_id].tolist()
+
+        # 4. Ensure the batch has th good size
+        if len(lines) < batch_size:
+            lines += self.get_data(batch_size=batch_size - len(lines))
+        return lines
+
+    ############
+    # Behavior #
+    ############
 
     def close(self):
         """
@@ -458,6 +472,10 @@ class DatabaseManager:
         """
 
         pass
+
+    #################
+    # Normalization #
+    #################
 
     def compute_normalization(self) -> Dict[str, List[float]]:
         """
@@ -543,7 +561,7 @@ class DatabaseManager:
 
     @property
     def normalization(self) -> Dict[str, List[float]]:
-        return None if self.json_content['normalization'] == {} else self.json_content['normalization']
+        return None if self.json_content['normalization'] == {} or not self.normalize else self.json_content['normalization']
 
     def load_partitions_fields(self,
                                partition: Database,

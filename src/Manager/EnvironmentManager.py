@@ -35,7 +35,7 @@ class EnvironmentManager:
         self.load_samples: bool = environment_config.load_samples
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
-        self.dataset_batch: Optional[List[int]] = None
+        self.dataset_batch: Optional[List[List[int]]] = None
 
         # Create the Visualizer
         self.visualizer: Optional[VedoVisualizer] = None
@@ -53,7 +53,8 @@ class EnvironmentManager:
         if environment_config.as_tcp_ip_client:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           visualization_db=None if visualization_db is None else visualization_db.get_path())
+                                                           visualization_db=None if visualization_db is None else
+                                                           visualization_db.get_path())
             self.data_manager.get_database().load()
         else:
             self.environment = environment_config.create_environment(visualization_db=visualization_db)

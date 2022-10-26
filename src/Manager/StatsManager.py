@@ -17,48 +17,35 @@ def generate_default_material():
 
 
 class StatsManager:
-    """
-    | Record all given values using the tensorboard framework. Open a tab in the navigator to inspect these values
-      during the training.
-
-    :param str log_dir: Path of the created directory
-    :param Manager manager: Manager that handles the StatsManager
-    :param bool keep_losses: If True Allow saving loss to .csv file
-    """
 
     def __init__(self,
                  session: str,
-                 manager: Any = None,
                  keep_losses: bool = False):
+        """
+        Record all given values using the tensorboard framework. Open a tab in the navigator to inspect these values
+        during the training.
+
+        :param str log_dir: Path of the created directory
+        :param bool keep_losses: If True Allow saving loss to .csv file
+        """
 
         self.name: str = self.__class__.__name__
 
         # Init writer
-        self.manager = manager
         self.log_dir: str = join(session, 'stats/')
         self.writer: SummaryWriter = SummaryWriter(self.log_dir)
 
         # Open Tensorboard
-        if not self.manager.debug_session:
-            tb = program.TensorBoard()
-            tb.configure(argv=[None, '--logdir', self.log_dir])
-            url = tb.launch()
-            w_open(url)
+        tb = program.TensorBoard()
+        tb.configure(argv=[None, '--logdir', self.log_dir])
+        url = tb.launch()
+        w_open(url)
 
         # Values
         self.mean: ndarray = full(4, inf)  # Contains in the 1st dimension the mean, and 2nd the variance of the mean
         self.train_loss: ndarray = array([])
         self.keep_losses: bool = keep_losses
         self.tag_dict: Dict[str, int] = {}
-
-    def get_manager(self) -> Any:
-        """
-        | Return the Manager of the StatsManager.
-
-        :return: Manager that handles the StatsManager
-        """
-
-        return self.manager
 
     def add_train_batch_loss(self, value: float, count: int) -> None:
         """

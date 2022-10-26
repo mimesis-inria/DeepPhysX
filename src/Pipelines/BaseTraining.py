@@ -1,14 +1,17 @@
 from typing import Optional
 from sys import stdout
-from os.path import join, isfile
+from os.path import join, isfile, exists, sep
 from datetime import datetime
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
-from DeepPhysX.Core.Manager.Manager import Manager
+from DeepPhysX.Core.Manager.DataManager import DataManager
+from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
+from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Utils.progressbar import Progressbar
+from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
 
 class BaseTraining(BasePipeline):
@@ -19,11 +22,11 @@ class BaseTraining(BasePipeline):
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'training',
+                 new_session: bool = True,
                  epoch_nb: int = 0,
                  batch_nb: int = 0,
                  batch_size: int = 0,
-                 new_session: bool = True,
-                 debug_session: bool = False):
+                 debug: bool = False):
         """
         BaseTraining implements the main loop that defines the training process of an artificial neural network.
         Training can be launched with several data sources (from a Dataset, from an Environment, from combined sources).
@@ -34,11 +37,11 @@ class BaseTraining(BasePipeline):
         :param environment_config: Specialisation containing the parameters of the environment manager.
         :param session_dir: Relative path to the directory which contains sessions directories.
         :param session_name: Name of the new the session directory.
+        :param new_session: Define the creation of new directories to store data.
         :param epoch_nb: Number of epochs to run.
         :param batch_nb: Number of batches to use.
         :param batch_size: Number of samples in a single batch.
-        :param new_session: Define the creation of new directories to store data.
-        :param debug_session: If True, main training features will not be launched.
+        :param debug: If True, main training features will not be launched.
         """
 
         BasePipeline.__init__(self,
@@ -47,7 +50,46 @@ class BaseTraining(BasePipeline):
                               environment_config=environment_config,
                               session_dir=session_dir,
                               session_name=session_name,
+                              new_session=new_session,
                               pipeline='training')
+
+        # Define the session repository
+        root = get_first_caller()
+        session_dir = join(root, session_dir)
+
+        # Create a new session if required
+        if not new_session:
+            new_session = not exists(join(session_dir, session_name))
+        if new_session:
+            session_name = create_dir(session_dir=session_dir,
+                                      session_name=session_name).split(sep)[-1]
+        self.session = join(session_dir, session_name)
+
+        # Configure 'produce_data' flag
+        if environment_config is None and database_config.existing_dir is None:
+            raise ValueError(f"[{self.name}] No data source provided.")
+        produce_data = database_config.existing_dir is None
+
+        # Create a DataManager
+        self.data_manager = DataManager(pipeline=self,
+                                        database_config=database_config,
+                                        environment_config=environment_config,
+                                        session=self.session,
+                                        new_session=new_session,
+                                        produce_data=produce_data,
+                                        batch_size=batch_size)
+        self.batch_size = batch_size
+
+        # Create a NetworkMmanager
+        self.network_manager = NetworkManager(network_config=network_config,
+                                              pipeline=self.type,
+                                              session=self.session,
+                                              new_session=new_session)
+        self.data_manager.connect_handler(self.network_manager.get_database_handler())
+        self.network_manager.link_clients(self.data_manager.nb_environment)
+
+        # Create a StatsManager
+        self.stats_manager = StatsManager(session=self.session) if not debug else None
 
         # Training variables
         self.epoch_nb = epoch_nb
@@ -57,12 +99,7 @@ class BaseTraining(BasePipeline):
         self.batch_id = 0
         self.nb_samples = batch_nb * batch_size * epoch_nb
         self.loss_dict = None
-        self.debug = debug_session
-
-        # Configure 'produce_data' flag
-        if environment_config is None and database_config.existing_dir is None:
-            raise ValueError(f"[{self.name}] No data source provided.")
-        produce_data = database_config.existing_dir is None
+        self.debug = debug
 
         # Progressbar
         if not self.debug:
@@ -74,17 +111,7 @@ class BaseTraining(BasePipeline):
             self.progress_bar = Progressbar(start=0, stop=self.batch_nb * self.epoch_nb, c='orange',
                                             title=f'Epoch n°{epoch_id}/{epoch_nb} - Batch n°{batch_id}/{batch_nb}')
 
-        self.manager = Manager(network_config=self.network_config,
-                               database_config=self.database_config,
-                               environment_config=self.environment_config,
-                               session_dir=session_dir,
-                               session_name=session_name,
-                               new_session=new_session,
-                               pipeline='training',
-                               produce_data=produce_data,
-                               batch_size=batch_size,
-                               debug_session=debug_session)
-        self.save_info_file(self.manager.session)
+        self.save_info_file()
 
     def execute(self) -> None:
         """
@@ -152,8 +179,11 @@ class BaseTraining(BasePipeline):
         Pulls data, run a prediction and an optimizer step.
         """
 
-        self.manager.get_data(self.epoch_id)
-        _, self.loss_dict = self.manager.optimize_network()
+        self.data_manager.get_data(epoch=self.epoch_id,
+                                   animate=True)
+        _, self.loss_dict = self.network_manager.compute_prediction_and_loss(data_lines=self.data_manager.data_lines,
+                                                                             normalization=self.data_manager.normalization,
+                                                                             optimize=True)
 
     def batch_count(self) -> None:
         """
@@ -167,13 +197,14 @@ class BaseTraining(BasePipeline):
         Called one at the end of a batch production.
         """
 
-        self.manager.stats_manager.add_train_batch_loss(self.loss_dict['loss'],
-                                                        self.epoch_id * self.batch_nb + self.batch_id)
-        for key in self.loss_dict.keys():
-            if key != 'loss':
-                self.manager.stats_manager.add_custom_scalar(tag=key,
-                                                             value=self.loss_dict[key],
-                                                             count=self.epoch_id * self.batch_nb + self.batch_id)
+        if self.stats_manager is not None:
+            self.stats_manager.add_train_batch_loss(self.loss_dict['loss'],
+                                                    self.epoch_id * self.batch_nb + self.batch_id)
+            for key in self.loss_dict.keys():
+                if key != 'loss':
+                    self.stats_manager.add_custom_scalar(tag=key,
+                                                         value=self.loss_dict[key],
+                                                         count=self.epoch_id * self.batch_nb + self.batch_id)
 
     def epoch_count(self) -> None:
         """
@@ -187,29 +218,32 @@ class BaseTraining(BasePipeline):
         Called one at the end of each epoch.
         """
 
-        self.manager.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
+        if self.stats_manager is not None:
+            self.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
 
     def save_network(self) -> None:
         """
         Store the network parameters in the corresponding directory.
         """
 
-        self.manager.save_network()
+        self.network_manager.save_network()
 
     def train_end(self) -> None:
         """
         Called once at the end of the training pipeline.
         """
 
-        self.manager.close()
+        self.data_manager.close()
+        self.network_manager.close()
+        if self.stats_manager is not None:
+            self.stats_manager.close()
 
-    def save_info_file(self,
-                       directory: str) -> None:
+    def save_info_file(self) -> None:
         """
         Save a .txt file that provides a template for user notes and the description of all the components.
         """
 
-        filename = join(directory, 'info.txt')
+        filename = join(self.session, 'info.txt')
         date_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         if not isfile(filename):
             f = open(filename, "w+")
@@ -220,14 +254,17 @@ class BaseTraining(BasePipeline):
             # Listing every component descriptions
             f.write("## List of Components Parameters ##\n")
             f.write(str(self))
-            f.write(str(self.manager))
+            f.write(str(self.network_manager))
+            f.write(str(self.data_manager))
+            if self.stats_manager is not None:
+                f.write(str(self.stats_manager))
             f.close()
 
     def __str__(self) -> str:
 
         description = "\n"
         description += f"# {self.__class__.__name__}\n"
-        description += f"    Session directory: {self.manager.session}\n"
+        description += f"    Session directory: {self.session}\n"
         description += f"    Number of epochs: {self.epoch_nb}\n"
         description += f"    Number of batches per epoch: {self.batch_nb}\n"
         description += f"    Number of samples per batch: {self.batch_size}\n"

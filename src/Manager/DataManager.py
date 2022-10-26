@@ -1,5 +1,4 @@
 from typing import Any, Optional, Dict, List
-from numpy import ndarray
 
 from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager, Database
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
@@ -10,12 +9,11 @@ from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 class DataManager:
 
     def __init__(self,
+                 pipeline: Any,
                  database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
-                 manager: Optional[Any] = None,
                  session: str = 'sessions/default',
                  new_session: bool = True,
-                 pipeline: str = '',
                  produce_data: bool = True,
                  batch_size: int = 1):
 
@@ -24,30 +22,29 @@ class DataManager:
         A batch is given with a call to 'get_data' on either the DatabaseManager or the EnvironmentManager according to
         the context.
 
+        :param pipeline: Pipeline that handle the DataManager.
         :param database_config: Specialisation containing the parameters of the dataset manager.
         :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param manager: Manager that handle the DataManager
         :param session: Path to the session directory.
-        :param new_session: Flag that indicates whether if the session is new
-        :param pipeline: Flag that indicates whether if this session is training a Network.
+        :param new_session: Flag that indicates whether if the session is new.
         :param produce_data: Flag that indicates whether if this session is producing data.
-        :param int batch_size: Number of samples in a batch
+        :param int batch_size: Number of samples in a batch.
         """
 
         self.name: str = self.__class__.__name__
 
         # Managers variables
-        self.manager: Optional[Any] = manager
+        self.pipeline: Optional[Any] = pipeline
         self.database_manager: Optional[DatabaseManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
         self.connected_managers: List[Any] = []
 
         # Create a DatabaseManager
         self.database_manager = DatabaseManager(database_config=database_config,
-                                                session=session,
                                                 data_manager=self,
+                                                pipeline=pipeline.type,
+                                                session=session,
                                                 new_session=new_session,
-                                                pipeline=pipeline,
                                                 produce_data=produce_data)
 
         # Create an EnvironmentManager if required
@@ -58,19 +55,9 @@ class DataManager:
                                                           batch_size=batch_size)
 
         # DataManager variables
-        self.pipeline = pipeline
         self.produce_data = produce_data
         self.batch_size = batch_size
-        self.data_lines: List[int] = []
-
-    def get_manager(self) -> Any:
-        """
-        Return the Manager of this DataManager.
-
-        :return: The Manager of this DataManager.
-        """
-
-        return self.manager
+        self.data_lines: List[List[int]] = []
 
     def connect_handler(self, handler):
         self.database_manager.connect_handler(handler)
@@ -104,16 +91,16 @@ class DataManager:
         """
 
         # Data generation case
-        if self.pipeline == 'data_generation':
+        if self.pipeline.type == 'data_generation':
             self.environment_manager.get_data(animate=animate)
             self.database_manager.add_data()
 
         # Training case
-        elif self.pipeline == 'training':
+        elif self.pipeline.type == 'training':
 
             # Get data from Environment(s) if used and if the data should be created at this epoch
-            if self.environment_manager is not None and (epoch == 0 or not self.environment_manager.only_first_epoch) \
-                    and self.produce_data:
+            if self.environment_manager is not None and self.produce_data and \
+                    (epoch == 0 or not self.environment_manager.only_first_epoch):
                 self.data_lines = self.environment_manager.get_data(animate=animate)
                 self.database_manager.add_data(self.data_lines)
 
@@ -121,7 +108,8 @@ class DataManager:
             else:
                 self.data_lines = self.database_manager.get_data(batch_size=self.batch_size)
                 # Dispatch a batch to clients
-                if self.environment_manager is not None and (epoch == 0 or self.environment_manager.load_samples):
+                if self.environment_manager is not None and self.environment_manager.load_samples and \
+                        (epoch == 0 or not self.environment_manager.only_first_epoch):
                     self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                             animate=animate)
                 # Environment is no longer used
@@ -154,10 +142,10 @@ class DataManager:
         """
 
         # Get a prediction
-        if self.manager is None:
+        if self.pipeline is None:
             raise ValueError("Cannot request prediction if Manager (and then NetworkManager) does not exist.")
-        self.manager.network_manager.compute_online_prediction(instance_id=instance_id,
-                                                               normalization=self.normalization)
+        self.pipeline.network_manager.compute_online_prediction(instance_id=instance_id,
+                                                                normalization=self.normalization)
 
     @property
     def normalization(self) -> Dict[str, List[float]]:

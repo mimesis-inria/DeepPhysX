@@ -62,6 +62,7 @@ class BasePipeline:
         self.session_dir = session_dir
         self.session_name = session_name
         self.new_session = new_session
+        self.type = pipeline
 
         # Main manager
         self.manager: Optional[Manager] = None

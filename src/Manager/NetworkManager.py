@@ -3,8 +3,7 @@ from os import listdir
 from os.path import join, isdir, isfile
 from numpy import ndarray, array
 
-from SSD.Core.Storage.Database import Database
-
+from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Utils.path import copy_dir, create_dir
 
@@ -13,29 +12,23 @@ class NetworkManager:
 
     def __init__(self,
                  network_config: BaseNetworkConfig,
-                 manager: Optional[Any] = None,
-                 session: str = 'sessions/default',
-                 new_session: bool = True,
                  pipeline: str = '',
-                 data_db: Optional[Database] = None):
+                 session: str = 'sessions/default',
+                 new_session: bool = True):
         """
         Deals with all the interactions with the neural network: predictions, saves, initialisation, loading,
         back-propagation, etc.
 
         :param network_config: Specialisation containing the parameters of the network manager.
-        :param manager: Manager that handle the network manager.
+        :param pipeline: Type of the Pipeline.
         :param session: Path to the session directory.
         :param new_session: Define the creation of new directories to store data.
-        :param is_training: If True prediction will cause tensors gradient creation.
         """
 
         self.name: str = self.__class__.__name__
 
-        # Managers architecture
-        self.manager: Any = manager
-
         # Storage variables
-        self.data_db: Database = data_db
+        self.database_handler: DatabaseHandler = DatabaseHandler()
         self.batch: Optional[Any] = None
         self.session: str = session
         self.new_session: bool = new_session
@@ -77,16 +70,16 @@ class NetworkManager:
             self.network_dir = join(session, 'network/')
             self.load_network(which_network=network_config.which_network)
 
-    def change_database(self, database):
-        self.data_db = database
+    def get_database_handler(self):
+        return self.database_handler
 
     def link_clients(self,
                      nb_clients: Optional[int] = None):
         if nb_clients is not None:
             fields = [(field_name, ndarray) for field_name in self.network.net_fields + self.network.pred_fields]
-            self.data_db.create_table(table_name='Prediction', fields=fields)
+            self.database_handler.create_fields(table_name='Exchange', fields=fields)
             for _ in range(nb_clients):
-                self.data_db.add_data(table_name='Prediction', data={})
+                self.database_handler.add_data(table_name='Exchange', data={})
 
     def load_network(self,
                      which_network: int = -1) -> None:
@@ -115,7 +108,7 @@ class NetworkManager:
 
     def compute_prediction_and_loss(self,
                                     optimize: bool,
-                                    data_lines: List[int],
+                                    data_lines: List[List[int]],
                                     normalization: Optional[Dict[str, List[float]]] = None) -> Tuple[ndarray, Dict[str, float]]:
         """
         Make a prediction with the data passed as argument, optimize or not the network
@@ -132,11 +125,9 @@ class NetworkManager:
         for side, fields in zip(['net', 'opt'], [self.network.net_fields, self.network.opt_fields]):
 
             # Get the batch from the Database
-            batch = self.data_db.get_lines(table_name='Training',
-                                           fields=fields,
-                                           lines_id=data_lines,
-                                           batched=True)
-            del batch['id']
+            batch = self.database_handler.get_lines(table_name='Training',
+                                                    fields=fields,
+                                                    lines_id=data_lines)
 
             # Apply normalization and convert to tensor
             for field in batch.keys():

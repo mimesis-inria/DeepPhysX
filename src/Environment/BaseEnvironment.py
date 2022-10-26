@@ -183,11 +183,11 @@ class BaseEnvironment(AbstractEnvironment):
         return {}
 
     def define_training_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.__database_handler.define_fields(table_name='Training',
+        self.__database_handler.create_fields(table_name='Training',
                                               fields=fields)
 
     def define_additional_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        self.__database_handler.define_fields(table_name='Additional',
+        self.__database_handler.create_fields(table_name='Additional',
                                               fields=fields)
 
     def set_training_data(self, **kwargs) -> None:
@@ -230,21 +230,21 @@ class BaseEnvironment(AbstractEnvironment):
         return line_id
 
     def _reset_training_data(self) -> None:
-        self.__training_data = {}
-        self.__additional_data = {}
+        self.__data_training = {}
+        self.__data_additional = {}
         self.sample_training = None
         self.sample_additional = None
         self.update_line = None
 
     def _update_training_data(self,
-                              line_id: int) -> None:
-        if self.__training_data != {}:
+                              line_id: List[int]) -> None:
+        if self.__data_training != {}:
             self.__database_handler.update(table_name='Training',
-                                           data=self.__training_data,
+                                           data=self.__data_training,
                                            line_id=line_id)
-        if self.__additional_data != {}:
+        if self.__data_additional != {}:
             self.__database_handler.update(table_name='Additional',
-                                           data=self.__additional_data,
+                                           data=self.__data_additional,
                                            line_id=line_id)
 
     def _get_training_data(self,
@@ -302,9 +302,9 @@ class BaseEnvironment(AbstractEnvironment):
 
         """
 
-        training_data = self.__training_data.copy()
+        training_data = self.__data_training.copy()
         required_fields = self.__database_handler.get_fields(table_name='Prediction')
-        for field in self.__training_data.keys():
+        for field in self.__data_training.keys():
             if field not in required_fields:
                 del training_data[field]
         self.apply_prediction(self.get_prediction(**training_data))
