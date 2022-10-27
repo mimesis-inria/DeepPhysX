@@ -86,10 +86,13 @@ class DatabaseHandler:
 
     def add_data(self,
                  table_name: str,
-                 data: Dict[str, Any]) -> int:
+                 data: Dict[str, Any]) -> Union[int, List[int]]:
 
-        database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[-1]
-        return database.add_data(table_name=table_name, data=data)
+        if table_name == 'Exchange':
+            return self.__exchange_db.add_data(table_name=table_name, data=data)
+        else:
+            return [len(self.__storing_partitions) - 1,
+                    self.__storing_partitions[-1].add_data(table_name=table_name, data=data)]
 
     def update(self,
                table_name: str,

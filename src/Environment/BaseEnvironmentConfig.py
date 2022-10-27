@@ -5,8 +5,6 @@ from threading import Thread
 from subprocess import run
 from sys import modules, executable
 
-from SSD.Core.Storage.Database import Database
-
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
@@ -24,6 +22,7 @@ class BaseEnvironmentConfig:
                  max_wrong_samples_per_step: int = 10,
                  load_samples: bool = False,
                  only_first_epoch: bool = True,
+                 always_produce: bool = False,
                  visualizer: Optional[Type[VedoVisualizer]] = None,
                  record_wrong_samples: bool = False):
         """
@@ -84,6 +83,7 @@ class BaseEnvironmentConfig:
         self.max_wrong_samples_per_step: int = max_wrong_samples_per_step
         self.load_samples: bool = load_samples
         self.only_first_epoch: bool = only_first_epoch
+        self.always_produce: bool = always_produce
 
         # Visualizer variables
         self.visualizer: Optional[Type[VedoVisualizer]] = visualizer

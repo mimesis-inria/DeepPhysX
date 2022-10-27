@@ -460,6 +460,7 @@ class DatabaseManager:
         for mode in self.modes:
             for database in self.partitions[mode]:
                 database.close()
+        self.exchange.close(erase_file=True)
 
         # Remove prediction pipeline DB
         if self.pipeline == 'prediction' and not self.produce_data:

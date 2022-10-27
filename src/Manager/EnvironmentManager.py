@@ -33,6 +33,7 @@ class EnvironmentManager:
         self.batch_size: int = batch_size
         self.only_first_epoch: bool = environment_config.only_first_epoch
         self.load_samples: bool = environment_config.load_samples
+        self.always_produce: bool = environment_config.always_produce
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
         self.dataset_batch: Optional[List[List[int]]] = None
@@ -105,7 +106,7 @@ class EnvironmentManager:
 
     def get_data_from_environment(self,
                                   animate: bool = True,
-                                  request_prediction: bool = False) -> List[int]:
+                                  request_prediction: bool = False) -> List[List[int]]:
         """
         Compute a batch of data directly from Environment.
 
