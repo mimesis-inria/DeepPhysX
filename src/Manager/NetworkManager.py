@@ -174,10 +174,9 @@ class NetworkManager:
 
         # Get Network data
         normalization = {} if normalization is None else normalization
-        sample = self.data_db.get_line(table_name='Prediction',
-                                       fields=self.network.net_fields,
-                                       line_id=instance_id)
-        del sample['id']
+        sample = self.database_handler.get_line(table_name='Exchange',
+                                                fields=self.network.net_fields,
+                                                line_id=instance_id)
 
         # Apply normalization and convert to tensor
         for field in sample.keys():
@@ -201,9 +200,9 @@ class NetworkManager:
                                                        normalization=normalization[field],
                                                        reverse=True)
             data_pred[field].reshape(-1)
-        self.data_db.update(table_name='Prediction',
-                            data=data_pred,
-                            line_id=instance_id)
+        self.database_handler.update(table_name='Exchange',
+                                     data=data_pred,
+                                     line_id=instance_id)
 
     @classmethod
     def normalize_data(cls,

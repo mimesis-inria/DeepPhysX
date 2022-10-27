@@ -274,7 +274,7 @@ class BaseEnvironment(AbstractEnvironment):
             if self.instance_id != 0:
                 self.__database_handler.load()
             self.__first_add[1] = False
-            required_fields = list(set(self.__database_handler.get_fields(table_name='Prediction')) - {'id'})
+            required_fields = list(set(self.__database_handler.get_fields(table_name='Exchange')) - {'id'})
             for field in kwargs.keys():
                 if field not in required_fields:
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
@@ -288,12 +288,12 @@ class BaseEnvironment(AbstractEnvironment):
         if self.environment_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
         # Get a prediction
-        self.__database_handler.update(table_name='Prediction',
+        self.__database_handler.update(table_name='Exchange',
                                        data=kwargs,
                                        line_id=self.instance_id)
         self.environment_manager.data_manager.get_prediction(self.instance_id)
-        data_pred = self.__database_handler.get_line(table_name='Prediction',
-                                                     line_id=[0, self.instance_id])
+        data_pred = self.__database_handler.get_line(table_name='Exchange',
+                                                     line_id=self.instance_id)
         del data_pred['id']
         return data_pred
 
@@ -303,7 +303,7 @@ class BaseEnvironment(AbstractEnvironment):
         """
 
         training_data = self.__data_training.copy()
-        required_fields = self.__database_handler.get_fields(table_name='Prediction')
+        required_fields = self.__database_handler.get_fields(table_name='Exchange')
         for field in self.__data_training.keys():
             if field not in required_fields:
                 del training_data[field]

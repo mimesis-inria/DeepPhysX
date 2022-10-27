@@ -13,6 +13,7 @@ class EnvironmentManager:
     def __init__(self,
                  environment_config: BaseEnvironmentConfig,
                  data_manager: Optional[Any] = None,
+                 pipeline: str = '',
                  session: str = 'sessions/default',
                  batch_size: int = 1):
         """
@@ -48,10 +49,11 @@ class EnvironmentManager:
             visualization_db = self.visualizer.get_database()
 
         # Create a single Environment or a TcpIpServer
-        self.number_of_thread: int = environment_config.number_of_thread
+        force_local = pipeline == 'prediction'
+        self.number_of_thread: int = 1 if force_local else environment_config.number_of_thread
         self.server: Optional[TcpIpServer] = None
         self.environment: Optional[BaseEnvironment] = None
-        if environment_config.as_tcp_ip_client:
+        if environment_config.as_tcp_ip_client and not force_local:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
                                                            visualization_db=None if visualization_db is None else
@@ -106,6 +108,7 @@ class EnvironmentManager:
 
     def get_data_from_environment(self,
                                   animate: bool = True,
+                                  save_data: bool = True,
                                   request_prediction: bool = False) -> List[List[int]]:
         """
         Compute a batch of data directly from Environment.
@@ -134,14 +137,15 @@ class EnvironmentManager:
             # 1.3 Add the produced sample to the batch if the sample is validated
             if self.environment.check_sample():
                 nb_sample += 1
-                if update_line is None:
-                    new_line = self.environment._send_training_data()
-                    dataset_lines.append(new_line)
-                else:
-                    self.environment._update_training_data(update_line)
-                    dataset_lines.append(update_line)
                 if request_prediction:
                     self.environment._get_prediction()
+                if save_data:
+                    if update_line is None:
+                        new_line = self.environment._send_training_data()
+                        dataset_lines.append(new_line)
+                    else:
+                        self.environment._update_training_data(update_line)
+                        dataset_lines.append(update_line)
                 self.environment._reset_training_data()
 
         return dataset_lines
@@ -165,6 +169,7 @@ class EnvironmentManager:
     def dispatch_batch_to_environment(self,
                                       data_lines: List[int],
                                       animate: bool = True,
+                                      save_data: bool = True,
                                       request_prediction: bool = False) -> None:
         """
         Send samples from dataset to the Environments. Get back the training data.
@@ -178,6 +183,7 @@ class EnvironmentManager:
         self.dataset_batch = data_lines.copy()
         # Get data
         self.get_data_from_environment(animate=animate,
+                                       save_data=save_data,
                                        request_prediction=request_prediction)
 
     def request_prediction(self):

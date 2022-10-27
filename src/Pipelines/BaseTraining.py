@@ -80,7 +80,7 @@ class BaseTraining(BasePipeline):
                                         batch_size=batch_size)
         self.batch_size = batch_size
 
-        # Create a NetworkMmanager
+        # Create a NetworkManager
         self.network_manager = NetworkManager(network_config=network_config,
                                               pipeline=self.type,
                                               session=self.session,
@@ -130,7 +130,6 @@ class BaseTraining(BasePipeline):
                 self.batch_end()
             self.epoch_count()
             self.epoch_end()
-            self.save_network()
         self.train_end()
 
     def train_begin(self) -> None:
@@ -220,12 +219,6 @@ class BaseTraining(BasePipeline):
 
         if self.stats_manager is not None:
             self.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
-
-    def save_network(self) -> None:
-        """
-        Store the network parameters in the corresponding directory.
-        """
-
         self.network_manager.save_network()
 
     def train_end(self) -> None:
@@ -233,6 +226,7 @@ class BaseTraining(BasePipeline):
         Called once at the end of the training pipeline.
         """
 
+        self.network_manager.save_network(last_save=True)
         self.data_manager.close()
         self.network_manager.close()
         if self.stats_manager is not None:

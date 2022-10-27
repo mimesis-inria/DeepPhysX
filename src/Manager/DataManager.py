@@ -51,6 +51,7 @@ class DataManager:
         if environment_config is not None:
             self.environment_manager = EnvironmentManager(environment_config=environment_config,
                                                           data_manager=self,
+                                                          pipeline=pipeline.type,
                                                           session=session,
                                                           batch_size=batch_size)
 
@@ -80,8 +81,7 @@ class DataManager:
 
     def get_data(self,
                  epoch: int = 0,
-                 animate: bool = True,
-                 request_prediction: bool = False) -> None:
+                 animate: bool = True) -> None:
         """
         Fetch data from the EnvironmentManager or the DatabaseManager according to the context.
 
@@ -122,16 +122,18 @@ class DataManager:
         else:
 
             # Get data from Dataset
-            if self.produce_data:
+            if self.environment_manager.load_samples:
                 self.data_lines = self.database_manager.get_data(batch_size=1)
                 self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                         animate=animate,
-                                                        request_prediction=True)
+                                                        request_prediction=True,
+                                                        save_data=self.produce_data)
             # Get data from Environment
             else:
                 self.data_lines = self.environment_manager.get_data(animate=animate,
-                                                                    request_prediction=True)
-                if self.database_manager is not None:
+                                                                    request_prediction=True,
+                                                                    save_data=self.produce_data)
+                if self.produce_data:
                     self.database_manager.add_data(self.data_lines)
 
     def get_prediction(self,

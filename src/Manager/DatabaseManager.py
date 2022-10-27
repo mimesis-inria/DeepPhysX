@@ -131,13 +131,7 @@ class DatabaseManager:
 
         # Prediction case
         else:
-
-            # Generate data
-            if produce_data:
-                self.load_directory()
-
-            else:
-                self.load_directory(load_partitions=False)
+            self.load_directory()
 
         # Finally create an exchange database
         self.exchange = Database(database_dir=self.database_dir,
@@ -149,7 +143,6 @@ class DatabaseManager:
     #########################
 
     def load_directory(self,
-                       load_partitions: bool = True,
                        rename_partitions: bool = False):
         """
 
@@ -187,22 +180,15 @@ class DatabaseManager:
                                dst=join(self.database_dir, f'{self.partition_names[mode][i]}.db'))
 
         # 5. Load the partitions
-        if load_partitions:
-            for mode in self.modes:
-                for name in self.partition_names[mode]:
-                    db = Database(database_dir=self.database_dir,
-                                  database_name=name).load()
-                    self.partitions[mode].append(db)
-            if len(self.partitions[self.mode]) == 0:
-                self.create_partition()
-            elif self.max_file_size is not None and self.partitions[self.mode][-1].memory_size > self.max_file_size:
-                self.create_partition()
-
-        else:
-            self.database = Database(database_dir=self.database_dir,
-                                     database_name='temp').new()
-            self.database.create_table(table_name='Training')
-            self.database.create_table(table_name='Additional')
+        for mode in self.modes:
+            for name in self.partition_names[mode]:
+                db = Database(database_dir=self.database_dir,
+                              database_name=name).load()
+                self.partitions[mode].append(db)
+        if len(self.partitions[self.mode]) == 0:
+            self.create_partition()
+        elif self.max_file_size is not None and self.partitions[self.mode][-1].memory_size > self.max_file_size:
+            self.create_partition()
 
         # 6. Index partitions
         self.index_samples()
@@ -461,11 +447,6 @@ class DatabaseManager:
             for database in self.partitions[mode]:
                 database.close()
         self.exchange.close(erase_file=True)
-
-        # Remove prediction pipeline DB
-        if self.pipeline == 'prediction' and not self.produce_data:
-            path = self.database.get_path()
-            remove(join(path[0], f'{path[1]}.db'))
 
     def change_mode(self, mode: int) -> None:
         """
