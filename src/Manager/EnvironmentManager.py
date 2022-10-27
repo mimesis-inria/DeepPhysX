@@ -69,7 +69,6 @@ class EnvironmentManager:
             self.environment.init_database()
             self.environment.init_visualization()
 
-
         # Define get_data and dispatch methods
         self.get_database_handler = self.get_server_database_handler if self.server else self.get_environment_database_handler
         self.change_database = self.change_database_in_server if self.server else self.change_database_in_environment

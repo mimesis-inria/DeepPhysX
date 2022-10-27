@@ -145,6 +145,8 @@ class TcpIpServer(TcpIpObject):
                 partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
             await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
 
+            # Wait Client init
+            await self.receive_data(loop=loop, sender=client)
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
     ##########################################################################################
@@ -215,8 +217,6 @@ class TcpIpServer(TcpIpObject):
         if animate:
             await self.send_command_step(loop=loop, receiver=client)
             # Receive data
-            await self.listen_while_not_done(loop=loop, sender=client, data_dict=self.data_dict,
-                                             client_id=client_id)
             line = await self.receive_data(loop=loop, sender=client)
             self.data_lines.append(line)
 

@@ -85,7 +85,7 @@ class TcpIpClient(TcpIpObject):
         self.environment.init_visualization()
 
         # Initialization done
-        await self.send_command_done(loop=loop, receiver=self.sock)
+        await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
     ##########################################################################################
     ##########################################################################################
@@ -270,7 +270,6 @@ class TcpIpClient(TcpIpObject):
             self.environment._update_training_data(self.environment.update_line)
             line = self.environment.update_line
         self.environment._reset_training_data()
-        await self.send_command_done()
         await self.send_data(data_to_send=line, loop=loop, receiver=sender)
 
     async def action_on_change_db(self, 

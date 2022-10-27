@@ -62,6 +62,7 @@ class BaseEnvironment(AbstractEnvironment):
     ##########################################################################################
 
     def __database_handler_init(self):
+        self.__database_handler.load()
         if self.instance_id == 1:
             self.__database_handler.create_fields(table_name='Training',
                                                   fields=('env_id', int))
