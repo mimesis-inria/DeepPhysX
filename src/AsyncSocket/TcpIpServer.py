@@ -6,6 +6,7 @@ from socket import socket
 from queue import SimpleQueue
 
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
+from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
 
 class TcpIpServer(TcpIpObject):
@@ -55,11 +56,27 @@ class TcpIpServer(TcpIpObject):
         # Reference to EnvironmentManager
         self.environment_manager: Optional[Any] = manager
 
+        # Connect the Server to the Database
+        self.database_handler = DatabaseHandler(on_partitions_handler=self.__database_handler_partitions,
+                                                name='ServerHandler')
+        self.environment_manager.data_manager.connect_handler(self.database_handler)
+
     ##########################################################################################
     ##########################################################################################
     #                                     Connect Clients                                    #
     ##########################################################################################
     ##########################################################################################
+
+    def __database_handler_partitions(self):
+
+        for _, client in self.clients:
+            self.sync_send_command_change_db(receiver=client)
+            new_partition = self.database_handler.get_partitions()[-1]
+            self.sync_send_data(data_to_send=f'{new_partition.get_path()[0]}///{new_partition.get_path()[1]}',
+                                receiver=client)
+
+    def get_database_handler(self) -> DatabaseHandler:
+        return self.database_handler
 
     def connect(self) -> None:
         """
@@ -107,9 +124,27 @@ class TcpIpServer(TcpIpObject):
 
         # Initialisation process for each client
         for client_id, client in self.clients:
+
             # Send number of sub-steps
             nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
             await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)
+
+            # Send partitions
+            partitions = self.database_handler.get_partitions()
+            if len(partitions) == 0:
+                partitions_list = 'None'
+            else:
+                partitions_list = partitions[0].get_path()[0]
+                for partition in partitions:
+                    partitions_list += f'///{partition.get_path()[1]}'
+            partitions_list += '%%%'
+            exchange = self.database_handler.get_exchange()
+            if exchange is None:
+                partitions += 'None'
+            else:
+                partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
+            await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
+
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
     ##########################################################################################

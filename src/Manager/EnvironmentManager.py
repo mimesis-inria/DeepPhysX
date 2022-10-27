@@ -58,7 +58,6 @@ class EnvironmentManager:
                                                            batch_size=batch_size,
                                                            visualization_db=None if visualization_db is None else
                                                            visualization_db.get_path())
-            self.data_manager.get_database().load()
         else:
             self.environment = environment_config.create_environment(visualization_db=visualization_db)
             self.environment.environment_manager = self

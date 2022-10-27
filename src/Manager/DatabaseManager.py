@@ -362,12 +362,9 @@ class DatabaseManager:
 
     def connect_handler(self,
                         handler: DatabaseHandler) -> None:
-        if handler.remote:
-            handler.init_remote(storing_partitions=self.get_partition_names(),
-                                exchange_db=self.exchange.get_path())
-        else:
-            handler.init(storing_partitions=self.get_partition_objects(),
-                         exchange_db=self.exchange)
+
+        handler.init(storing_partitions=self.get_partition_objects(),
+                     exchange_db=self.exchange)
         self.database_handlers.append(handler)
 
     def index_samples(self):
@@ -394,6 +391,8 @@ class DatabaseManager:
         # 1. Update the json file
         self.update_json(update_nb_samples=True)
         if self.first_add:
+            for handler in self.database_handlers:
+                handler.load()
             self.update_json(update_partitions_lists=True, update_shapes=True, update_architecture=True)
             self.first_add = False
         if self.normalize and self.mode == 'training' and self.pipeline == 'training' and data_lines is not None:

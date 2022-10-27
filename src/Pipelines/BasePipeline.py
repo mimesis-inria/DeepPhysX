@@ -3,7 +3,6 @@ from typing import Optional, Any, List, Union
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Manager.Manager import Manager
 from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
@@ -64,9 +63,6 @@ class BasePipeline:
         self.new_session = new_session
         self.type = pipeline
 
-        # Main manager
-        self.manager: Optional[Manager] = None
-
     def execute(self):
         """
         Launch the Pipeline.
@@ -83,16 +79,12 @@ class BasePipeline:
         :return: The desired Manager associated with the Pipeline.
         """
 
-        # If manager variable is not defined, cannot access other manager
-        if self.manager is None:
-            return None
-
         # Direct access to manager
         if type(manager_names) == str:
-            return getattr(self.manager, manager_names) if hasattr(self.manager, manager_names) else None
+            return getattr(self, manager_names) if hasattr(self, manager_names) else None
 
         # Intermediates to access manager
-        accessed_manager = self.manager
+        accessed_manager = self
         for next_manager in manager_names:
             if hasattr(accessed_manager, next_manager):
                 accessed_manager = getattr(accessed_manager, next_manager)
@@ -127,7 +119,7 @@ class BasePipeline:
 
         return self.__get_any_manager(manager_names='stats_manager')
 
-    def get_dataset_manager(self) -> Optional[DatabaseManager]:
+    def get_database_manager(self) -> Optional[DatabaseManager]:
         """
         Return the DatabaseManager associated with the pipeline if it exists.
 

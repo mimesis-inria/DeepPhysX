@@ -92,14 +92,12 @@ class BaseEnvironmentConfig:
     def create_server(self,
                       environment_manager: Optional[Any] = None,
                       batch_size: int = 1,
-                      training_db: Optional[str] = None,
                       visualization_db: Optional[str] = None) -> TcpIpServer:
         """
         Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
         :param environment_manager: EnvironmentManager.
         :param batch_size: Number of sample in a batch.
-        :param training_db: Path of the training Database to connect to.
         :param visualization_db: Path to the visualization Database to connect to.
         :return: TcpIpServer object.
         """
@@ -117,7 +115,7 @@ class BaseEnvironmentConfig:
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i + 1, training_db, visualization_db))
+            client_thread = Thread(target=self.start_client, args=(i + 1, visualization_db))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -141,20 +139,17 @@ class BaseEnvironmentConfig:
 
     def start_client(self,
                      idx: int = 1,
-                     training_db: Optional[str] = None,
                      visualization_db: Optional[str] = None) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
         :param idx: Index of client.
-        :param training_db: Path of the training Database to connect to.
         :param visualization_db: Path to the visualization Database to connect to.
         """
 
         script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcherBaseEnvironment.py')
         run([executable, script, self.environment_file, self.environment_class.__name__,
-             self.ip_address, str(self.port), str(idx), str(self.number_of_thread),
-             str(training_db), str(visualization_db)])
+             self.ip_address, str(self.port), str(idx), str(self.number_of_thread), str(visualization_db)])
 
     def create_environment(self,
                            visualization_db: Optional[Any] = None) -> BaseEnvironment:

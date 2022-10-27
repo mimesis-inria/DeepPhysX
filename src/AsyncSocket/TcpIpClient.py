@@ -17,7 +17,6 @@ class TcpIpClient(TcpIpObject):
                  port: int = 10000,
                  instance_id: int = 0,
                  instance_nb: int = 1,
-                 training_db: Optional[Union[Database, Tuple[str, str]]] = None,
                  visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
         TcpIpClient is both a TcpIpObject which communicate with a TcpIpServer and an AbstractEnvironment to compute
@@ -69,6 +68,15 @@ class TcpIpClient(TcpIpObject):
 
         # Receive number of sub-steps
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
+
+        # Receive partitions
+        partitions_list = await self.receive_data(loop=loop, sender=self.sock)
+        partitions_list, exchange = partitions_list.split('%%%')
+        partitions = [[partitions_list.split('///')[0], partition_name]
+                      for partition_name in partitions_list.split('///')[1:]]
+        exchange = [exchange.split('///')[0], exchange.split('///')[1]]
+        self.environment.get_database_handler().init_remote(storing_partitions=partitions,
+                                                            exchange_db=exchange)
 
         # Create the environment
         self.environment.create()
@@ -278,7 +286,5 @@ class TcpIpClient(TcpIpObject):
         :param sender: TcpIpObject sender.
         """
         
-        new_database = (await self.receive_data(loop=loop, sender=sender),
-                        await self.receive_data(loop=loop, sender=sender))
-        self.database = Database(database_dir=new_database[0],
-                                 database_name=new_database[1]).load()
+        new_database = await self.receive_data(loop=loop, sender=sender)
+        self.environment.get_database_handler().update_list_partitions_remote(new_database.split('///'))

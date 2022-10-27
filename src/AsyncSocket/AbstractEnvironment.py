@@ -3,6 +3,8 @@ from numpy import ndarray
 
 from SSD.Core.Storage.Database import Database
 
+from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
+
 
 class AbstractEnvironment:
 
@@ -83,6 +85,9 @@ class AbstractEnvironment:
     #                                   Defining a sample                                    #
     ##########################################################################################
     ##########################################################################################
+
+    def get_database_handler(self) -> DatabaseHandler:
+        raise NotImplementedError
 
     def _send_training_data(self) -> None:
         raise NotImplementedError

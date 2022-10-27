@@ -8,13 +8,15 @@ from SSD.Core.Storage.Database import Database
 class DatabaseHandler:
 
     def __init__(self,
-                 remote: bool = False,
-                 on_init_handler: Optional[Callable] = None):
+                 name: str = '',
+                 on_init_handler: Optional[Callable] = None,
+                 on_partitions_handler: Optional[Callable] = None):
 
-        self.remote = remote
+        self.name = name
         self.__storing_partitions: List[Database] = []
         self.__exchange_db: Optional[Database] = None
         self.__on_init_handler = self.__default_handler if on_init_handler is None else on_init_handler
+        self.__on_partitions_handler = self.__default_handler if on_partitions_handler is None else on_partitions_handler
 
     def __default_handler(self):
         pass
@@ -42,6 +44,13 @@ class DatabaseHandler:
     def update_list_partitions(self,
                                partition: Database) -> None:
         self.__storing_partitions.append(partition)
+        self.__on_partitions_handler()
+
+    def update_list_partitions_remote(self,
+                                      partition: List[str]):
+        self.__storing_partitions.append(Database(database_dir=partition[0],
+                                                  database_name=partition[1]).load())
+        self.__on_partitions_handler()
 
     def get_database_dir(self):
         return self.__storing_partitions[0].get_path()[0]
@@ -53,6 +62,9 @@ class DatabaseHandler:
 
     def get_partitions(self):
         return self.__storing_partitions
+
+    def get_exchange(self):
+        return self.__exchange_db
 
     ###
     # Database Architecture
@@ -70,9 +82,9 @@ class DatabaseHandler:
         else:
             if len(self.__storing_partitions) == 1:
                 self.__storing_partitions[0].load()
-                if len(self.__storing_partitions[0].get_fields(table_name=table_name)) <= 2:
-                    self.__storing_partitions[0].create_fields(table_name=table_name,
-                                                               fields=fields)
+            if len(self.__storing_partitions[0].get_fields(table_name=table_name)) <= 2:
+                self.__storing_partitions[0].create_fields(table_name=table_name,
+                                                           fields=fields)
 
     def get_fields(self,
                    table_name: str) -> List[str]:

@@ -1,6 +1,6 @@
 from typing import Any, Optional, Dict, List
 
-from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager, Database
+from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
@@ -37,7 +37,6 @@ class DataManager:
         self.pipeline: Optional[Any] = pipeline
         self.database_manager: Optional[DatabaseManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
-        self.connected_managers: List[Any] = []
 
         # Create a DatabaseManager
         self.database_manager = DatabaseManager(database_config=database_config,
@@ -62,16 +61,6 @@ class DataManager:
 
     def connect_handler(self, handler):
         self.database_manager.connect_handler(handler)
-
-    def get_database(self) -> Database:
-        return self.database_manager.database
-
-    def connect_manager(self, manager: Any):
-        self.connected_managers.append(manager)
-
-    def change_database(self) -> None:
-        for manager in self.connected_managers:
-            manager.change_database(self.database_manager.database)
 
     @property
     def nb_environment(self):
