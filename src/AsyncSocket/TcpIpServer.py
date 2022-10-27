@@ -210,13 +210,15 @@ class TcpIpServer(TcpIpObject):
                 return
             # Send the sample to the Client
             await self.send_command_sample(loop=loop, receiver=client)
-            line = int(self.batch_from_dataset.pop(0))
+            line = self.batch_from_dataset.pop(0)
             await self.send_data(data_to_send=line, loop=loop, receiver=client)
 
         # 2. Execute n steps, the last one send data computation signal
         if animate:
             await self.send_command_step(loop=loop, receiver=client)
             # Receive data
+            await self.listen_while_not_done(loop=loop, sender=client, data_dict=self.data_dict,
+                                             client_id=client_id)
             line = await self.receive_data(loop=loop, sender=client)
             self.data_lines.append(line)
 

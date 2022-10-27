@@ -158,13 +158,13 @@ class TcpIpClient(TcpIpObject):
         """
 
         # Get a prediction
-        self.database.update(table_name='Prediction',
-                             data=kwargs,
-                             line_id=self.environment.instance_id)
+        self.environment.get_database_handler().update(table_name='Exchange',
+                                                       data=kwargs,
+                                                       line_id=self.environment.instance_id)
         self.sync_send_command_prediction()
         _ = self.sync_receive_data()
-        data_pred = self.database.get_line(table_name='Prediction',
-                                           line_id=self.environment.instance_id)
+        data_pred = self.environment.get_database_handler().get_line(table_name='Exchange',
+                                                                     line_id=self.environment.instance_id)
         del data_pred['id']
         return data_pred
 
@@ -270,6 +270,7 @@ class TcpIpClient(TcpIpObject):
             self.environment._update_training_data(self.environment.update_line)
             line = self.environment.update_line
         self.environment._reset_training_data()
+        await self.send_command_done(loop=loop, receiver=sender)
         await self.send_data(data_to_send=line, loop=loop, receiver=sender)
 
     async def action_on_change_db(self, 

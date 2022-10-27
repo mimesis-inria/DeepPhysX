@@ -226,7 +226,6 @@ class BaseTraining(BasePipeline):
         Called once at the end of the training pipeline.
         """
 
-        self.network_manager.save_network(last_save=True)
         self.data_manager.close()
         self.network_manager.close()
         if self.stats_manager is not None:

@@ -198,8 +198,7 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Check kwargs
         if self.__first_add[0]:
-            if self.instance_id != 0:
-                self.__database_handler.load()
+            self.__database_handler.load()
             self.__first_add[0] = False
             required_fields = list(set(self.__database_handler.get_fields(table_name='Training')) - {'id', 'env_id'})
             for field in kwargs.keys():
@@ -272,8 +271,9 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Check kwargs
         if self.__first_add[1]:
-            if self.instance_id != 0:
-                self.__database_handler.load()
+            if len(kwargs) == 0 and len(self.__data_training) == 0:
+                raise ValueError(f"[{self.name}] The prediction request requires the network fields.")
+            self.__database_handler.load()
             self.__first_add[1] = False
             required_fields = list(set(self.__database_handler.get_fields(table_name='Exchange')) - {'id'})
             for field in kwargs.keys():
@@ -281,9 +281,15 @@ class BaseEnvironment(AbstractEnvironment):
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
                                      f"Required fields are {required_fields}.")
 
+        # Avoid empty sample
+        if len(kwargs) == 0:
+            required_fields = set(self.__database_handler.get_fields(table_name='Exchange')) - {'id'}
+            necessary_fields = list(required_fields.intersection(self.__data_training.keys()))
+            kwargs = {field: self.__data_training[field] for field in necessary_fields}
+
         # If Environment is a TcpIpClient, send request to the Server
         if self.as_tcp_ip_client:
-            return TcpIpClient.get_prediction(self, **kwargs)
+            return self.tcp_ip_client.get_prediction(**kwargs)
 
         # Otherwise, check the hierarchy of managers
         if self.environment_manager.data_manager is None:
