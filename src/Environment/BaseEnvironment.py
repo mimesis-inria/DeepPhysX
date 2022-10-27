@@ -271,6 +271,11 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Check kwargs
         if self.__first_add[1]:
+
+            if (self.environment_manager is not None and not self.environment_manager.allow_prediction_requests) or \
+                    (self.tcp_ip_client is not None and not self.tcp_ip_client.allow_prediction_requests):
+                raise ValueError(f"[{self.name}] Prediction request is not available in data generation Pipeline.")
+
             if len(kwargs) == 0 and len(self.__data_training) == 0:
                 raise ValueError(f"[{self.name}] The prediction request requires the network fields.")
             self.__database_handler.load()

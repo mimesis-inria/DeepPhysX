@@ -125,6 +125,10 @@ class TcpIpServer(TcpIpObject):
         # Initialisation process for each client
         for client_id, client in self.clients:
 
+            # Send prediction request authorization
+            await self.send_data(data_to_send=self.environment_manager.allow_prediction_requests,
+                                 loop=loop, receiver=client)
+
             # Send number of sub-steps
             nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
             await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)

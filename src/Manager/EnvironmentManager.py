@@ -19,15 +19,16 @@ class EnvironmentManager:
         """
         Deals with the online generation of data for both training and running of the neural networks.
 
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param session: Path to the session directory.
+        :param environment_config: Configuration object with the parameters of the Environment.
         :param data_manager: DataManager that handles the EnvironmentManager.
-        :param batch_size: Number of samples in a batch of data.
+        :param pipeline: Type of the pipeline.
+        :param session: Path to the session repository.
+        :param batch_size: Number of samples in a single batch.
         """
 
         self.name: str = self.__class__.__name__
 
-        # Managers architecture
+        # Session variables
         self.data_manager: Any = data_manager
 
         # Data producing parameters
@@ -37,6 +38,7 @@ class EnvironmentManager:
         self.always_produce: bool = environment_config.always_produce
         self.simulations_per_step: int = environment_config.simulations_per_step
         self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
+        self.allow_prediction_requests: bool = pipeline != 'data_generation'
         self.dataset_batch: Optional[List[List[int]]] = None
 
         # Create the Visualizer

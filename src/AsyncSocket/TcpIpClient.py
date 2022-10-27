@@ -66,6 +66,9 @@ class TcpIpClient(TcpIpObject):
 
         loop = get_event_loop()
 
+        # Receive prediction requests authorization
+        self.allow_prediction_requests = await self.receive_data(loop=loop, sender=self.sock)
+
         # Receive number of sub-steps
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
 
