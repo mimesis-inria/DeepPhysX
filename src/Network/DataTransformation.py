@@ -1,16 +1,14 @@
 from typing import Callable, Any, Optional, Tuple, Dict
 from collections import namedtuple
 
-DTYPE = Dict[str, Any]
-
 
 class DataTransformation:
 
     def __init__(self, config: namedtuple):
         """
-        DataTransformation is dedicated to data operations before and after network predictions.
+        DataTransformation manages data operations before and after network predictions.
 
-        :param namedtuple config: Namedtuple containing the parameters of the network manager.
+        :param config: Set of DataTransformation parameters.
         """
 
         self.name = self.__class__.__name__
@@ -30,7 +28,7 @@ class DataTransformation:
         return inner
 
     def transform_before_prediction(self,
-                                    data_net: DTYPE) -> DTYPE:
+                                    data_net: Dict[str, Any]) -> Dict[str, Any]:
         """
         Apply data operations before network's prediction.
 
@@ -41,8 +39,8 @@ class DataTransformation:
         return data_net
 
     def transform_before_loss(self,
-                              data_pred: DTYPE,
-                              data_opt: Optional[DTYPE] = None) -> Tuple[DTYPE, Optional[DTYPE]]:
+                              data_pred: Dict[str, Any],
+                              data_opt: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         """
         Apply data operations between network's prediction and loss computation.
 
@@ -54,7 +52,7 @@ class DataTransformation:
         return data_pred, data_opt
 
     def transform_before_apply(self,
-                               data_pred: DTYPE) -> DTYPE:
+                               data_pred: Dict[str, Any]) -> Dict[str, Any]:
         """
         Apply data operations between loss computation and prediction apply in environment.
 
@@ -64,10 +62,7 @@ class DataTransformation:
 
         return data_pred
 
-    def __str__(self) -> str:
-        """
-        :return: String containing information about the DataTransformation object
-        """
+    def __str__(self):
 
         description = "\n"
         description += f"  {self.__class__.__name__}\n"

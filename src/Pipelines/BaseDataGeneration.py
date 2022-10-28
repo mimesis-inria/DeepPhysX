@@ -23,11 +23,11 @@ class BaseDataGeneration(BasePipeline):
         """
         BaseDataGeneration implements the main loop that only produces and stores data (no Network training).
 
-        :param database_config: Specialisation containing the parameters of the dataset manager.
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param session_dir: Relative path to the directory which contains sessions directories.
-        :param session_name: Name of the new the session directory.
-        :param new_session: If True, the session will be run in a new repository.
+        :param database_config: Configuration object with the parameters of the Database.
+        :param environment_config: Configuration object with the parameters of the Environment.
+        :param session_dir: Relative path to the directory which contains sessions repositories.
+        :param session_name: Name of the new the session repository.
+        :param new_session: If True, a new repository will be created for this session.
         :param batch_nb: Number of batches to produce.
         :param batch_size: Number of samples in a single batch.
         """
@@ -50,6 +50,7 @@ class BaseDataGeneration(BasePipeline):
         if new_session:
             session_name = create_dir(session_dir=session_dir,
                                       session_name=session_name).split(sep)[-1]
+        self.session = join(session_dir, session_name)
 
         # Create a DataManager
         self.data_manager = DataManager(pipeline=self,
@@ -63,13 +64,14 @@ class BaseDataGeneration(BasePipeline):
         # Data generation variables
         self.batch_nb: int = batch_nb
         self.batch_id: int = 0
+        self.batch_size = batch_size
         self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
 
     def execute(self) -> None:
         """
         Launch the data generation Pipeline.
-        Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
-        more complex pipeline.
+        Each event is already implemented for a basic Pipeline but can also be rewritten via inheritance to describe a
+        more complex Pipeline.
         """
 
         self.data_generation_begin()
@@ -82,7 +84,7 @@ class BaseDataGeneration(BasePipeline):
 
     def data_generation_begin(self) -> None:
         """
-        Called once at the beginning of the data generation pipeline.
+        Called once at the beginning of the data generation Pipeline.
         """
 
         pass
@@ -125,7 +127,14 @@ class BaseDataGeneration(BasePipeline):
 
     def data_generation_end(self) -> None:
         """
-        Called once at the beginning of the data generation pipeline.
+        Called once at the beginning of the data generation Pipeline.
         """
 
         self.data_manager.close()
+
+    def __str__(self):
+
+        description = BasePipeline.__str__(self)
+        description += f"    Number of batches: {self.batch_nb}\n"
+        description += f"    Number of sample per batch: {self.batch_size}\n"
+        return description

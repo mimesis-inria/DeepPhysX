@@ -12,7 +12,7 @@ class BaseDatabaseConfig:
                  normalize: bool = False,
                  recompute_normalization: bool = False):
         """
-        Configuration class to parameterize the Dataset and its Manager.
+        BaseDatabaseConfig is a configuration class to parameterize the Database and the DatabaseManager.
 
         :param existing_dir: Path to an existing Dataset repository.
         :param mode: Specify the Dataset mode that should be used between 'training', 'validation' and 'running'.
@@ -59,7 +59,7 @@ class BaseDatabaseConfig:
         self.normalize: bool = normalize
         self.recompute_normalization: bool = recompute_normalization
 
-    def __str__(self) -> str:
+    def __str__(self):
 
         description = "\n"
         description += f"{self.name}\n"

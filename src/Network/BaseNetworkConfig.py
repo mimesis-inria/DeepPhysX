@@ -142,7 +142,7 @@ class BaseNetworkConfig:
                             f"must be a DataTransformation.")
         return data_transformation
 
-    def __str__(self) -> str:
+    def __str__(self):
 
         description = "\n"
         description += f"{self.__class__.__name__}\n"

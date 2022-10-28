@@ -8,10 +8,9 @@ class BaseOptimization:
 
     def __init__(self, config: namedtuple):
         """
-        BaseOptimization is dedicated to network optimization: compute loss between prediction and target, update
-        network parameters.
+        BaseOptimization computes loss between prediction and target and optimizes the Network parameters.
 
-        :param config: Namedtuple containing BaseOptimization parameters
+        :param config: Set of BaseOptimization parameters
         """
 
         self.manager: Any = None
@@ -53,12 +52,13 @@ class BaseOptimization:
         Apply a transformation on the loss value using the potential additional data.
 
         :param data_opt: Additional data sent as dict to compute loss value
-        :return: Transformed loss value
+        :return: Transformed loss value.
         """
 
         raise NotImplementedError
 
-    def set_optimizer(self, net: BaseNetwork) -> None:
+    def set_optimizer(self,
+                      net: BaseNetwork) -> None:
         """
         Define an optimization process.
 
@@ -74,7 +74,7 @@ class BaseOptimization:
 
         raise NotImplementedError
 
-    def __str__(self) -> str:
+    def __str__(self):
 
         description = "\n"
         description += f"  {self.__class__.__name__}\n"

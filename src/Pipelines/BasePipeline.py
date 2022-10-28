@@ -1,4 +1,5 @@
 from typing import Optional, Any, List, Union
+from os.path import join
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
@@ -23,12 +24,12 @@ class BasePipeline:
         """
         Pipelines implement the main loop that defines data flow through components (Environment, Dataset, Network...).
 
-        :param network_config: Specialisation containing the parameters of the network manager.
-        :param database_config: Specialisation containing the parameters of the dataset manager.
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param session_dir: Name of the directory in which to write all the necessary data.
-        :param session_name: Name of the newly created directory if session is not defined.
-        :param new_session: If True, the session will be run in a new repository.
+        :param network_config: Configuration object with the parameters of the Network.
+        :param database_config: Configuration object with the parameters of the Database.
+        :param environment_config: Configuration object with the parameters of the Environment.
+        :param session_dir: Relative path to the directory which contains sessions repositories.
+        :param session_name: Name of the new the session repository.
+        :param new_session: If True, a new repository will be created for this session.
         :param pipeline: Name of the Pipeline.
         """
 
@@ -58,8 +59,7 @@ class BasePipeline:
         self.environment_config: BaseEnvironmentConfig = environment_config
 
         # Session variables
-        self.session_dir = session_dir
-        self.session_name = session_name
+        self.session = join(session_dir, session_name)
         self.new_session = new_session
         self.type = pipeline
 
@@ -73,7 +73,7 @@ class BasePipeline:
     def __get_any_manager(self,
                           manager_names: Union[str, List[str]]) -> Optional[Any]:
         """
-        Return the desired Manager associated with the pipeline if it exists.
+        Return the desired Manager associated with the Pipeline if it exists.
 
         :param manager_names: Name of the desired Manager or order of access to this desired Manager.
         :return: The desired Manager associated with the Pipeline.
@@ -94,45 +94,53 @@ class BasePipeline:
 
     def get_network_manager(self) -> Optional[NetworkManager]:
         """
-        Return the NetworkManager associated with the pipeline if it exists.
+        Return the NetworkManager associated with the Pipeline if it exists.
 
-        :return: The NetworkManager associated with the pipeline.
+        :return: The NetworkManager associated with the Pipeline.
         """
 
         return self.__get_any_manager(manager_names='network_manager')
 
     def get_data_manager(self) -> Optional[DataManager]:
         """
-        Return the DataManager associated with the pipeline if it exists.
+        Return the DataManager associated with the Pipeline if it exists.
 
-        :return: The DataManager associated with the pipeline.
+        :return: The DataManager associated with the Pipeline.
         """
 
         return self.__get_any_manager(manager_names='data_manager')
 
     def get_stats_manager(self) -> Optional[StatsManager]:
         """
-        Return the StatsManager associated with the pipeline if it exists.
+        Return the StatsManager associated with the Pipeline if it exists.
 
-        :return: The StatsManager associated with the pipeline.
+        :return: The StatsManager associated with the Pipeline.
         """
 
         return self.__get_any_manager(manager_names='stats_manager')
 
     def get_database_manager(self) -> Optional[DatabaseManager]:
         """
-        Return the DatabaseManager associated with the pipeline if it exists.
+        Return the DatabaseManager associated with the Pipeline if it exists.
 
-        :return: The DatabaseManager associated with the pipeline.
+        :return: The DatabaseManager associated with the Pipeline.
         """
 
         return self.__get_any_manager(manager_names=['data_manager', 'database_manager'])
 
     def get_environment_manager(self) -> Optional[EnvironmentManager]:
         """
-        Return the EnvironmentManager associated with the pipeline if it exists.
+        Return the EnvironmentManager associated with the Pipeline if it exists.
 
-        :return: The EnvironmentManager associated with the pipeline.
+        :return: The EnvironmentManager associated with the Pipeline.
         """
 
         return self.__get_any_manager(manager_names=['data_manager', 'environment_manager'])
+
+    def __str__(self):
+
+        description = "\n"
+        description += f"# {self.name}\n"
+        description += f"    Pipeline type: {self.type}\n"
+        description += f"    Session repository: {self.session}\n"
+        return description

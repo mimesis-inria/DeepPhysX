@@ -24,13 +24,13 @@ class BasePrediction(BasePipeline):
         BasePrediction is a pipeline defining the running process of an artificial neural network.
         It provides a highly tunable learning process that can be used with any machine learning library.
 
-        :param network_config: Specialisation containing the parameters of the network manager.
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param database_config: Specialisation containing the parameters of the dataset manager.
-        :param session_name: Name of the newly created directory if session is not defined.
-        :param session_dir: Name of the directory in which to write all the necessary data.
+        :param network_config: Configuration object with the parameters of the Network.
+        :param environment_config: Configuration object with the parameters of the Environment.
+        :param database_config: Configuration object with the parameters of the Database.
+        :param session_dir: Relative path to the directory which contains sessions repositories.
+        :param session_name: Name of the new the session repository.
         :param step_nb: Number of simulation step to play.
-        :param record: Save or not the prediction data.
+        :param record: If True, prediction data will be saved in a dedicated Database.
         """
 
         BasePipeline.__init__(self,
@@ -74,7 +74,7 @@ class BasePrediction(BasePipeline):
         """
         Launch the prediction Pipeline.
         Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
-        more complex pipeline.
+        more complex Pipeline.
         """
 
         self.prediction_begin()
@@ -86,14 +86,14 @@ class BasePrediction(BasePipeline):
 
     def prediction_begin(self) -> None:
         """
-        Called once at the beginning of the prediction pipeline.
+        Called once at the beginning of the prediction Pipeline.
         """
 
         pass
 
     def prediction_condition(self) -> bool:
         """
-        Condition that characterize the end of the prediction pipeline.
+        Condition that characterize the end of the prediction Pipeline.
         """
 
         running = self.step_id < self.step_nb if self.step_nb > 0 else True
@@ -124,16 +124,14 @@ class BasePrediction(BasePipeline):
 
     def run_end(self) -> None:
         """
-        Called once at the end of the prediction pipeline.
+        Called once at the end of the prediction Pipeline.
         """
 
         self.data_manager.close()
         self.network_manager.close()
 
-    def __str__(self) -> str:
+    def __str__(self):
 
-        description = ""
-        description += f"Running statistics :\n"
-        description += f"Number of simulation step: {self.step_nb}\n"
-
+        description = BasePipeline.__str__(self)
+        description += f"   Number of step: {self.step_nb}\n"
         return description

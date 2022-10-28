@@ -4,6 +4,7 @@ from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
+from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
 
 class DataManager:
@@ -19,21 +20,19 @@ class DataManager:
 
         """
         DataManager deals with the generation, storage and loading of training data.
-        A batch is given with a call to 'get_data' on either the DatabaseManager or the EnvironmentManager according to
-        the context.
 
         :param pipeline: Pipeline that handle the DataManager.
-        :param database_config: Specialisation containing the parameters of the dataset manager.
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param session: Path to the session directory.
-        :param new_session: Flag that indicates whether if the session is new.
-        :param produce_data: Flag that indicates whether if this session is producing data.
-        :param int batch_size: Number of samples in a batch.
+        :param database_config: Configuration object with the parameters of the Database.
+        :param environment_config: Configuration object with the parameters of the Environment.
+        :param session: Path to the session repository.
+        :param new_session: If True, the session is done in a new repository.
+        :param produce_data: If True, this session will store data in the Database.
+        :param batch_size: Number of samples in a single batch.
         """
 
         self.name: str = self.__class__.__name__
 
-        # Managers variables
+        # Session variables
         self.pipeline: Optional[Any] = pipeline
         self.database_manager: Optional[DatabaseManager] = None
         self.environment_manager: Optional[EnvironmentManager] = None
@@ -59,14 +58,33 @@ class DataManager:
         self.batch_size = batch_size
         self.data_lines: List[List[int]] = []
 
-    def connect_handler(self, handler):
-        self.database_manager.connect_handler(handler)
-
     @property
-    def nb_environment(self):
+    def nb_environment(self) -> Optional[int]:
+        """
+        Get the number of Environments managed by the EnvironmentManager.
+        """
+
         if self.environment_manager is None:
             return None
         return 1 if self.environment_manager.server is None else self.environment_manager.number_of_thread
+
+    @property
+    def normalization(self) -> Dict[str, List[float]]:
+        """
+        Get the normalization coefficients computed by the DatabaseManager.
+        """
+
+        return self.database_manager.normalization
+
+    def connect_handler(self,
+                        handler: DatabaseHandler) -> None:
+        """
+        Add a new DatabaseHandler to the list of handlers of the DatabaseManager.
+
+        :param handler: New handler to register.
+        """
+
+        self.database_manager.connect_handler(handler)
 
     def get_data(self,
                  epoch: int = 0,
@@ -75,8 +93,7 @@ class DataManager:
         Fetch data from the EnvironmentManager or the DatabaseManager according to the context.
 
         :param epoch: Current epoch number.
-        :param animate: Allow EnvironmentManager to generate a new sample.
-        :return: Dict containing the newly computed data.
+        :param animate: Allow EnvironmentManager to trigger a step itself in order to generate a new sample.
         """
 
         # Data generation case
@@ -128,9 +145,7 @@ class DataManager:
     def get_prediction(self,
                        instance_id: int) -> None:
         """
-        Get a Network prediction from an input array. Normalization is applied on input and prediction.
-
-        :return: Network prediction.
+        Get a Network prediction for the specified Environment instance.
         """
 
         # Get a prediction
@@ -139,13 +154,9 @@ class DataManager:
         self.pipeline.network_manager.compute_online_prediction(instance_id=instance_id,
                                                                 normalization=self.normalization)
 
-    @property
-    def normalization(self) -> Dict[str, List[float]]:
-        return self.database_manager.normalization
-
     def close(self) -> None:
         """
-        Launch the closing procedure of Managers.
+        Launch the closing procedure of the DataManager.
         """
 
         if self.environment_manager is not None:
@@ -153,10 +164,7 @@ class DataManager:
         if self.database_manager is not None:
             self.database_manager.close()
 
-    def __str__(self) -> str:
-        """
-        :return: A string containing valuable information about the DataManager
-        """
+    def __str__(self):
 
         data_manager_str = ""
         if self.environment_manager:

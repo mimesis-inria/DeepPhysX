@@ -17,12 +17,12 @@ class BaseEnvironment(AbstractEnvironment):
                  instance_nb: int = 1,
                  visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
         """
-        BaseEnvironment is an environment class to compute simulated data for the network and its optimization process.
+        BaseEnvironment computes simulated data for the Network and its training process.
 
+        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
         :param instance_id: ID of the instance.
         :param instance_nb: Number of simultaneously launched instances.
-        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
-        :param visualization_db: The path to the visualization Database or the visualization Database object to connect to.
+        :param visualization_db: The path to the visualization Database or the visualization Database object to connect.
         """
 
         AbstractEnvironment.__init__(self,
@@ -57,20 +57,9 @@ class BaseEnvironment(AbstractEnvironment):
 
     ##########################################################################################
     ##########################################################################################
-    #                                 Initializing Environment                               #
+    #                                 Environment initialization                             #
     ##########################################################################################
     ##########################################################################################
-
-    def __database_handler_init(self):
-        self.__database_handler.load()
-        if self.instance_id == 1:
-            self.__database_handler.create_fields(table_name='Training',
-                                                  fields=('env_id', int))
-            self.__database_handler.create_fields(table_name='Additional',
-                                                  fields=('env_id', int))
-
-    def get_database_handler(self) -> DatabaseHandler:
-        return self.__database_handler
 
     def create(self) -> None:
         """
@@ -104,6 +93,41 @@ class BaseEnvironment(AbstractEnvironment):
 
         pass
 
+    def save_parameters(self, **kwargs) -> None:
+        """
+        Save a set of parameters in the Database.
+        """
+
+        # Create a dedicated Database
+        database_dir = self.__database_handler.get_database_dir()
+        if isfile(join(database_dir, 'environment_parameters.db')):
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').load()
+        else:
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').new()
+
+        # Create fields and add data
+        fields = [(field, type(value)) for field, value in kwargs.items()]
+        database.create_table(table_name=f'Environment_{self.instance_id}', fields=fields)
+        database.add_data(table_name=f'Environment_{self.instance_id}', data=kwargs)
+        database.close()
+
+    def load_parameters(self) -> Dict[str, Any]:
+        """
+        Load a set of parameters from the Database.
+        """
+
+        # Load the dedicated Database and the parameters
+        database_dir = self.__database_handler.get_database_dir()
+        if isfile(join(database_dir, 'environment_parameters.db')):
+            database = Database(database_dir=database_dir,
+                                database_name='environment_parameters').load()
+            parameters = database.get_line(table_name=f'Environment_{self.instance_id}')
+            del parameters['id']
+            return parameters
+        return {}
+
     ##########################################################################################
     ##########################################################################################
     #                                 Environment behavior                                   #
@@ -128,7 +152,8 @@ class BaseEnvironment(AbstractEnvironment):
 
         return True
 
-    def apply_prediction(self, prediction: Dict[str, ndarray]) -> None:
+    def apply_prediction(self,
+                         prediction: Dict[str, ndarray]) -> None:
         """
         Apply network prediction in environment.
         Not mandatory.
@@ -148,46 +173,29 @@ class BaseEnvironment(AbstractEnvironment):
 
     ##########################################################################################
     ##########################################################################################
-    #                                   Defining a sample                                    #
+    #                                 Defining data samples                                  #
     ##########################################################################################
     ##########################################################################################
 
-    def save_parameters(self, **kwargs) -> None:
+    def define_training_fields(self,
+                               fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
         """
-        Save a set of parameters in the Database.
-        """
+        Specify the training data fields names and types.
 
-        database_dir = self.__database_handler.get_database_dir()
-        if isfile(join(database_dir, 'environment_parameters.db')):
-            database = Database(database_dir=database_dir,
-                                database_name='environment_parameters').load()
-        else:
-            database = Database(database_dir=database_dir,
-                                database_name='environment_parameters').new()
-        fields = [(field, type(value)) for field, value in kwargs.items()]
-        database.create_table(table_name=f'Environment_{self.instance_id}', fields=fields)
-        database.add_data(table_name=f'Environment_{self.instance_id}', data=kwargs)
-        database.close()
-
-    def load_parameters(self) -> Dict[str, Any]:
-        """
-        Load a set of parameters from the Database.
+        :param fields: Field or list of fields to tag as training data.
         """
 
-        database_dir = self.__database_handler.get_database_dir()
-        if isfile(join(database_dir, 'environment_parameters.db')):
-            database = Database(database_dir=database_dir,
-                                database_name='environment_parameters').load()
-            parameters = database.get_line(table_name=f'Environment_{self.instance_id}')
-            del parameters['id']
-            return parameters
-        return {}
-
-    def define_training_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
         self.__database_handler.create_fields(table_name='Training',
                                               fields=fields)
 
-    def define_additional_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+    def define_additional_fields(self,
+                                 fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+        """
+        Specify the additional data fields names and types.
+
+        :param fields: Field or list of Fields to tag as additional data.
+        """
+
         self.__database_handler.create_fields(table_name='Additional',
                                               fields=fields)
 
@@ -217,44 +225,14 @@ class BaseEnvironment(AbstractEnvironment):
 
     def set_additional_data(self,
                             **kwargs) -> None:
+        """
+        Set the additional data to send to the TcpIpServer or the EnvironmentManager.
+        """
+
         # Additional data is also set if the Environment can compute data
         if self.compute_training_data:
             self.__data_additional = kwargs
             self.__data_additional['env_id'] = self.instance_id
-
-    def _send_training_data(self) -> int:
-        line_id = self.__database_handler.add_data(table_name='Training',
-                                                   data=self.__data_training)
-        self.__database_handler.add_data(table_name='Additional',
-                                         data=self.__data_additional)
-        return line_id
-
-    def _reset_training_data(self) -> None:
-        self.__data_training = {}
-        self.__data_additional = {}
-        self.sample_training = None
-        self.sample_additional = None
-        self.update_line = None
-
-    def _update_training_data(self,
-                              line_id: List[int]) -> None:
-        if self.__data_training != {}:
-            self.__database_handler.update(table_name='Training',
-                                           data=self.__data_training,
-                                           line_id=line_id)
-        if self.__data_additional != {}:
-            self.__database_handler.update(table_name='Additional',
-                                           data=self.__data_additional,
-                                           line_id=line_id)
-
-    def _get_training_data(self,
-                           line: List[int]) -> None:
-        self.update_line = line
-        self.sample_training = self.__database_handler.get_line(table_name='Training',
-                                                                line_id=line)
-        self.sample_additional = self.__database_handler.get_line(table_name='Additional',
-                                                                  line_id=line)
-        self.sample_additional = None if len(self.sample_additional) == 1 else self.sample_additional
 
     ##########################################################################################
     ##########################################################################################
@@ -313,9 +291,20 @@ class BaseEnvironment(AbstractEnvironment):
         else:
             raise ValueError(f"[{self.name}] This Environment has not Manager.")
 
-    def _get_prediction(self):
+    def update_visualisation(self) -> None:
+        """
+        Triggers the Visualizer update.
         """
 
+        # If Environment is a TcpIpClient, request to the Server
+        if self.as_tcp_ip_client:
+            self.tcp_ip_client.request_update_visualization()
+        self.factory.render()
+
+    def _get_prediction(self):
+        """
+        Request a prediction from Network and apply it to the Environment.
+        Should not be used by users.
         """
 
         training_data = self.__data_training.copy()
@@ -325,17 +314,93 @@ class BaseEnvironment(AbstractEnvironment):
                 del training_data[field]
         self.apply_prediction(self.get_prediction(**training_data))
 
-    def update_visualisation(self) -> None:
+    ##########################################################################################
+    ##########################################################################################
+    #                                 Database communication                                 #
+    ##########################################################################################
+    ##########################################################################################
+
+    def get_database_handler(self) -> DatabaseHandler:
         """
-        Triggers the Visualizer update.
+        Get the DatabaseHandler of the Environment.
         """
 
-        # If Environment is a TcpIpClient, request to the Server
-        if self.as_tcp_ip_client:
-            self.request_update_visualization()
-        self.factory.render()
+        return self.__database_handler
 
-    def __str__(self) -> str:
+    def __database_handler_init(self):
+        """
+        Init event of the DatabaseHandler.
+        """
+
+        # Load Database and create basic fields
+        self.__database_handler.load()
+        if self.instance_id == 1:
+            self.__database_handler.create_fields(table_name='Training',
+                                                  fields=('env_id', int))
+            self.__database_handler.create_fields(table_name='Additional',
+                                                  fields=('env_id', int))
+
+    def _send_training_data(self) -> List[int]:
+        """
+        Add the training data and the additional data in their respective Databases.
+        Should not be used by users.
+
+        :return: Index of the samples in the Database.
+        """
+
+        line_id = self.__database_handler.add_data(table_name='Training',
+                                                   data=self.__data_training)
+        self.__database_handler.add_data(table_name='Additional',
+                                         data=self.__data_additional)
+        return line_id
+
+    def _update_training_data(self,
+                              line_id: List[int]) -> None:
+        """
+        Update the training data and the additional data in their respective Databases.
+        Should not be used by users.
+
+        :param line_id: Index of the samples to update.
+        """
+
+        if self.__data_training != {}:
+            self.__database_handler.update(table_name='Training',
+                                           data=self.__data_training,
+                                           line_id=line_id)
+        if self.__data_additional != {}:
+            self.__database_handler.update(table_name='Additional',
+                                           data=self.__data_additional,
+                                           line_id=line_id)
+
+    def _get_training_data(self,
+                           line_id: List[int]) -> None:
+        """
+        Get the training data and the additional data from their respective Databases.
+        Should not be used by users.
+
+        :param line_id: Index of the sample to get.
+        """
+
+        self.update_line = line_id
+        self.sample_training = self.__database_handler.get_line(table_name='Training',
+                                                                line_id=line_id)
+        self.sample_additional = self.__database_handler.get_line(table_name='Additional',
+                                                                  line_id=line_id)
+        self.sample_additional = None if len(self.sample_additional) == 1 else self.sample_additional
+
+    def _reset_training_data(self) -> None:
+        """
+        Reset the training data and the additional data variables.
+        Should not be used by users.
+        """
+
+        self.__data_training = {}
+        self.__data_additional = {}
+        self.sample_training = None
+        self.sample_additional = None
+        self.update_line = None
+
+    def __str__(self):
 
         description = "\n"
         description += f"  {self.name}\n"

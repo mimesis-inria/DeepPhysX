@@ -39,6 +39,7 @@ class BaseEnvironmentConfig:
         :param load_samples: If True, the dataset will always be used in the environment.
         :param only_first_epoch: If True, data will always be created from environment. If False, data will be created
                                  from the environment during the first epoch and then re-used from the Dataset.
+        :param always_produce: If True, data will always be produced in Environment(s).
         :param visualizer: Class of the Visualizer to use.
         :param record_wrong_samples: If True, wrong samples are recorded through Visualizer.
         """
@@ -168,7 +169,7 @@ class BaseEnvironmentConfig:
                             f"BaseEnvironment.")
         return environment
 
-    def __str__(self) -> str:
+    def __str__(self):
 
         description = "\n"
         description += f"{self.name}\n"

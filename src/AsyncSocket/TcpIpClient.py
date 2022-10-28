@@ -6,7 +6,7 @@ from asyncio import run as async_run
 from numpy import ndarray
 
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
-from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment, Database
+from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
 
 
 class TcpIpClient(TcpIpObject):
@@ -17,33 +17,33 @@ class TcpIpClient(TcpIpObject):
                  port: int = 10000,
                  instance_id: int = 0,
                  instance_nb: int = 1,
-                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
+                 visualization_db: Optional[Union[Tuple[str, str]]] = None):
         """
-        TcpIpClient is both a TcpIpObject which communicate with a TcpIpServer and an AbstractEnvironment to compute
-        simulated data.
+        TcpIpClient is a TcpIpObject which communicate with a TcpIpServer and manages an Environment to compute data.
 
+        :param environment: Environment class.
         :param ip_address: IP address of the TcpIpObject.
         :param port: Port number of the TcpIpObject.
         :param instance_id: Index of this instance.
         :param instance_nb: Number of simultaneously launched instances.
+        :param visualization_db: Path to the visualization Database.
         """
 
         TcpIpObject.__init__(self,
                              ip_address=ip_address,
                              port=port)
 
+        # Create instance
         self.environment = environment(as_tcp_ip_client=True,
                                        instance_id=instance_id,
                                        instance_nb=instance_nb,
                                        visualization_db=visualization_db)
         self.environment.tcp_ip_client = self
 
-        # Bind to client address
+        # Bind to client address and send ID
         self.sock.connect((ip_address, port))
-        # Send ID
         self.sync_send_labeled_data(data_to_send=instance_id, label="instance_ID", receiver=self.sock,
                                     send_read_command=False)
-        # Flag to trigger client's shutdown
         self.close_client: bool = False
 
     ##########################################################################################
@@ -81,7 +81,7 @@ class TcpIpClient(TcpIpObject):
         self.environment.get_database_handler().init_remote(storing_partitions=partitions,
                                                             exchange_db=exchange)
 
-        # Create the environment
+        # Initialize the environment
         self.environment.create()
         self.environment.init()
         self.environment.init_database()
@@ -152,8 +152,7 @@ class TcpIpClient(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def get_prediction(self,
-                       **kwargs) -> Dict[str, ndarray]:
+    def get_prediction(self, **kwargs) -> Dict[str, ndarray]:
         """
         Request a prediction from Network.
 
@@ -288,6 +287,7 @@ class TcpIpClient(TcpIpObject):
         :param loop: Asyncio event loop.
         :param sender: TcpIpObject sender.
         """
-        
+
+        # Update the partition list in the DatabaseHandler
         new_database = await self.receive_data(loop=loop, sender=sender)
         self.environment.get_database_handler().update_list_partitions_remote(new_database.split('///'))

@@ -32,13 +32,13 @@ class BaseTraining(BasePipeline):
         Training can be launched with several data sources (from a Dataset, from an Environment, from combined sources).
         It provides a highly tunable learning process that can be used with any machine learning library.
 
-        :param network_config: Specialisation containing the parameters of the network manager.
-        :param database_config: Specialisation containing the parameters of the dataset manager.
-        :param environment_config: Specialisation containing the parameters of the environment manager.
-        :param session_dir: Relative path to the directory which contains sessions directories.
-        :param session_name: Name of the new the session directory.
-        :param new_session: Define the creation of new directories to store data.
-        :param epoch_nb: Number of epochs to run.
+        :param network_config: Configuration object with the parameters of the Network.
+        :param database_config: Configuration object with the parameters of the Database.
+        :param environment_config: Configuration object with the parameters of the Environment.
+        :param session_dir: Relative path to the directory which contains sessions repositories.
+        :param session_name: Name of the new the session repository.
+        :param new_session: If True, a new repository will be created for this session.
+        :param epoch_nb: Number of epochs to perform.
         :param batch_nb: Number of batches to use.
         :param batch_size: Number of samples in a single batch.
         :param debug: If True, main training features will not be launched.
@@ -117,7 +117,7 @@ class BaseTraining(BasePipeline):
         """
         Launch the training Pipeline.
         Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
-        more complex pipeline.
+        more complex Pipeline.
         """
 
         self.train_begin()
@@ -134,7 +134,7 @@ class BaseTraining(BasePipeline):
 
     def train_begin(self) -> None:
         """
-        Called once at the beginning of the training pipeline.
+        Called once at the beginning of the training Pipeline.
         """
 
         pass
@@ -180,9 +180,10 @@ class BaseTraining(BasePipeline):
 
         self.data_manager.get_data(epoch=self.epoch_id,
                                    animate=True)
-        _, self.loss_dict = self.network_manager.compute_prediction_and_loss(data_lines=self.data_manager.data_lines,
-                                                                             normalization=self.data_manager.normalization,
-                                                                             optimize=True)
+        self.loss_dict = self.network_manager.compute_prediction_and_loss(
+            data_lines=self.data_manager.data_lines,
+            normalization=self.data_manager.normalization,
+            optimize=True)
 
     def batch_count(self) -> None:
         """
@@ -223,7 +224,7 @@ class BaseTraining(BasePipeline):
 
     def train_end(self) -> None:
         """
-        Called once at the end of the training pipeline.
+        Called once at the end of the training Pipeline.
         """
 
         self.data_manager.close()
@@ -253,11 +254,9 @@ class BaseTraining(BasePipeline):
                 f.write(str(self.stats_manager))
             f.close()
 
-    def __str__(self) -> str:
+    def __str__(self):
 
-        description = "\n"
-        description += f"# {self.__class__.__name__}\n"
-        description += f"    Session directory: {self.session}\n"
+        description = BasePipeline.__str__(self)
         description += f"    Number of epochs: {self.epoch_nb}\n"
         description += f"    Number of batches per epoch: {self.batch_nb}\n"
         description += f"    Number of samples per batch: {self.batch_size}\n"

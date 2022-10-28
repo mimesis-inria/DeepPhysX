@@ -51,32 +51,45 @@ class TcpIpServer(TcpIpObject):
         self.sample_to_client_id: List[int] = []
         self.batch_from_dataset: Optional[List[int]] = None
         self.first_time: bool = True
-        self.data_lines: List[int] = []
+        self.data_lines: List[List[int]] = []
 
         # Reference to EnvironmentManager
         self.environment_manager: Optional[Any] = manager
 
         # Connect the Server to the Database
-        self.database_handler = DatabaseHandler(on_partitions_handler=self.__database_handler_partitions,
-                                                name='ServerHandler')
+        self.database_handler = DatabaseHandler(on_partitions_handler=self.__database_handler_partitions)
         self.environment_manager.data_manager.connect_handler(self.database_handler)
 
     ##########################################################################################
     ##########################################################################################
-    #                                     Connect Clients                                    #
+    #                              DatabaseHandler management                                #
     ##########################################################################################
     ##########################################################################################
 
-    def __database_handler_partitions(self):
+    def get_database_handler(self) -> DatabaseHandler:
+        """
+        Get the DatabaseHandler of the TcpIpServer.
+        """
 
+        return self.database_handler
+
+    def __database_handler_partitions(self) -> None:
+        """
+        Partition update event of the DatabaseHandler.
+        """
+
+        # Send the new partition to every Client
         for _, client in self.clients:
             self.sync_send_command_change_db(receiver=client)
             new_partition = self.database_handler.get_partitions()[-1]
             self.sync_send_data(data_to_send=f'{new_partition.get_path()[0]}///{new_partition.get_path()[1]}',
                                 receiver=client)
 
-    def get_database_handler(self) -> DatabaseHandler:
-        return self.database_handler
+    ##########################################################################################
+    ##########################################################################################
+    #                                     Connect Clients                                    #
+    ##########################################################################################
+    ##########################################################################################
 
     def connect(self) -> None:
         """
@@ -160,7 +173,7 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
 
     def get_batch(self,
-                  animate: bool = True) -> List[int]:
+                  animate: bool = True) -> List[List[int]]:
         """
         Build a batch from clients samples.
 
@@ -195,10 +208,7 @@ class TcpIpServer(TcpIpObject):
                             client_id: Optional[int] = None,
                             animate: bool = True) -> None:
         """
-        | Communication protocol with a client. It goes through different steps:
-        |   1) Eventually send samples to Client
-        |   2) Running steps & Receiving training data
-        |   3) Add data to the Queue
+        Communication protocol with a client.
 
         :param client: TcpIpObject client to communicate with.
         :param client_id: Index of the client.
@@ -231,35 +241,11 @@ class TcpIpServer(TcpIpObject):
         """
         Receive a batch of data from the Dataset. Samples will be dispatched between clients.
 
-        :param data_lines: Batch of data.
+        :param data_lines: Batch of indices of samples.
         """
 
         # Define batch from dataset
         self.batch_from_dataset = data_lines.copy()
-
-    def change_database(self,
-                        database: str):
-        """
-        Change the Database to connect to for each Client.
-
-        :param database: Path to the new Database.
-        """
-
-        async_run(self.__change_database(database))
-
-    async def __change_database(self,
-                                database: str):
-        """
-        Change the Database to connect to for each Client.
-
-        :param database: Path to the new Database.
-        """
-
-        loop = get_event_loop()
-        for client_id, client in self.clients:
-            await self.send_command_change_db(loop=loop, receiver=client)
-            await self.send_data(data_to_send=database[0], loop=loop, receiver=client)
-            await self.send_data(data_to_send=database[1], loop=loop, receiver=client)
 
     ##########################################################################################
     ##########################################################################################
