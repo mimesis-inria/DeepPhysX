@@ -293,21 +293,25 @@ class BaseEnvironment(AbstractEnvironment):
             kwargs = {field: self.__data_training[field] for field in necessary_fields}
 
         # If Environment is a TcpIpClient, send request to the Server
-        if self.as_tcp_ip_client:
+        if self.tcp_ip_client is not None:
             return self.tcp_ip_client.get_prediction(**kwargs)
 
         # Otherwise, check the hierarchy of managers
-        if self.environment_manager.data_manager is None:
-            raise ValueError("Cannot request prediction if DataManager does not exist")
-        # Get a prediction
-        self.__database_handler.update(table_name='Exchange',
-                                       data=kwargs,
-                                       line_id=self.instance_id)
-        self.environment_manager.data_manager.get_prediction(self.instance_id)
-        data_pred = self.__database_handler.get_line(table_name='Exchange',
-                                                     line_id=self.instance_id)
-        del data_pred['id']
-        return data_pred
+        elif self.environment_manager is not None:
+            if self.environment_manager.data_manager is None:
+                raise ValueError("Cannot request prediction if DataManager does not exist")
+            # Get a prediction
+            self.__database_handler.update(table_name='Exchange',
+                                           data=kwargs,
+                                           line_id=self.instance_id)
+            self.environment_manager.data_manager.get_prediction(self.instance_id)
+            data_pred = self.__database_handler.get_line(table_name='Exchange',
+                                                         line_id=self.instance_id)
+            del data_pred['id']
+            return data_pred
+
+        else:
+            raise ValueError(f"[{self.name}] This Environment has not Manager.")
 
     def _get_prediction(self):
         """
