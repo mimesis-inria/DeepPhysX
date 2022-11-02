@@ -4,22 +4,48 @@ Launch a training session and Dataset production simultaneously.
 """
 
 # DeepPhysX related imports
-from DeepPhysX.Core.Pipelines.BaseTrainer import BaseTrainer
+from DeepPhysX.Core.Pipelines.BaseTraining import BaseTraining
+from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
+from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 
 # Tutorial related imports
-from T3_configuration import env_config, net_config, dataset_config
+from T1_environment import DummyEnvironment
+from T2_network import DummyNetwork, DummyOptimization, DummyTransformation
 
 
 def launch_training():
+
+    # Create the Environment config
+    env_config = BaseEnvironmentConfig(environment_class=DummyEnvironment,
+                                       as_tcp_ip_client=True,
+                                       number_of_thread=3)
+
+    # Create the Network config
+    net_config = BaseNetworkConfig(network_class=DummyNetwork,
+                                   optimization_class=DummyOptimization,
+                                   data_transformation_class=DummyTransformation,
+                                   network_name='DummyNetwork',
+                                   network_type='Dummy',
+                                   save_each_epoch=False,
+                                   require_training_stuff=False)
+
+    # Create the Dataset config
+    database_config = BaseDatabaseConfig(max_file_size=1,
+                                         normalize=False)
+
     # Create the Pipeline
-    pipeline = BaseTrainer(session_dir='sessions',
-                           session_name='tutorial_online_training',
-                           environment_config=env_config,
-                           dataset_config=dataset_config,
-                           network_config=net_config,
-                           nb_epochs=2,
-                           nb_batches=100,
-                           batch_size=10)
+    pipeline = BaseTraining(network_config=net_config,
+                            database_config=database_config,
+                            environment_config=env_config,
+                            session_dir='sessions',
+                            session_name='tutorial_online_training',
+                            new_session=True,
+                            epoch_nb=2,
+                            batch_nb=20,
+                            batch_size=10,
+                            debug=True)
+
     # Launch the Pipeline
     pipeline.execute()
 
