@@ -15,7 +15,8 @@ class BaseEnvironment(AbstractEnvironment):
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 0,
                  instance_nb: int = 1,
-                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
+                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None,
+                 **kwargs):
         """
         BaseEnvironment computes simulated data for the Network and its training process.
 

@@ -19,7 +19,7 @@ if __name__ == '__main__':
     exec(f"from {module_name} import {argv[2]} as Environment")
 
     # Create, init and run Tcp-Ip environment
-    visualization_db = None if argv[7] == 'None' else [s[1:-1] for s in argv[8][1:-1].split(', ')]
+    visualization_db = None if argv[7] == 'None' else [s[1:-1] for s in argv[7][1:-1].split(', ')]
     client = TcpIpClient(environment=Environment,
                          ip_address=argv[3],
                          port=int(argv[4]),

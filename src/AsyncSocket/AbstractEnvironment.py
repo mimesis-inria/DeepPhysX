@@ -12,7 +12,8 @@ class AbstractEnvironment:
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 0,
                  instance_nb: int = 1,
-                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None):
+                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None,
+                 **kwargs):
         """
         AbstractEnvironment sets the Environment API for TcpIpClient.
         Do not use AbstractEnvironment to implement an Environment, use BaseEnvironment instead.

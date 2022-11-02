@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict
 from os import cpu_count
 from os.path import join, dirname
 from threading import Thread
@@ -24,7 +24,8 @@ class BaseEnvironmentConfig:
                  only_first_epoch: bool = True,
                  always_produce: bool = False,
                  visualizer: Optional[Type[VedoVisualizer]] = None,
-                 record_wrong_samples: bool = False):
+                 record_wrong_samples: bool = False,
+                 env_kwargs: Optional[Dict[str, Any]] = None):
         """
         BaseEnvironmentConfig is a configuration class to parameterize and create a BaseEnvironment for the
         EnvironmentManager.
@@ -42,6 +43,7 @@ class BaseEnvironmentConfig:
         :param always_produce: If True, data will always be produced in Environment(s).
         :param visualizer: Class of the Visualizer to use.
         :param record_wrong_samples: If True, wrong samples are recorded through Visualizer.
+        :param env_kwargs: Additional arguments to pass to the Environment.
         """
 
         self.name: str = self.__class__.__name__
@@ -85,6 +87,7 @@ class BaseEnvironmentConfig:
         self.load_samples: bool = load_samples
         self.only_first_epoch: bool = only_first_epoch
         self.always_produce: bool = always_produce
+        self.env_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
 
         # Visualizer variables
         self.visualizer: Optional[Type[VedoVisualizer]] = visualizer
@@ -135,7 +138,7 @@ class BaseEnvironmentConfig:
         """
 
         server.connect()
-        server.initialize()
+        server.initialize(env_kwargs=self.env_kwargs)
         self.server_is_ready = True
 
     def start_client(self,
@@ -163,7 +166,8 @@ class BaseEnvironmentConfig:
 
         # Create instance
         environment = self.environment_class(as_tcp_ip_client=False,
-                                             visualization_db=visualization_db)
+                                             visualization_db=visualization_db,
+                                             **self.env_kwargs)
         if not isinstance(environment, BaseEnvironment):
             raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "
                             f"BaseEnvironment.")

@@ -33,12 +33,11 @@ class TcpIpClient(TcpIpObject):
                              ip_address=ip_address,
                              port=port)
 
-        # Create instance
-        self.environment = environment(as_tcp_ip_client=True,
-                                       instance_id=instance_id,
-                                       instance_nb=instance_nb,
-                                       visualization_db=visualization_db)
-        self.environment.tcp_ip_client = self
+        # Environment instance
+        self.environment: AbstractEnvironment
+        self.environment_class = environment
+        self.environment_instance = (instance_id, instance_nb)
+        self.environment_visualization = visualization_db
 
         # Bind to client address and send ID
         self.sock.connect((ip_address, port))
@@ -65,6 +64,17 @@ class TcpIpClient(TcpIpObject):
         """
 
         loop = get_event_loop()
+
+        # Receive additional arguments
+        env_kwargs = {}
+        await self.receive_dict(recv_to=env_kwargs, loop=loop, sender=self.sock)
+
+        self.environment = self.environment_class(as_tcp_ip_client=True,
+                                                  instance_id=self.environment_instance[0],
+                                                  instance_nb=self.environment_instance[1],
+                                                  visualization_db=self.environment_visualization,
+                                                  **env_kwargs['env_kwargs'])
+        self.environment.tcp_ip_client = self
 
         # Receive prediction requests authorization
         self.allow_prediction_requests = await self.receive_data(loop=loop, sender=self.sock)
@@ -279,8 +289,8 @@ class TcpIpClient(TcpIpObject):
         await self.send_command_done(loop=loop, receiver=sender)
         await self.send_data(data_to_send=line, loop=loop, receiver=sender)
 
-    async def action_on_change_db(self, 
-                                  data: Dict[Any, Any], 
+    async def action_on_change_db(self,
+                                  data: Dict[Any, Any],
                                   client_id: int, sender: socket,
                                   loop: EventLoop) -> None:
         """

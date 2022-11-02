@@ -120,23 +120,32 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def initialize(self) -> None:
+    def initialize(self,
+                   env_kwargs: Dict[str, Any]) -> None:
         """
         Send parameters to the clients to create their environments.
+
+        :param env_kwargs: Additional arguments to pass to the Environment.
         """
 
         print(f"[{self.name}] Initializing clients...")
-        async_run(self.__initialize())
+        async_run(self.__initialize(env_kwargs))
 
-    async def __initialize(self) -> None:
+    async def __initialize(self,
+                           env_kwargs: Dict[str, Any]) -> None:
         """
         Send parameters to the clients to create their environments.
+
+        :param env_kwargs: Additional arguments to pass to the Environment.
         """
 
         loop = get_event_loop()
 
         # Initialisation process for each client
         for client_id, client in self.clients:
+
+            # Send additional arguments
+            await self.send_dict(name='env_kwargs', dict_to_send=env_kwargs, loop=loop, receiver=client)
 
             # Send prediction request authorization
             await self.send_data(data_to_send=self.environment_manager.allow_prediction_requests,
