@@ -21,8 +21,9 @@ class BaseTransformation:
 
         def inner(self, *args):
             for data in args:
-                if data is not None and type(data) != self.data_type:
-                    raise TypeError(f"[{self.name}] Wrong data type: {self.data_type} required, get {type(data)}")
+                for value in data.values():
+                    if value is not None and type(value) != self.data_type:
+                        raise TypeError(f"[{self.name}] Wrong data type: {self.data_type} required, get {type(value)}")
             return func(self, *args)
 
         return inner

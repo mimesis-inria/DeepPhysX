@@ -224,10 +224,11 @@ class NetworkManager:
         sample = self.database_handler.get_line(table_name='Exchange',
                                                 fields=self.network.net_fields,
                                                 line_id=instance_id)
+        del sample['id']
 
         # Apply normalization and convert to tensor
         for field in sample.keys():
-            sample[field] = array(sample[field])
+            sample[field] = array([sample[field]])
             if field in normalization.keys():
                 sample[field] = self.normalize_data(data=sample[field],
                                                     normalization=normalization[field])
@@ -241,7 +242,7 @@ class NetworkManager:
 
         # Return the prediction
         for field in data_pred.keys():
-            data_pred[field] = self.network.tensor_to_numpy(data=data_pred[field])
+            data_pred[field] = self.network.tensor_to_numpy(data=data_pred[field][0])
             if field in normalization.keys():
                 data_pred[field] = self.normalize_data(data=data_pred[field],
                                                        normalization=normalization[field],

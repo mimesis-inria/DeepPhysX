@@ -7,41 +7,42 @@ Run the pipeline BaseRunner to check the predictions of the trained network.
 import os
 
 # DeepPhysX related imports
-from DeepPhysX.Core.Pipelines.BaseRunner import BaseRunner
+from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
+from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
-from DeepPhysX.Core.Visualizer.VedoVisualizer import VedoVisualizer
-from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+
 
 # Session imports
 from Environment import MeanEnvironment
 
 
 def launch_prediction(session):
+
     # Define the number of points and the dimension
     nb_points = 30
     dimension = 3
+
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
                                                visualizer=VedoVisualizer,
-                                               param_dict={'constant': False,
+                                               env_kwargs={'constant': False,
                                                            'data_size': [nb_points, dimension],
-                                                           'sleep': True,
-                                                           'allow_requests': False},
-                                               as_tcp_ip_client=False)
+                                                           'delay': True,
+                                                           'allow_request': False})
+
     # Fully Connected configuration (the number of neurones on the first and last layer is defined by the total amount
     # of parameters in the input and the output vectors respectively)
     network_config = FCConfig(dim_layers=[nb_points * dimension, nb_points * dimension, dimension],
                               dim_output=dimension)
-    # Dataset configuration
-    dataset_config = BaseDatasetConfig(normalize=False)
+
     # Create DataGenerator
-    trainer = BaseRunner(session_dir='sessions',
-                         session_name=session,
-                         environment_config=environment_config,
-                         network_config=network_config,
-                         dataset_config=dataset_config,
-                         nb_steps=100)
+    trainer = BasePrediction(environment_config=environment_config,
+                             network_config=network_config,
+                             session_dir='sessions',
+                             session_name=session,
+                             step_nb=100)
+
     # Launch the training session
     trainer.execute()
 

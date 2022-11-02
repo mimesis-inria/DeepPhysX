@@ -10,7 +10,7 @@ from numpy import save, array, ndarray
 # DeepPhysX related imports
 from DeepPhysX.Core.Network.BaseNetwork import BaseNetwork
 from DeepPhysX.Core.Network.BaseOptimization import BaseOptimization
-from DeepPhysX.Core.Network.DataTransformation import DataTransformation
+from DeepPhysX.Core.Network.BaseTransformation import BaseTransformation
 
 
 # Create a Network as a BaseNetwork child class
@@ -94,12 +94,12 @@ class DummyOptimization(BaseOptimization):
         pass
 
 
-# Create a DataTransformation as a DataTransformation child class
-class DummyTransformation(DataTransformation):
+# Create a BaseTransformation as a BaseTransformation child class
+class DummyTransformation(BaseTransformation):
 
     def __init__(self, config):
 
-        DataTransformation.__init__(self, config)
+        BaseTransformation.__init__(self, config)
         self.data_type = ndarray
 
     def transform_before_prediction(self, data_net):

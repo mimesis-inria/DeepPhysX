@@ -21,7 +21,7 @@ def make_config(configuration_object: Any,
 
     # Check if a dataset_config already exists (child class will have the parent's config by default)
     if configuration_name in configuration_object.__dict__:
-        configuration: namedtuple = configuration_object.__getattr__(configuration_name)
+        configuration: namedtuple = configuration_object.__getattribute__(configuration_name)
         # Get items set in the existing config
         for key, value in configuration._asdict().items():
             # Only new items are required for children, check if the parent's items are set again anyway

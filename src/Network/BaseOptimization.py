@@ -43,7 +43,6 @@ class BaseOptimization:
         :return: Loss value.
         """
 
-        # WARNING: self.optimization.compute_loss(data_pred.reshape(data_gt.shape), data_gt, loss_data)
         raise NotImplementedError
 
     def transform_loss(self,

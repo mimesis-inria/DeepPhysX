@@ -10,7 +10,7 @@ class AbstractEnvironment:
 
     def __init__(self,
                  as_tcp_ip_client: bool = True,
-                 instance_id: int = 0,
+                 instance_id: int = 1,
                  instance_nb: int = 1,
                  visualization_db: Optional[Union[Database, Tuple[str, str]]] = None,
                  **kwargs):
@@ -30,7 +30,7 @@ class AbstractEnvironment:
             raise ValueError(f"[{self.name}] Instance ID ({instance_id}) is bigger than max instances "
                              f"({instance_nb}).")
         self.as_tcp_ip_client: bool = as_tcp_ip_client
-        self.instance_id: int = instance_id
+        self.instance_id: int = max(1, instance_id)
         self.instance_nb: int = instance_nb
 
         # Manager of the Environment
