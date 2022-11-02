@@ -10,7 +10,7 @@ class BaseOptimization:
         """
         BaseOptimization computes loss between prediction and target and optimizes the Network parameters.
 
-        :param config: Set of BaseOptimization parameters
+        :param config: Set of BaseOptimization parameters.
         """
 
         self.manager: Any = None

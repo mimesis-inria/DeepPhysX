@@ -39,7 +39,7 @@ class BaseNetwork:
         Compute a forward pass of the Network.
 
         :param input_data: Input tensor.
-        :return: Output tensor.
+        :return: Network prediction.
         """
 
         raise NotImplementedError
@@ -60,7 +60,7 @@ class BaseNetwork:
 
     def set_device(self) -> None:
         """
-        | Set computer device on which Network's parameters will be stored and tensors will be computed.
+        Set computer device on which Network's parameters will be stored and tensors will be computed.
         """
 
         raise NotImplementedError

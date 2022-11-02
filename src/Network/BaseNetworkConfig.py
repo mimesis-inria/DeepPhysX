@@ -4,7 +4,7 @@ from numpy import typeDict
 
 from DeepPhysX.Core.Network.BaseNetwork import BaseNetwork
 from DeepPhysX.Core.Network.BaseOptimization import BaseOptimization
-from DeepPhysX.Core.Network.DataTransformation import DataTransformation
+from DeepPhysX.Core.Network.BaseTransformation import BaseTransformation
 from DeepPhysX.Core.Utils.configs import make_config, namedtuple
 
 
@@ -13,7 +13,7 @@ class BaseNetworkConfig:
     def __init__(self,
                  network_class: Type[BaseNetwork] = BaseNetwork,
                  optimization_class: Type[BaseOptimization] = BaseOptimization,
-                 data_transformation_class: Type[DataTransformation] = DataTransformation,
+                 data_transformation_class: Type[BaseTransformation] = BaseTransformation,
                  network_dir: Optional[str] = None,
                  network_name: str = 'Network',
                  network_type: str = 'BaseNetwork',
@@ -26,11 +26,11 @@ class BaseNetworkConfig:
                  optimizer: Optional[Any] = None):
         """
         BaseNetworkConfig is a configuration class to parameterize and create BaseNetwork, BaseOptimization and
-        DataTransformation for the NetworkManager.
+        BaseTransformation for the NetworkManager.
 
         :param network_class: BaseNetwork class from which an instance will be created.
         :param optimization_class: BaseOptimization class from which an instance will be created.
-        :param data_transformation_class: DataTransformation class from which an instance will be created.
+        :param data_transformation_class: BaseTransformation class from which an instance will be created.
         :param network_dir: Name of an existing network repository.
         :param network_name: Name of the network.
         :param network_type: Type of the network.
@@ -92,7 +92,7 @@ class BaseNetworkConfig:
         self.training_stuff: bool = (loss is not None) and (optimizer is not None) or (not require_training_stuff)
 
         # NetworkManager parameterization
-        self.data_transformation_class: Type[DataTransformation] = data_transformation_class
+        self.data_transformation_class: Type[BaseTransformation] = data_transformation_class
         self.data_transformation_config: namedtuple = make_config(configuration_object=self,
                                                                   configuration_name='data_transformation_config')
 
@@ -128,18 +128,18 @@ class BaseNetworkConfig:
                             f"BaseOptimization.")
         return optimization
 
-    def create_data_transformation(self) -> DataTransformation:
+    def create_data_transformation(self) -> BaseTransformation:
         """
         Create an instance of data_transformation_class with given parameters.
 
-        :return: DataTransformation object from data_transformation_class and its parameters.
+        :return: BaseTransformation object from data_transformation_class and its parameters.
         """
 
         # Create instance
         data_transformation = self.data_transformation_class(config=self.data_transformation_config)
-        if not isinstance(data_transformation, DataTransformation):
+        if not isinstance(data_transformation, BaseTransformation):
             raise TypeError(f"[{self.name}] The given 'data_transformation_class'={self.data_transformation_class} "
-                            f"must be a DataTransformation.")
+                            f"must be a BaseTransformation.")
         return data_transformation
 
     def __str__(self):

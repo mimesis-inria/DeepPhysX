@@ -2,13 +2,13 @@ from typing import Callable, Any, Optional, Tuple, Dict
 from collections import namedtuple
 
 
-class DataTransformation:
+class BaseTransformation:
 
     def __init__(self, config: namedtuple):
         """
-        DataTransformation manages data operations before and after network predictions.
+        BaseTransformation manages data operations before and after network predictions.
 
-        :param config: Set of DataTransformation parameters.
+        :param config: Set of BaseTransformation parameters.
         """
 
         self.name = self.__class__.__name__
