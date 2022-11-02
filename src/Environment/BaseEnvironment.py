@@ -334,11 +334,6 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Load Database and create basic fields
         self.__database_handler.load()
-        if self.instance_id == 1:
-            self.__database_handler.create_fields(table_name='Training',
-                                                  fields=('env_id', int))
-            self.__database_handler.create_fields(table_name='Additional',
-                                                  fields=('env_id', int))
 
     def _send_training_data(self) -> List[int]:
         """

@@ -232,6 +232,11 @@ class DatabaseManager:
             for table_name in fields.keys():
                 self.partitions[self.mode][-1].create_fields(table_name=table_name,
                                                              fields=fields[table_name])
+        else:
+            self.partitions[self.mode][-1].create_fields(table_name='Training',
+                                                         fields=('env_id', int))
+            self.partitions[self.mode][-1].create_fields(table_name='Additional',
+                                                         fields=('env_id', int))
 
         # 4. Update the partitions in handlers
         for handler in self.database_handlers:
