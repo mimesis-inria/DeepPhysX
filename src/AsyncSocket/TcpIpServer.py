@@ -166,6 +166,10 @@ class TcpIpServer(TcpIpObject):
             await self.receive_data(loop=loop, sender=client)
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
+        # Synchronize Clients
+        for client_id, client in self.clients:
+            await self.send_data(data_to_send='sync', loop=loop, receiver=client)
+
     ##########################################################################################
     ##########################################################################################
     #                          Data: produce batch & dispatch batch                          #
@@ -197,11 +201,12 @@ class TcpIpServer(TcpIpObject):
         self.data_lines = []
         # Launch the communication protocol while the batch needs to be filled
         while nb_sample < self.batch_size:
+            clients = self.clients[:min(len(self.clients), self.batch_size - nb_sample)]
             # Run communicate protocol for each client and wait for the last one to finish
             await gather(*[self.__communicate(client=client,
                                               client_id=client_id,
-                                              animate=animate) for client_id, client in self.clients])
-            nb_sample += len(self.clients)
+                                              animate=animate) for client_id, client in clients])
+            nb_sample += len(clients)
 
     async def __communicate(self,
                             client: Optional[socket] = None,

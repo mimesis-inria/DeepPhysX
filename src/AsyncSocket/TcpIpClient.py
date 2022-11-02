@@ -90,6 +90,10 @@ class TcpIpClient(TcpIpObject):
         # Initialization done
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
+        # Synchronize Database
+        _ = await self.receive_data(loop=loop, sender=self.sock)
+        self.environment.get_database_handler().load()
+
     ##########################################################################################
     ##########################################################################################
     #                                      Running Client                                    #
