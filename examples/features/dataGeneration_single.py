@@ -36,7 +36,7 @@ def launch_data_generation():
                                         database_config=database_config,
                                         session_dir='sessions',
                                         session_name='data_generation',
-                                        batch_nb=500,
+                                        batch_nb=100,
                                         batch_size=10)
 
     # Launch the training session

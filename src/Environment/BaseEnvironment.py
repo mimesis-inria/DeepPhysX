@@ -300,8 +300,6 @@ class BaseEnvironment(AbstractEnvironment):
         # If Environment is a TcpIpClient, request to the Server
         if self.as_tcp_ip_client:
             self.tcp_ip_client.request_update_visualization()
-        else:
-            self.environment_manager.update_visualizer(self.instance_id)
         self.factory.render()
 
     def _get_prediction(self):

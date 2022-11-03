@@ -28,8 +28,7 @@ def launch_training():
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
                                                visualizer=VedoVisualizer,
-                                               as_tcp_ip_client=True,
-                                               number_of_thread=1,
+                                               as_tcp_ip_client=False,
                                                env_kwargs={'constant': True,
                                                            'data_size': [nb_points, dimension],
                                                            'delay': False,

@@ -39,7 +39,7 @@ def launch_training():
                            session_dir='sessions',
                            session_name='offline_training',
                            epoch_nb=1,
-                           batch_nb=500,
+                           batch_nb=100,
                            batch_size=10)
 
     # Launch the training session
