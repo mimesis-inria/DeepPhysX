@@ -184,6 +184,22 @@ class DatabaseHandler:
             return [len(self.__storing_partitions) - 1,
                     self.__storing_partitions[-1].add_data(table_name=table_name, data=data)]
 
+    def add_batch(self,
+                  table_name: str,
+                  batch: Dict[str, List[Any]]) -> None:
+        """
+        Add a batch of data in a Database.
+
+        :param table_name: Name of the Table.
+        :param batch: New lines of the Table.
+        """
+
+        # Only available in the storing Database
+        if table_name == 'Exchange':
+            raise ValueError(f"Cannot add a batch in the Exchange Database.")
+        self.__storing_partitions[-1].add_batch(table_name=table_name,
+                                                batch=batch)
+
     def update(self,
                table_name: str,
                data: Dict[str, Any],
