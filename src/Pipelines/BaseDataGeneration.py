@@ -1,12 +1,11 @@
 from typing import Optional
 from os.path import join, sep, exists
-from sys import stdout
+from vedo import ProgressBar
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Utils.progressbar import Progressbar
 from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
 
@@ -65,7 +64,7 @@ class BaseDataGeneration(BasePipeline):
         self.batch_nb: int = batch_nb
         self.batch_id: int = 0
         self.batch_size = batch_size
-        self.progress_bar = Progressbar(start=0, stop=self.batch_id, c='orange', title="Data Generation")
+        self.progress_bar = ProgressBar(start=0, stop=self.batch_nb, c='orange', title="Data Generation")
 
     def execute(self) -> None:
         """
@@ -122,8 +121,7 @@ class BaseDataGeneration(BasePipeline):
         Called once at the end of a batch production.
         """
 
-        stdout.write("\033[K")
-        self.progress_bar.print(counts=self.batch_id + 1)
+        self.progress_bar.print(counts=self.batch_id)
 
     def data_generation_end(self) -> None:
         """

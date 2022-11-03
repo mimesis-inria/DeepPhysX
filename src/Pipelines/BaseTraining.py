@@ -1,7 +1,7 @@
 from typing import Optional
-from sys import stdout
 from os.path import join, isfile, exists, sep
 from datetime import datetime
+from vedo import ProgressBar
 
 from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.DataManager import DataManager
@@ -10,7 +10,6 @@ from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Utils.progressbar import Progressbar
 from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
 
 
@@ -102,14 +101,13 @@ class BaseTraining(BasePipeline):
         self.debug = debug
 
         # Progressbar
-        if not self.debug:
-            self.progress_counter = 0
-            self.digits = ['{' + f':0{len(str(self.epoch_nb))}d' + '}',
-                           '{' + f':0{len(str(self.batch_nb))}d' + '}']
-            epoch_id, epoch_nb = self.digits[0].format(0), self.digits[0].format(self.epoch_nb)
-            batch_id, batch_nb = self.digits[1].format(0), self.digits[1].format(self.batch_nb)
-            self.progress_bar = Progressbar(start=0, stop=self.batch_nb * self.epoch_nb, c='orange',
-                                            title=f'Epoch n°{epoch_id}/{epoch_nb} - Batch n°{batch_id}/{batch_nb}')
+        self.progress_counter = 0
+        self.digits = ['{' + f':0{len(str(self.epoch_nb))}d' + '}',
+                       '{' + f':0{len(str(self.batch_nb))}d' + '}']
+        epoch_id, epoch_nb = self.digits[0].format(0), self.digits[0].format(self.epoch_nb)
+        batch_id, batch_nb = self.digits[1].format(0), self.digits[1].format(self.batch_nb)
+        self.progress_bar = ProgressBar(start=0, stop=self.batch_nb * self.epoch_nb, c='orange',
+                                        title=f'Epoch n°{epoch_id}/{epoch_nb} - Batch n°{batch_id}/{batch_nb}')
 
         self.save_info_file()
 
@@ -165,13 +163,11 @@ class BaseTraining(BasePipeline):
         Called one at the beginning of a batch production.
         """
 
-        if not self.debug:
-            stdout.write("\033[K")
-            self.progress_counter += 1
-            id_epoch, nb_epoch = self.digits[0].format(self.epoch_id + 1), self.digits[0].format(self.epoch_nb)
-            id_batch, nb_batch = self.digits[1].format(self.batch_id + 1), self.digits[1].format(self.batch_nb)
-            self.progress_bar.title = f'Epoch n°{id_epoch}/{nb_epoch} - Batch n°{id_batch}/{nb_batch} '
-            self.progress_bar.print(counts=self.progress_counter)
+        self.progress_counter += 1
+        id_epoch, nb_epoch = self.digits[0].format(self.epoch_id + 1), self.digits[0].format(self.epoch_nb)
+        id_batch, nb_batch = self.digits[1].format(self.batch_id + 1), self.digits[1].format(self.batch_nb)
+        self.progress_bar.title = f'Epoch n°{id_epoch}/{nb_epoch} - Batch n°{id_batch}/{nb_batch} '
+        self.progress_bar.print(counts=self.progress_counter)
 
     def optimize(self) -> None:
         """
