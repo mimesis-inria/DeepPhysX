@@ -42,12 +42,10 @@ class EnvironmentManager:
 
         # Create a Visualizer to provide the visualization Database
         self.visualizer: Optional[VedoVisualizer] = None
-        visualization_db = None
         if environment_config.visualizer is not None:
             self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
                                                             database_name='Visualization',
                                                             remote=environment_config.as_tcp_ip_client)
-            visualization_db = self.visualizer.get_database()
 
         # Create a single Environment or a TcpIpServer
         force_local = pipeline == 'prediction'
@@ -58,17 +56,19 @@ class EnvironmentManager:
         if environment_config.as_tcp_ip_client and not force_local:
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           visualization_db=None if visualization_db is None else
-                                                           visualization_db.get_path())
+                                                           visualization_db=None if self.visualizer is None else
+                                                           self.visualizer.get_path())
         # Create Environment
         else:
-            self.environment = environment_config.create_environment(visualization_db=visualization_db)
+            self.environment = environment_config.create_environment()
             self.environment.environment_manager = self
             self.data_manager.connect_handler(self.environment.get_database_handler())
             self.environment.create()
             self.environment.init()
             self.environment.init_database()
-            self.environment.init_visualization()
+            if self.visualizer is not None:
+                self.environment._create_visualization(visualization_db=self.visualizer.get_database())
+                self.environment.init_visualization()
 
         # Define whether methods are used for environment or server
         self.get_database_handler = self.__get_server_db_handler if self.server else self.__get_environment_db_handler

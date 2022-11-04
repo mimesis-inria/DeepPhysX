@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from asyncio import get_event_loop, gather
 from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
@@ -121,22 +121,26 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
 
     def initialize(self,
-                   env_kwargs: Dict[str, Any]) -> None:
+                   env_kwargs: Dict[str, Any],
+                   visualization_db: Optional[Tuple[str, str]] = None) -> None:
         """
         Send parameters to the clients to create their environments.
 
         :param env_kwargs: Additional arguments to pass to the Environment.
+        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         print(f"[{self.name}] Initializing clients...")
-        async_run(self.__initialize(env_kwargs))
+        async_run(self.__initialize(env_kwargs, visualization_db))
 
     async def __initialize(self,
-                           env_kwargs: Dict[str, Any]) -> None:
+                           env_kwargs: Dict[str, Any],
+                           visualization_db: Optional[Tuple[str, str]] = None) -> None:
         """
         Send parameters to the clients to create their environments.
 
         :param env_kwargs: Additional arguments to pass to the Environment.
+        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         loop = get_event_loop()
@@ -170,6 +174,10 @@ class TcpIpServer(TcpIpObject):
             else:
                 partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
             await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
+
+            # Send visualization Database
+            visualization = 'None' if visualization_db is None else f'{visualization_db[0]}///{visualization_db[1]}'
+            await self.send_data(data_to_send=visualization, loop=loop, receiver=client)
 
             # Wait Client init
             await self.receive_data(loop=loop, sender=client)

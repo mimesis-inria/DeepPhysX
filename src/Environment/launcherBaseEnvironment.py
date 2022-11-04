@@ -8,9 +8,9 @@ from DeepPhysX.Core.AsyncSocket.TcpIpClient import TcpIpClient
 if __name__ == '__main__':
 
     # Check script call
-    if len(argv) != 8:
+    if len(argv) != 7:
         print(f"Usage: python3 {argv[0]} <file_path> <environment_class> <ip_address> <port> <instance_id> "
-              f"<max_instance_count> <visu_db>")
+              f"<max_instance_count>")
         exit(1)
 
     # Import environment_class
@@ -19,13 +19,11 @@ if __name__ == '__main__':
     exec(f"from {module_name} import {argv[2]} as Environment")
 
     # Create, init and run Tcp-Ip environment
-    visualization_db = None if argv[7] == 'None' else [s[1:-1] for s in argv[7][1:-1].split(', ')]
     client = TcpIpClient(environment=Environment,
                          ip_address=argv[3],
                          port=int(argv[4]),
                          instance_id=int(argv[5]),
-                         instance_nb=int(argv[6]),
-                         visualization_db=visualization_db)
+                         instance_nb=int(argv[6]))
     client.initialize()
     client.launch()
 

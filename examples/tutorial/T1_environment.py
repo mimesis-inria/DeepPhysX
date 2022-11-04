@@ -16,14 +16,12 @@ class DummyEnvironment(BaseEnvironment):
     def __init__(self,
                  as_tcp_ip_client=True,
                  instance_id=1, 
-                 instance_nb=1,
-                 visualization_db=None):
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self, 
                                  as_tcp_ip_client=as_tcp_ip_client,
                                  instance_id=instance_id, 
-                                 instance_nb=instance_nb,
-                                 visualization_db=visualization_db)
+                                 instance_nb=instance_nb)
 
         self.step_nb: int = 0
 

@@ -20,7 +20,6 @@ class MeanEnvironment(BaseEnvironment):
                  as_tcp_ip_client=True,
                  instance_id=1,
                  instance_nb=1,
-                 visualization_db=None,
                  constant=False,
                  data_size=(30, 2),
                  delay=False,
@@ -29,8 +28,7 @@ class MeanEnvironment(BaseEnvironment):
         BaseEnvironment.__init__(self,
                                  as_tcp_ip_client=as_tcp_ip_client,
                                  instance_id=instance_id,
-                                 instance_nb=instance_nb,
-                                 visualization_db=visualization_db)
+                                 instance_nb=instance_nb)
 
         # Define training data values
         self.pcd = array([])
@@ -59,23 +57,21 @@ class MeanEnvironment(BaseEnvironment):
 
     def init_visualization(self):
 
-        if self.factory is not None:
-
-            # Point cloud (object will have id = 0)
-            self.factory.add_points(positions=self.pcd,
-                                    at=self.instance_id,
-                                    c='blue',
-                                    point_size=8)
-            # Ground truth value (object will have id = 1)
-            self.factory.add_points(positions=self.mean,
-                                    at=self.instance_id,
-                                    c='green',
-                                    point_size=10)
-            # Prediction value (object will have id = 2)
-            self.factory.add_points(positions=self.mean,
-                                    at=self.instance_id,
-                                    c='orange',
-                                    point_size=12)
+        # Point cloud (object will have id = 0)
+        self.factory.add_points(positions=self.pcd,
+                                at=self.instance_id,
+                                c='blue',
+                                point_size=8)
+        # Ground truth value (object will have id = 1)
+        self.factory.add_points(positions=self.mean,
+                                at=self.instance_id,
+                                c='green',
+                                point_size=10)
+        # Prediction value (object will have id = 2)
+        self.factory.add_points(positions=self.mean,
+                                at=self.instance_id,
+                                c='orange',
+                                point_size=12)
 
     """
     ENVIRONMENT BEHAVIOR

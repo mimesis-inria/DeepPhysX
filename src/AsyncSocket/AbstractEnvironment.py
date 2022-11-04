@@ -11,9 +11,7 @@ class AbstractEnvironment:
     def __init__(self,
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 1,
-                 instance_nb: int = 1,
-                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None,
-                 **kwargs):
+                 instance_nb: int = 1):
         """
         AbstractEnvironment sets the Environment API for TcpIpClient.
         Do not use AbstractEnvironment to implement an Environment, use BaseEnvironment instead.
@@ -88,6 +86,9 @@ class AbstractEnvironment:
     ##########################################################################################
 
     def get_database_handler(self) -> DatabaseHandler:
+        raise NotImplementedError
+
+    def _create_visualization(self, visualization_db: Union[Database, Tuple[str, str]]) -> None:
         raise NotImplementedError
 
     def _send_training_data(self) -> None:

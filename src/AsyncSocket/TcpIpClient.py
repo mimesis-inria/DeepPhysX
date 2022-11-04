@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type, Optional, Union, Tuple
+from typing import Any, Dict, Type
 from socket import socket
 from asyncio import get_event_loop
 from asyncio import AbstractEventLoop as EventLoop
@@ -16,8 +16,7 @@ class TcpIpClient(TcpIpObject):
                  ip_address: str = 'localhost',
                  port: int = 10000,
                  instance_id: int = 0,
-                 instance_nb: int = 1,
-                 visualization_db: Optional[Union[Tuple[str, str]]] = None):
+                 instance_nb: int = 1):
         """
         TcpIpClient is a TcpIpObject which communicate with a TcpIpServer and manages an Environment to compute data.
 
@@ -26,7 +25,6 @@ class TcpIpClient(TcpIpObject):
         :param port: Port number of the TcpIpObject.
         :param instance_id: Index of this instance.
         :param instance_nb: Number of simultaneously launched instances.
-        :param visualization_db: Path to the visualization Database.
         """
 
         TcpIpObject.__init__(self,
@@ -37,7 +35,6 @@ class TcpIpClient(TcpIpObject):
         self.environment: AbstractEnvironment
         self.environment_class = environment
         self.environment_instance = (instance_id, instance_nb)
-        self.environment_visualization = visualization_db
 
         # Bind to client address and send ID
         self.sock.connect((ip_address, port))
@@ -73,7 +70,6 @@ class TcpIpClient(TcpIpObject):
         self.environment = self.environment_class(as_tcp_ip_client=True,
                                                   instance_id=self.environment_instance[0],
                                                   instance_nb=self.environment_instance[1],
-                                                  visualization_db=self.environment_visualization,
                                                   **env_kwargs)
         self.environment.tcp_ip_client = self
 
@@ -92,11 +88,17 @@ class TcpIpClient(TcpIpObject):
         self.environment.get_database_handler().init_remote(storing_partitions=partitions,
                                                             exchange_db=exchange)
 
+        # Receive visualization database
+        visualization_db = await self.receive_data(loop=loop, sender=self.sock)
+        visualization_db = None if visualization_db == 'None' else visualization_db.split('///')
+
         # Initialize the environment
         self.environment.create()
         self.environment.init()
         self.environment.init_database()
-        self.environment.init_visualization()
+        if visualization_db is not None:
+            self.environment._create_visualization(visualization_db=visualization_db)
+            self.environment.init_visualization()
 
         # Initialization done
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)

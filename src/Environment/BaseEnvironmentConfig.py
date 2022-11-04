@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, Dict
+from typing import Any, Optional, Type, Dict, Tuple
 from os import cpu_count
 from os.path import join, dirname
 from threading import Thread
@@ -96,7 +96,7 @@ class BaseEnvironmentConfig:
     def create_server(self,
                       environment_manager: Optional[Any] = None,
                       batch_size: int = 1,
-                      visualization_db: Optional[str] = None) -> TcpIpServer:
+                      visualization_db: Optional[Tuple[str, str]] = None) -> TcpIpServer:
         """
         Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
@@ -113,13 +113,13 @@ class BaseEnvironmentConfig:
                              max_client_count=self.max_client_connections,
                              batch_size=batch_size,
                              manager=environment_manager)
-        server_thread = Thread(target=self.start_server, args=(server,))
+        server_thread = Thread(target=self.start_server, args=(server, visualization_db))
         server_thread.start()
 
         # Create clients
         client_threads = []
         for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i + 1, visualization_db))
+            client_thread = Thread(target=self.start_client, args=(i + 1,))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -130,43 +130,41 @@ class BaseEnvironmentConfig:
         return server
 
     def start_server(self,
-                     server: TcpIpServer) -> None:
+                     server: TcpIpServer,
+                     visualization_db: Optional[Tuple[str, str]] = None) -> None:
         """
         Start TcpIpServer.
 
         :param server: TcpIpServer.
+        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         server.connect()
-        server.initialize(env_kwargs=self.env_kwargs)
+        server.initialize(visualization_db=visualization_db,
+                          env_kwargs=self.env_kwargs)
         self.server_is_ready = True
 
     def start_client(self,
-                     idx: int = 1,
-                     visualization_db: Optional[str] = None) -> None:
+                     idx: int = 1) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
         :param idx: Index of client.
-        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcherBaseEnvironment.py')
         run([executable, script, self.environment_file, self.environment_class.__name__,
-             self.ip_address, str(self.port), str(idx), str(self.number_of_thread), str(visualization_db)])
+             self.ip_address, str(self.port), str(idx), str(self.number_of_thread)])
 
-    def create_environment(self,
-                           visualization_db: Optional[Any] = None) -> BaseEnvironment:
+    def create_environment(self) -> BaseEnvironment:
         """
         Create an Environment that will not be a TcpIpObject.
 
-        :param visualization_db: Path to the visualization Database to connect to.
         :return: Environment object.
         """
 
         # Create instance
         environment = self.environment_class(as_tcp_ip_client=False,
-                                             visualization_db=visualization_db,
                                              **self.env_kwargs)
         if not isinstance(environment, BaseEnvironment):
             raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "

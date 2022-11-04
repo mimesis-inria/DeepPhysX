@@ -15,7 +15,6 @@ class BaseEnvironment(AbstractEnvironment):
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 1,
                  instance_nb: int = 1,
-                 visualization_db: Optional[Union[Database, Tuple[str, str]]] = None,
                  **kwargs):
         """
         BaseEnvironment computes simulated data for the Network and its training process.
@@ -23,7 +22,6 @@ class BaseEnvironment(AbstractEnvironment):
         :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
         :param instance_id: ID of the instance.
         :param instance_nb: Number of simultaneously launched instances.
-        :param visualization_db: The path to the visualization Database or the visualization Database object to connect.
         """
 
         AbstractEnvironment.__init__(self,
@@ -47,14 +45,6 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Connect the Factory to the visualization Database
         self.factory: Optional[VedoFactory] = None
-        if visualization_db is not None:
-            if type(visualization_db) == list:
-                self.factory = VedoFactory(database_path=visualization_db,
-                                           idx_instance=instance_id,
-                                           remote=True)
-            else:
-                self.factory = VedoFactory(database=visualization_db,
-                                           idx_instance=instance_id)
 
     ##########################################################################################
     ##########################################################################################
@@ -298,10 +288,11 @@ class BaseEnvironment(AbstractEnvironment):
         Triggers the Visualizer update.
         """
 
-        # If Environment is a TcpIpClient, request to the Server
-        if self.as_tcp_ip_client:
-            self.tcp_ip_client.request_update_visualization()
-        self.factory.render()
+        if self.factory is not None:
+            # If Environment is a TcpIpClient, request to the Server
+            if self.as_tcp_ip_client:
+                self.tcp_ip_client.request_update_visualization()
+            self.factory.render()
 
     def _get_prediction(self):
         """
@@ -336,6 +327,20 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Load Database and create basic fields
         self.__database_handler.load()
+
+    def _create_visualization(self,
+                              visualization_db: Union[Database, Tuple[str, str]]) -> None:
+        """
+        Create a Factory for the Environment.
+        """
+
+        if type(visualization_db) == list:
+            self.factory = VedoFactory(database_path=visualization_db,
+                                       idx_instance=self.instance_id,
+                                       remote=True)
+        else:
+            self.factory = VedoFactory(database=visualization_db,
+                                       idx_instance=self.instance_id)
 
     def _send_training_data(self) -> List[int]:
         """
