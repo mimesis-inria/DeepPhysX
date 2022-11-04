@@ -94,7 +94,8 @@ class DatabaseHandler:
 
         for db in self.__storing_partitions:
             db.load()
-        self.__exchange_db.load()
+        if self.__exchange_db is not None:
+            self.__exchange_db.load()
 
     def get_database_dir(self) -> str:
         """
@@ -156,6 +157,8 @@ class DatabaseHandler:
         :param table_name: Name of the Table.
         """
 
+        if self.__exchange_db is None and len(self.__storing_partitions) == 0:
+            return []
         database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[0]
         return database.get_fields(table_name=table_name)
 

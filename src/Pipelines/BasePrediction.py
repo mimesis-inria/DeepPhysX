@@ -82,7 +82,7 @@ class BasePrediction(BasePipeline):
             self.sample_begin()
             self.predict()
             self.sample_end()
-        self.run_end()
+        self.prediction_end()
 
     def prediction_begin(self) -> None:
         """
@@ -122,7 +122,7 @@ class BasePrediction(BasePipeline):
 
         pass
 
-    def run_end(self) -> None:
+    def prediction_end(self) -> None:
         """
         Called once at the end of the prediction Pipeline.
         """
