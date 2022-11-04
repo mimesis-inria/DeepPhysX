@@ -233,6 +233,8 @@ class DatabaseHandler:
 
         database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[line_id[0]]
         line_id = line_id[1] if type(line_id) == list else line_id
+        if database.nb_lines(table_name=table_name) == 0:
+            return {}
         return database.get_line(table_name=table_name,
                                  line_id=line_id,
                                  fields=fields)

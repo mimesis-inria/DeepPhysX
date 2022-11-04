@@ -243,9 +243,9 @@ class NetworkManager:
         # Return the prediction
         for field in data_pred.keys():
             data_pred[field] = self.network.tensor_to_numpy(data=data_pred[field][0])
-            if field in normalization.keys():
+            if self.network.pred_norm_fields[field] in normalization.keys():
                 data_pred[field] = self.normalize_data(data=data_pred[field],
-                                                       normalization=normalization[field],
+                                                       normalization=normalization[self.network.pred_norm_fields[field]],
                                                        reverse=True)
             data_pred[field].reshape(-1)
         self.database_handler.update(table_name='Exchange',

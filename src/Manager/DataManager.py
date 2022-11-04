@@ -88,7 +88,8 @@ class DataManager:
 
     def get_data(self,
                  epoch: int = 0,
-                 animate: bool = True) -> None:
+                 animate: bool = True,
+                 load_samples: bool = True) -> None:
         """
         Fetch data from the EnvironmentManager or the DatabaseManager according to the context.
 
@@ -129,7 +130,8 @@ class DataManager:
 
             # Get data from Dataset
             if self.environment_manager.load_samples:
-                self.data_lines = self.database_manager.get_data(batch_size=1)
+                if load_samples:
+                    self.data_lines = self.database_manager.get_data(batch_size=1)
                 self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                         animate=animate,
                                                         request_prediction=True,
@@ -141,6 +143,10 @@ class DataManager:
                                                                     save_data=self.produce_data)
                 if self.produce_data:
                     self.database_manager.add_data(self.data_lines)
+
+    def load_sample(self) -> List[int]:
+        self.data_lines = self.database_manager.get_data(batch_size=1)
+        return self.data_lines[0]
 
     def get_prediction(self,
                        instance_id: int) -> None:

@@ -195,7 +195,8 @@ class DatabaseManager:
                 self.partitions[mode].append(db)
         if len(self.partitions[self.mode]) == 0:
             self.create_partition()
-        elif self.max_file_size is not None and self.partitions[self.mode][-1].memory_size > self.max_file_size:
+        elif self.max_file_size is not None and self.partitions[self.mode][-1].memory_size > self.max_file_size \
+                and self.produce_data:
             self.create_partition()
 
         # 6. Index partitions

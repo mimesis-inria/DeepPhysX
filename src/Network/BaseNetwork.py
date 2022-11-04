@@ -21,6 +21,7 @@ class BaseNetwork:
         self.net_fields = ['input']
         self.opt_fields = ['ground_truth']
         self.pred_fields = ['prediction']
+        self.pred_norm_fields = {'prediction': 'ground_truth'}
 
     def predict(self,
                 data_net: Dict[str, Any]) -> Dict[str, Any]:
