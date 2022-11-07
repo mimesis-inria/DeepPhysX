@@ -49,6 +49,12 @@ class BasePrediction(BasePipeline):
             raise ValueError(f"[{self.name}] The following directory does not exist: {join(session_dir, session_name)}")
         self.session = join(session_dir, session_name)
 
+        # Create a NetworkManager
+        self.network_manager = NetworkManager(network_config=network_config,
+                                              pipeline=self.type,
+                                              session=self.session,
+                                              new_session=False)
+
         # Create a DataManager
         self.data_manager = DataManager(pipeline=self,
                                         database_config=database_config,
@@ -57,12 +63,6 @@ class BasePrediction(BasePipeline):
                                         new_session=False,
                                         produce_data=record,
                                         batch_size=1)
-
-        # Create a NetworkManager
-        self.network_manager = NetworkManager(network_config=network_config,
-                                              pipeline=self.type,
-                                              session=self.session,
-                                              new_session=False)
         self.data_manager.connect_handler(self.network_manager.get_database_handler())
         self.network_manager.link_clients(self.data_manager.nb_environment)
 

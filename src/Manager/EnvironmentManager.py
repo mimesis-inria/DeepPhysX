@@ -41,14 +41,14 @@ class EnvironmentManager:
         self.dataset_batch: Optional[List[List[int]]] = None
 
         # Create a Visualizer to provide the visualization Database
+        force_local = pipeline == 'prediction'
         self.visualizer: Optional[VedoVisualizer] = None
         if environment_config.visualizer is not None:
             self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
                                                             database_name='Visualization',
-                                                            remote=environment_config.as_tcp_ip_client)
+                                                            remote=environment_config.as_tcp_ip_client and not force_local)
 
         # Create a single Environment or a TcpIpServer
-        force_local = pipeline == 'prediction'
         self.number_of_thread: int = 1 if force_local else environment_config.number_of_thread
         self.server: Optional[TcpIpServer] = None
         self.environment: Optional[BaseEnvironment] = None
