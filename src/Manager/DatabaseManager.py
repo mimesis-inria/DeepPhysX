@@ -137,7 +137,7 @@ class DatabaseManager:
 
         # Finally create an exchange database
         self.exchange = Database(database_dir=self.database_dir,
-                                 database_name='Exchange').new()
+                                 database_name='Exchange').new(remove_existing=True)
         self.exchange.create_table(table_name='Exchange')
 
     ##########################################################################################

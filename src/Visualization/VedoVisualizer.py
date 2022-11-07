@@ -12,7 +12,8 @@ class VedoVisualizer(_VedoVisualizer):
                  database_name: Optional[str] = None,
                  remove_existing: bool = False,
                  offscreen: bool = False,
-                 remote: bool = False):
+                 remote: bool = False,
+                 record: bool = True):
         """
         Manage the creation, update and rendering of Vedo Actors.
 
@@ -22,6 +23,7 @@ class VedoVisualizer(_VedoVisualizer):
         :param remove_existing: If True, overwrite a Database with the same path.
         :param offscreen: If True, visual data will be saved but not rendered.
         :param remote: If True, the Visualizer will treat the Factories as remote.
+        :param record: If True, the visualization Database is saved in memory.
         """
 
         # Define Database
@@ -47,6 +49,7 @@ class VedoVisualizer(_VedoVisualizer):
         if not remote:
             self.__database.register_post_save_signal(table_name='Sync',
                                                       handler=self.__sync_visualizer)
+        self.record = record
 
     def render_instance(self, instance: int):
         """
@@ -80,3 +83,11 @@ class VedoVisualizer(_VedoVisualizer):
         # 3. Render Plotter if offscreen is False
         if not self.__offscreen:
             self.__plotter.render()
+
+    def close(self):
+        """
+        Launch the closing procedure of the Visualizer.
+        """
+
+        if not self.record:
+            self.__database.close(erase_file=True)

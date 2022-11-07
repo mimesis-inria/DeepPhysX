@@ -51,6 +51,7 @@ class DataManager:
                                                           data_manager=self,
                                                           pipeline=pipeline.type,
                                                           session=session,
+                                                          produce_data=produce_data,
                                                           batch_size=batch_size)
 
         # DataManager variables
@@ -95,6 +96,7 @@ class DataManager:
 
         :param epoch: Current epoch number.
         :param animate: Allow EnvironmentManager to trigger a step itself in order to generate a new sample.
+        :param load_samples: If True, trigger a sample loading from the Database.
         """
 
         # Data generation case
@@ -145,6 +147,12 @@ class DataManager:
                     self.database_manager.add_data(self.data_lines)
 
     def load_sample(self) -> List[int]:
+        """
+        Load a sample from the Database.
+
+        :return: Index of the loaded line.
+        """
+
         self.data_lines = self.database_manager.get_data(batch_size=1)
         return self.data_lines[0]
 

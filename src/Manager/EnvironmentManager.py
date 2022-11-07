@@ -14,6 +14,7 @@ class EnvironmentManager:
                  data_manager: Optional[Any] = None,
                  pipeline: str = '',
                  session: str = 'sessions/default',
+                 produce_data: bool = True,
                  batch_size: int = 1):
         """
         EnvironmentManager handle the communication with Environment(s).
@@ -22,6 +23,7 @@ class EnvironmentManager:
         :param data_manager: DataManager that handles the EnvironmentManager.
         :param pipeline: Type of the pipeline.
         :param session: Path to the session repository.
+        :param produce_data: If True, this session will store data in the Database.
         :param batch_size: Number of samples in a single batch.
         """
 
@@ -46,7 +48,8 @@ class EnvironmentManager:
         if environment_config.visualizer is not None:
             self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
                                                             database_name='Visualization',
-                                                            remote=environment_config.as_tcp_ip_client and not force_local)
+                                                            remote=environment_config.as_tcp_ip_client and not force_local,
+                                                            record=produce_data)
 
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = 1 if force_local else environment_config.number_of_thread
@@ -239,6 +242,10 @@ class EnvironmentManager:
         # Environment case
         if self.environment:
             self.environment.close()
+
+        # Visualizer
+        if self.visualizer:
+            self.visualizer.close()
 
     def __str__(self) -> str:
 
