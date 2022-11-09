@@ -26,20 +26,14 @@ from parameters import p_model
 class Beam(BaseEnvironment):
 
     def __init__(self,
-                 ip_address='localhost',
-                 port=10000,
-                 instance_id=0,
-                 number_of_instances=1,
                  as_tcp_ip_client=True,
-                 environment_manager=None):
+                 instance_id=1,
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self,
-                                 ip_address=ip_address,
-                                 port=port,
-                                 instance_id=instance_id,
-                                 number_of_instances=number_of_instances,
                                  as_tcp_ip_client=as_tcp_ip_client,
-                                 environment_manager=environment_manager)
+                                 instance_id=instance_id,
+                                 instance_nb=instance_nb)
 
         # Topologies & mappings
         self.mesh = None
@@ -61,6 +55,11 @@ class Beam(BaseEnvironment):
 
         # Data sizes
         self.data_size = (p_model.nb_nodes, 3)
+
+    def init_database(self):
+
+        # Define the fields of the Training database
+        self.define_training_fields(fields=[('input', np.ndarray), ('ground_truth', np.ndarray)])
 
     def create(self):
 
@@ -138,8 +137,8 @@ class Beam(BaseEnvironment):
         # Launch Vedo window
         self.plotter.show().close()
         # Smooth close
-        self.set_training_data(input_array=np.zeros(self.data_size),
-                               output_array=np.zeros(self.data_size))
+        self.set_training_data(input=np.zeros(self.data_size),
+                               ground_truth=np.zeros(self.data_size))
 
     def key_press(self, evt):
 
@@ -195,7 +194,7 @@ class Beam(BaseEnvironment):
             F[self.areas[self.selected]] = move_3D * 2
 
             # Apply output displacement
-            U = self.get_prediction(F).reshape(self.data_size)
+            U = self.get_prediction(input=F)['prediction'].reshape(self.data_size)
             updated_grid = self.mesh_init + U
 
             # Update view

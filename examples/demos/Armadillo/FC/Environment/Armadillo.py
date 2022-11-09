@@ -10,10 +10,10 @@ Training data are produced at each time step:
 import os
 import sys
 
-import numpy as np
+from numpy import ndarray, array, concatenate, arange, zeros, reshape
+from numpy.random import randint, uniform
 from vedo import Mesh
 from math import pow
-from time import sleep
 
 # DeepPhysX related imports
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
@@ -28,20 +28,14 @@ from parameters import p_model, p_forces
 class Armadillo(BaseEnvironment):
 
     def __init__(self,
-                 ip_address='localhost',
-                 port=10000,
-                 instance_id=0,
-                 number_of_instances=1,
                  as_tcp_ip_client=True,
-                 environment_manager=None):
+                 instance_id=1,
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self,
-                                 ip_address=ip_address,
-                                 port=port,
-                                 instance_id=instance_id,
-                                 number_of_instances=number_of_instances,
                                  as_tcp_ip_client=as_tcp_ip_client,
-                                 environment_manager=environment_manager)
+                                 instance_id=instance_id,
+                                 instance_nb=instance_nb)
 
         # Topology
         self.mesh = None
@@ -53,12 +47,12 @@ class Armadillo(BaseEnvironment):
         # Force fields
         self.forces = []
         self.areas = []
-        self.compute_sample = True
 
         # Force pattern
         step = 0.05
-        self.amplitudes = np.concatenate((np.arange(0, 1, step),
-                                          np.arange(1, 0, -step)))
+        self.amplitudes = concatenate((arange(0, 1, step),
+                                       arange(1, 0, -step)))
+        self.amplitudes[0] = 0
         self.idx_amplitude = 0
         self.force_value = None
         self.idx_zone = 0
@@ -73,11 +67,10 @@ class Armadillo(BaseEnvironment):
     Methods will be automatically called in this order to create and initialize Environment.
     """
 
-    def recv_parameters(self, param_dict):
+    def init_database(self):
 
-        # Get the model definition parameters
-        self.compute_sample = param_dict['compute_sample'] if 'compute_sample' in param_dict else True
-        self.amplitudes[0] = 0 if self.compute_sample else 1
+        # Define the fields of the Training database
+        self.define_training_fields(fields=[('input', ndarray), ('ground_truth', ndarray)])
 
     def create(self):
 
@@ -97,34 +90,26 @@ class Armadillo(BaseEnvironment):
                 if sphere(pts, p_forces.centers[zone]) <= pow(p_forces.radius[zone], 2):
                     self.areas[-1].append(i)
             # Init force value
-            self.forces.append(np.zeros(3, ))
+            self.forces.append(zeros(3, ))
 
-    def send_visualization(self):
+    def init_visualization(self):
 
         # Mesh representing detailed Armadillo (object will have id = 0)
-        self.factory.add_object(object_type="Mesh",
-                                data_dict={"positions": self.mesh.points(),
-                                           'cells': self.mesh.cells(),
-                                           'wireframe': True,
-                                           "c": "orange",
-                                           "at": self.instance_id})
-
+        self.factory.add_mesh(positions=self.mesh.points(),
+                              cells=self.mesh.cells(),
+                              wireframe=True,
+                              c='orange',
+                              at=self.instance_id)
         # Arrows representing the force fields (object will have id = 1)
-        self.factory.add_object(object_type='Arrows',
-                                data_dict={'positions': [0, 0, 0],
-                                           'vectors': [0, 0, 0],
-                                           'c': 'green',
-                                           'at': self.instance_id})
-
+        self.factory.add_arrows(positions=array([0., 0., 0.]),
+                                vectors=array([0., 0., 0.]),
+                                c='green',
+                                at=self.instance_id)
         # Points representing the grid (object will have id = 2)
-        self.factory.add_object(object_type='Points',
-                                data_dict={'positions': self.sparse_grid.points(),
-                                           'r': 1.,
-                                           'c': 'black',
-                                           'at': self.instance_id})
-
-        # Return the visualization data
-        return self.factory.objects_dict
+        self.factory.add_points(positions=self.sparse_grid.points(),
+                                point_size=1,
+                                c='black',
+                                at=self.instance_id)
 
     """
     ENVIRONMENT BEHAVIOR
@@ -134,38 +119,31 @@ class Armadillo(BaseEnvironment):
 
     async def step(self):
 
-        # Compute a force sample
-        if self.compute_sample:
-            # Generate a new force
-            if self.idx_amplitude == 0:
-                self.idx_zone = np.random.randint(0, len(self.forces))
-                zone = p_forces.zones[self.idx_zone]
-                self.force_value = np.random.uniform(low=-1, high=1, size=(3,)) * p_forces.amplitude[zone]
+        # Generate a new force
+        if self.idx_amplitude == 0:
+            self.idx_zone = randint(0, len(self.forces))
+            zone = p_forces.zones[self.idx_zone]
+            self.force_value = uniform(low=-1, high=1, size=(3,)) * p_forces.amplitude[zone]
 
-            # Update current force amplitude
-            self.forces[self.idx_zone] = self.force_value * self.amplitudes[self.idx_amplitude]
+        # Update current force amplitude
+        self.forces[self.idx_zone] = self.force_value * self.amplitudes[self.idx_amplitude]
 
-            # Update force amplitude index
-            self.idx_amplitude = (self.idx_amplitude + 1) % len(self.amplitudes)
+        # Update force amplitude index
+        self.idx_amplitude = (self.idx_amplitude + 1) % len(self.amplitudes)
 
-            # Create input array
-            F = np.zeros(self.input_size)
-            F[self.areas[self.idx_zone]] = self.forces[self.idx_zone]
-
-        # Load a force sample from Dataset
-        else:
-            sleep(0.5)
-            F = np.zeros(self.input_size) if self.sample_in is None else self.sample_in
+        # Create input array
+        F = zeros(self.input_size)
+        F[self.areas[self.idx_zone]] = self.forces[self.idx_zone]
 
         # Set training data
         self.F = F
-        self.set_training_data(input_array=F.copy(),
-                               output_array=np.zeros(self.output_size))
+        self.set_training_data(input=F.copy(),
+                               ground_truth=zeros(self.output_size))
 
     def apply_prediction(self, prediction):
 
         # Reshape to correspond to sparse grid
-        U = np.reshape(prediction, self.output_size)
+        U = reshape(prediction['prediction'], self.output_size)
         self.update_visual(U)
 
     def update_visual(self, U):
@@ -176,20 +154,20 @@ class Armadillo(BaseEnvironment):
         mesh_coarse_position = self.mapping_coarse.apply(updated_position)
 
         # Update surface mesh
-        self.factory.update_object_dict(object_id=0,
-                                        new_data_dict={'positions': mesh_position})
+        self.factory.update_mesh(object_id=0,
+                                 positions=mesh_position)
 
         # Update arrows representing force fields
-        self.factory.update_object_dict(object_id=1,
-                                        new_data_dict={'positions': mesh_coarse_position,
-                                                       'vectors': 0.25 * self.F / p_model.scale})
+        self.factory.update_arrows(object_id=1,
+                                   positions=mesh_coarse_position,
+                                   vectors=0.25 * self.F / p_model.scale)
 
         # Update sparse grid positions
-        self.factory.update_object_dict(object_id=2,
-                                        new_data_dict={'positions': updated_position})
+        self.factory.update_points(object_id=2,
+                                   positions=updated_position)
 
         # Send visualization data to update
-        self.update_visualisation(visu_dict=self.factory.updated_object_dict)
+        self.update_visualisation()
 
     def close(self):
         # Shutdown message
