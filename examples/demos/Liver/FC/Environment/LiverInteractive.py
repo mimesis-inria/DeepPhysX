@@ -94,6 +94,7 @@ class Liver(BaseEnvironment):
 
         # Create plotter
         self.plotter = Plotter(title='Interactive Armadillo', N=1, interactive=True, offscreen=False, bg2='lightgray')
+        self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(box)
         self.plotter.add(self.mesh)
@@ -162,7 +163,7 @@ class Liver(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.computeWorldPosition(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
             move_3D = (mouse_3D - self.mesh_coarse.points()[self.spheres_init[self.selected]]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 1.5:
                 move_3D = 1.5 * move_3D / np.linalg.norm(move_3D)

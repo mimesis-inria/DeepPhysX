@@ -114,10 +114,11 @@ class Beam(BaseEnvironment):
         fixed = np.where(mesh_x <= np.min(mesh_x) + 0.05 * (np.max(mesh_x) - np.min(mesh_x)))
         plane_origin = [np.min(mesh_x),
                         np.mean(self.mesh.points()[:, 1][fixed]),
-                        np.mean(self.mesh.points()[:, 2][fixed])]
+                        np.mean(self.mesh.points()[:, 2][fixed])+10]
 
         # Create plotter
         self.plotter = Plotter(title='Interactive Beam', N=1, interactive=True, offscreen=False, bg2='lightgray')
+        self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(self.mesh)
         self.plotter.add(Plane(pos=plane_origin, normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
@@ -186,7 +187,7 @@ class Beam(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.computeWorldPosition(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
             move_3D = (mouse_3D - self.mesh_init[self.spheres_init[self.selected]]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 10:
                 move_3D = 10 * move_3D / np.linalg.norm(move_3D)

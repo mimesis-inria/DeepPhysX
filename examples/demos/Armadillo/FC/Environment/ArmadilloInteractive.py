@@ -100,6 +100,7 @@ class Armadillo(BaseEnvironment):
 
         # Create plotter
         self.plotter = Plotter(title='Interactive Armadillo', N=1, interactive=True, offscreen=False, bg2='lightgray')
+        self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(self.mesh)
         self.plotter.add(Plane(pos=plane_origin, normal=[0, 1, 0], s=(10 * p_model.scale, 10 * p_model.scale),
@@ -169,7 +170,7 @@ class Armadillo(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.computeWorldPosition(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
             move_3D = (mouse_3D - self.spheres_init[self.selected]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 2:
                 move_3D = 2 * move_3D / np.linalg.norm(move_3D)
