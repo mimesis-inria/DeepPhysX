@@ -1,5 +1,7 @@
 ## DeepPhysX
 
+![logo](docs/source/_static/image/logo.png)
+
 ### Interfacing AI with simulation
 
 The **DeepPhysX** project provides Python packages allowing users to easily interface their **numerical simulations**

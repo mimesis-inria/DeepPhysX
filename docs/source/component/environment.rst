@@ -285,7 +285,7 @@ Client-Server Architecture
 The :guilabel:`Core/AsyncSocket` module defines a **Client-Server architecture** where a *TcpIpServer* communicates
 with several *TcpIpClients* using a **TcpIp protocol**.
 
-.. figure:: ../_static/image/environment_tcpip.png
+.. figure:: ../_static/image/environment_tcp_ip.png
     :alt: environment_tcpip.png
     :width: 80%
     :align: center

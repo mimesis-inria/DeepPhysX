@@ -14,8 +14,8 @@ prediction data) and can be multiple for each data field in order not to exceed 
 of loaded data.
 Each partition will have a unique name: ``<session_name>_<dataset_mode>_<field>_<index>.npy``.
 
-.. figure:: ../_static/image/dataset.png
-    :alt: dataset.png
+.. figure:: ../_static/image/database.png
+    :alt: database.png
     :align: center
     :width: 80%
 

@@ -15,7 +15,7 @@ import sys
 
 # DeepPhysX root
 root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src'))
-all_modules = ['AsyncSocket', 'Dataset', 'Environment', 'Manager', 'Network', 'Pipelines', 'Visualizer']
+all_modules = ['AsyncSocket', 'Database', 'Environment', 'Manager', 'Network', 'Pipelines', 'Visualization']
 
 # Import all modules
 sys.path.append(root)
@@ -73,14 +73,15 @@ html_theme_options = {
 html_static_path = ['_static']
 html_css_files = ['theme.css']
 
-extlinks = {'Caribou': ('https://caribou.readthedocs.io/', None),
-            'CaribouI': ('https://caribou.readthedocs.io/en/latest/Building.html#', None),
-            'Numpy': ('https://numpy.org/', None),
-            'PyTorch': ('https://pytorch.org/', None),
-            'SOFA': ('https://www.sofa-framework.org/%s', None),
-            'SOFAI': ('https://www.sofa-framework.org/community/doc/getting-started/build/linux/', None),
-            'SP3': ('https://sofapython3.readthedocs.io/en/latest/', None),
-            'SP3I': ('https://sofapython3.readthedocs.io/en/latest/menu/Compilation.html', None),
-            'Tensorboard': ('https://www.tensorflow.org/tensorboard/', None),
-            'Vedo': ('https://vedo.embl.es/', None),
-            'VedoObject': ('https://vedo.embl.es/autodocs/content/vedo/%s', '%s')}
+extlinks = {'Caribou': ('https://caribou.readthedocs.io/%s', '%s'),
+            'CaribouI': ('https://caribou.readthedocs.io/en/latest/Building.html#/%s', '%s'),
+            'Numpy': ('https://numpy.org/%s', '%s'),
+            'PyTorch': ('https://pytorch.org/%s', '%s'),
+            'SOFA': ('https://www.sofa-framework.org/%s', '%s'),
+            'SOFAI': ('https://www.sofa-framework.org/community/doc/getting-started/build/linux/%s', '%s'),
+            'SP3': ('https://sofapython3.readthedocs.io/en/latest/%s', '%s'),
+            'SP3I': ('https://sofapython3.readthedocs.io/en/latest/menu/Compilation.html/%s', '%s'),
+            'Tensorboard': ('https://www.tensorflow.org/tensorboard/%s', '%s'),
+            'Vedo': ('https://vedo.embl.es/%s', '%s'),
+            'VedoObject': ('https://vedo.embl.es/autodocs/content/vedo/%s', '%s'),
+            'SSD': ('https://github.com/RobinEnjalbert/SimulationSimpleDatabase/%s', '%s')}

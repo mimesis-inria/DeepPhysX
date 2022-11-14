@@ -10,6 +10,8 @@ with **learning algorithms**.
 **DeepPhysX** is mainly designed for :SOFA:`SOFA <>` and :PyTorch:`PyTorch <>` frameworks, but other simulation and AI
 frameworks can also be used.
 
+The project is closely linked to the :SSD:`SSD <>` external Python library.
+
 
 Let's get started
 -----------------
