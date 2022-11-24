@@ -4,13 +4,13 @@ from os.path import join
 PROJECT = 'DeepPhysX'
 PACKAGE = 'Core'
 
-packages = [f'{PROJECT}.{PACKAGE}']
-packages_dir = {f'{PROJECT}.{PACKAGE}': 'src'}
+packages = []
+packages_dir = {}
 
 # Configure packages list and directories
 for subpackage in find_packages(where='src'):
-    packages.append(f'{PROJECT}.{PACKAGE}.{subpackage}')
-    packages_dir[f'{PROJECT}.{PACKAGE}.{subpackage}'] = join('src', *subpackage.split('.'))
+    packages.append(f'{PROJECT}.{subpackage}')
+    packages_dir[f'{PROJECT}.{subpackage}'] = join('src', *subpackage.split('.'))
 
 # Add examples as subpackages
 packages.append(f'{PROJECT}.examples.{PACKAGE}')
@@ -33,7 +33,7 @@ def get_SSD():
 
 
 # Installation
-setup(name='DeepPhysX',
+setup(name=f'{PROJECT}',
       version='22.12',
       description='A Python framework interfacing AI with numerical simulation.',
       long_description=long_description,
@@ -43,4 +43,5 @@ setup(name='DeepPhysX',
       url='https://github.com/mimesis-inria/DeepPhysX',
       packages=packages,
       package_dir=packages_dir,
+      namespace_packages=[PROJECT],
       install_requires=get_SSD() + ['numpy', 'tensorboard', 'tensorboardX', 'pyDataverse'])
