@@ -4,8 +4,8 @@ from os.path import join
 PROJECT = 'DeepPhysX'
 PACKAGE = 'Core'
 
-packages = []
-packages_dir = {}
+packages = [f'{PROJECT}']
+packages_dir = {f'{PROJECT}': 'src'}
 
 # Configure packages list and directories
 for subpackage in find_packages(where='src'):
@@ -44,4 +44,5 @@ setup(name=f'{PROJECT}',
       packages=packages,
       package_dir=packages_dir,
       namespace_packages=[PROJECT],
-      install_requires=get_SSD() + ['numpy', 'tensorboard', 'tensorboardX', 'pyDataverse'])
+      install_requires=get_SSD() + ['numpy', 'tensorboard', 'tensorboardX', 'pyDataverse'],
+      entry_points={'console_scripts': ['DPX=DeepPhysX.cli:execute_cli']})

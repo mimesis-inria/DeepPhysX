@@ -1,9 +1,12 @@
 from os import sep, chdir, mkdir, listdir, getcwd, rename, symlink, unlink, remove
 from os.path import dirname, join, isfile, exists, isdir, islink
+from pathlib import Path
 from shutil import move, rmtree, which
 from site import USER_SITE
 from subprocess import run
 from sys import argv
+
+from pip._internal.operations.install.wheel import PipScriptMaker
 
 PROJECT = 'DeepPhysX'
 AI_PACKAGES = ['Torch']
@@ -112,10 +115,22 @@ if __name__ == '__main__':
                 print(f"\nLinked {join(USER_SITE, PROJECT, package)} -> {join(root, package)}")
 
         # Add examples and the CLI script
-        # TODO
+        if not isdir(join(USER_SITE, PROJECT, 'examples')):
+            symlink(src=join(Path(__file__).parent.absolute(), 'examples'),
+                    dst=join(USER_SITE, PROJECT, 'examples'))
+            print(f"\nLinked {join(USER_SITE, PROJECT, 'examples')} -> {join(Path(__file__).parent.absolute(), 'examples')}")
+        if not isfile(join(USER_SITE, PROJECT, 'cli.py')):
+            symlink(src=join(Path(__file__).parent.absolute(), 'src', 'cli.py'),
+                    dst=join(USER_SITE, PROJECT, 'cli.py'))
 
         # Create the CLI
-        # TODO
+        if which('DPX') is None:
+            # Generate the scripts
+            maker = PipScriptMaker(None, dirname(which('vedo')))
+            generated_scripts = maker.make_multiple(['DPX = DeepPhysX.cli:execute_cli'])
+            for script in generated_scripts:
+                if script.split(sep)[-1].split('.')[0] != 'DPX':
+                    remove(script)
 
     # Option 2: remove the symbolic links
     else:
