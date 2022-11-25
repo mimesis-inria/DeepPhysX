@@ -47,5 +47,6 @@ setup(name=f'{PROJECT}',
       install_requires=get_SSD() + ['numpy >1.23.5',
                                     'tensorboard >= 2.10.0',
                                     'tensorboardX >= 2.5.1',
-                                    'pyDataverse >= 0.3.1'],
+                                    'pyDataverse >= 0.3.1'
+                                    'torch >= 1.13.0'],
       entry_points={'console_scripts': ['DPX=DeepPhysX.cli:execute_cli']})

@@ -1,6 +1,5 @@
 numpy
 SimulationSimpleDatabase
 tensorboard
-tensorboardX
 pyDataverse
 torch

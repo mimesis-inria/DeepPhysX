@@ -1,5 +1,5 @@
 from typing import Dict, Any, Iterable, Optional
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from tensorboard import program
 from webbrowser import open as w_open
 from numpy import full, inf, array, ndarray, append, concatenate
