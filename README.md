@@ -40,34 +40,18 @@ $ pip install DeepPhysX.Sofa        # Install simulation package
 $ pip install DeepPhysX.Torch       # Install AI package
 ```
 
-If cloning sources, create a `DeepPhysX` repository to store every package. 
-Packages must be cloned in a directory with the corresponding name as shown below:
-
-``` bash
-$ mkdir DeepPhysX
-$ cd DeepPhysX
-$ git clone https://github.com/mimesis-inria/DeepPhysX.git Core             # Clone default package
-$ git clone https://github.com/mimesis-inria/DeepPhysX.Sofa.git Sofa        # Clone simulation package
-$ git clone https://github.com/mimesis-inria/DeepPhysX.Torch.git Torch      # Clone AI package
-$ ls
-Core Sofa Torch
-```
-
 
 ### Demos
 
 **DeepPhysX** includes a set of detailed tutorials, examples and demos.
-Following this installation process to directly try the **interactive demos**:
+As these scripts are producing data, they cannot be run in the python site-packages, thus they should be run locally.
+Use the *command line interface* to get the examples or to run **interactive demos**:
 
 ``` bash
-$ mkdir DeepPhysX
-$ cd DeepPhysX
-$ git clone https://github.com/mimesis/deepphysx.git Core   # Make shure to clone this repository in 'DeepPhysX/Core'
-$ cd Core
-$ python3 config.py                                         # Answer 'yes' to install Torch package to launch examples
-$ pip install .
+$ DPX --get             # Get the full example repository locally
+$ DPX --run <demo>      # Run one of the demo scripts
 ```
 
-|     **Armadillo**<br>`python3 demo.py armadillo`      |     **Beam**<br>`python3 demo.py beam`      |     **Liver**<br>`python3 demo.py liver`      |
+|          **Armadillo**<br>`DPX -r armadillo`          |          **Beam**<br>`DPX -r beam`          |          **Liver**<br>`DPX -r liver`          |
 |:-----------------------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
 | ![armadillo](docs/source/_static/image/armadillo.png) | ![beam](docs/source/_static/image/beam.png) | ![liver](docs/source/_static/image/liver.png) |
