@@ -28,7 +28,7 @@ def get_SSD():
     try:
         import SSD
     except ModuleNotFoundError:
-        return ['SimulationSimpleDatabase']
+        return ['SimulationSimpleDatabase >= 22.12']
     return []
 
 
@@ -44,5 +44,8 @@ setup(name=f'{PROJECT}',
       packages=packages,
       package_dir=packages_dir,
       namespace_packages=[PROJECT],
-      install_requires=get_SSD() + ['numpy', 'tensorboard', 'tensorboardX', 'pyDataverse'],
+      install_requires=get_SSD() + ['numpy >1.23.5',
+                                    'tensorboard >= 2.10.0',
+                                    'tensorboardX >= 2.5.1',
+                                    'pyDataverse >= 0.3.1'],
       entry_points={'console_scripts': ['DPX=DeepPhysX.cli:execute_cli']})
