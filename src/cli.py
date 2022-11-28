@@ -18,7 +18,7 @@ def get_sources():
 
     import DeepPhysX
     site_packages = dirname(DeepPhysX.__path__[0])
-    metadata_repo = [f for f in listdir(site_packages) if 'DeepPhysX' in f and
+    metadata_repo = [f for f in listdir(site_packages) if f.split('-')[0] == 'DeepPhysX' and
                      ('.dist-info' in f or '.egg-info' in f)]
     if len(metadata_repo) == 0:
         quit(print("The project does not seem to be properly installed. Try to re-install using 'pip'."))
@@ -136,15 +136,17 @@ def execute_cli():
             import DeepPhysX.Core
             source_dir = readlink(DeepPhysX.Core.__path__[0])
             examples_dir = join(dirname(dirname(source_dir)), 'examples')
+            repo = join(*examples[example].split('/')[1:-1])
         elif (source_dir := get_sources()) is not None:
             examples_dir = join(source_dir, 'examples')
+            repo = join(*examples[example].split('/')[1:-1])
         else:
             if not isdir(join(getcwd(), 'DPX_examples')):
                 print(f"The directory '{join(getcwd(), 'DPX_examples')}' does not exists.")
                 copy_examples_dir()
             examples_dir = join(getcwd(), 'DPX_examples')
+            repo = join(*examples[example].split('/')[:-1])
         # Run the example
-        repo = join(*examples[example].split('/')[:-1]) if is_pip_installed() else join(*examples[example].split('/')[1:-1])
         script = examples[example].split('/')[-1]
         chdir(join(examples_dir, repo))
         run([f'{executable}', f'{script}'], cwd=join(examples_dir, repo))
