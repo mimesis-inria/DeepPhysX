@@ -20,7 +20,7 @@ class BaseTransformation:
     def check_type(func: Callable[[Any, Any], Any]):
 
         def inner(self, *args):
-            for data in args:
+            for data in [a for a in args if a is not None]:
                 for value in data.values():
                     if value is not None and type(value) != self.data_type:
                         raise TypeError(f"[{self.name}] Wrong data type: {self.data_type} required, get {type(value)}")
