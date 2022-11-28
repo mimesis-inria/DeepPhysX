@@ -65,6 +65,7 @@ class Beam(BaseEnvironment):
 
         # Load the meshes and the sparse grid
         self.mesh = Mesh(p_model.grid, c='o').lineWidth(0.1).lighting('ambient')
+        self.mesh.shift(0, -7.5, -7.5)
         self.mesh_init = self.mesh.clone().points()
 
         # Get the surface points
@@ -109,19 +110,12 @@ class Beam(BaseEnvironment):
                                 (pts[:, other[1]] >= o1_min) & (pts[:, other[1]] <= o1_max))
                 self.areas.append(np.array(list(set(zone[0].tolist()).intersection(set(list(self.surface))))))
 
-        # Define fixed plane
-        mesh_x = self.mesh.points()[:, 0]
-        fixed = np.where(mesh_x <= np.min(mesh_x) + 0.05 * (np.max(mesh_x) - np.min(mesh_x)))
-        plane_origin = [np.min(mesh_x),
-                        np.mean(self.mesh.points()[:, 1][fixed]),
-                        np.mean(self.mesh.points()[:, 2][fixed])+10]
-
         # Create plotter
         self.plotter = Plotter(title='Interactive Beam', N=1, interactive=True, offscreen=False, bg2='lightgray')
         self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(self.mesh)
-        self.plotter.add(Plane(pos=plane_origin, normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
+        self.plotter.add(Plane(pos=[0., 0., 0.], normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
         self.plotter.add(Text2D("Press 'Alt' to interact with the object.\n"
                                 "Left click to select a sphere.\n"
                                 "Right click to unselect a sphere.", s=0.75))
