@@ -23,6 +23,9 @@ Even if a *BaseNetwork* is not usable, any **DeepPhysX** AI package provides the
     * - ``__init__``
       - Define the *Network* architecture.
 
+    * - ``predict``
+      - Define the data fields used to compute a prediction.
+
     * - ``forward``
       - Define the forward pass of the *Network*.
 
@@ -57,15 +60,22 @@ Even if a *BaseNetwork* is not usable, any **DeepPhysX** AI package provides the
     * - ``nb_parameters``
       - Return the number of parameters in the architecture.
 
-    * - ``transform_from_numpy``
+    * - ``numpy_to_tensor``
       - Convert a Numpy array to a tensor with the compatible type.
 
         Received data from Core will always be Numpy arrays.
 
-    * - ``transform_to_numpy``
+    * - ``tensor_to_numpy``
       - Convert a tensor to a Numpy array.
 
         Data provided to Core must be converted to Numpy arrays.
+
+| **Data fields**
+| The training data is given to the *Network* as a dictionary of tensors.
+  By default, the data used for inference has a single "input" field, the data produced by the *Network* has a single
+  "prediction" field, the data used for optimization has a single "ground_truth" field.
+  If another field should be defined, the *Network* class should specify them in the corresponding ``self.net_fields``,
+  ``self.pred_fields`` & ``self.opt_fields`` variables.
 
 .. _network-optimization:
 
@@ -126,14 +136,14 @@ Users are then free to define their own tensor transformations with the followin
     :widths: 15 85
 
     * - ``transform_before_prediction``
-      - Apply a tensor transformation to the input data before *Network* forward pass.
+      - Apply a tensor transformation to the *Network* data (before a prediction).
 
     * - ``transform_before_loss``
-      - Apply a tensor transformation to the ground truth data and / or the *Network* output before the loss
-        computation.
+      - Apply a tensor transformation to the ground truth data and / or the prediction data (after the prediction,
+        before the loss computation).
 
     * - ``transform_before_apply``
-      - Apply a tensor transformation to the *Network* prediction before sending it to the *Environment*.
+      - Apply a tensor transformation to the prediction data (before sending it to the *Environment*).
 
 
 Configurations

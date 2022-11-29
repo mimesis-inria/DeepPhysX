@@ -84,4 +84,5 @@ extlinks = {'Caribou': ('https://caribou.readthedocs.io/%s', '%s'),
             'Tensorboard': ('https://www.tensorflow.org/tensorboard/%s', '%s'),
             'Vedo': ('https://vedo.embl.es/%s', '%s'),
             'VedoObject': ('https://vedo.embl.es/autodocs/content/vedo/%s', '%s'),
-            'SSD': ('https://github.com/RobinEnjalbert/SimulationSimpleDatabase/%s', '%s')}
+            'SSD': ('https://github.com/RobinEnjalbert/SimulationSimpleDatabase/%s', '%s'),
+            'SSDd': ('https://simulationsimpledatabase.readthedocs.io/en/latest/%s', '%s')}

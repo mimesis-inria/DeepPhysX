@@ -1,18 +1,18 @@
 Dataset
 =======
 
-.. _dataset.basedataset:
+.. _database.databasehandler:
 
-BaseDataset
------------
+DatabaseHandler
+---------------
 
-.. autoclass:: BaseDataset.BaseDataset
+.. autoclass:: DatabaseHandler.DatabaseHandler
     :members:
 
-.. _dataset.basedatasetconfig:
+.. _database.basedatabaseconfig:
 
-BaseDatasetConfig
------------------
+BaseDatabaseConfig
+------------------
 
-.. autoclass:: BaseDatasetConfig.BaseDatasetConfig
+.. autoclass:: BaseDatabaseConfig.BaseDatabaseConfig
     :members:

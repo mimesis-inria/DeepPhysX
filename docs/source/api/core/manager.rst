@@ -9,12 +9,12 @@ DataManager
 .. autoclass:: DataManager.DataManager
     :members:
 
-.. _manager.datasetmanager:
+.. _manager.databasemanager:
 
-DatasetManager
---------------
+DatabaseManager
+---------------
 
-.. autoclass:: DatasetManager.DatasetManager
+.. autoclass:: DatabaseManager.DatabaseManager
     :members:
 
 .. _manager.environmentmanager:
@@ -23,14 +23,6 @@ EnvironmentManager
 ------------------
 
 .. autoclass:: EnvironmentManager.EnvironmentManager
-    :members:
-
-.. _manager.manager:
-
-Manager
--------
-
-.. autoclass:: Manager.Manager
     :members:
 
 .. _manager.networkmanager:
@@ -47,12 +39,4 @@ StatsManager
 ------------
 
 .. autoclass:: StatsManager.StatsManager
-    :members:
-
-.. _manager.visualizermanager:
-
-VisualizerManager
------------------
-
-.. autoclass:: VisualizerManager.VisualizerManager
     :members:
