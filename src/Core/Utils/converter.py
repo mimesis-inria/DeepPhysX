@@ -58,6 +58,7 @@ class DatasetConverter:
                                                new_session=False)
             database_handler = DatabaseHandler()
             database_manager.connect_handler(database_handler)
+            database_manager.first_add = True
 
             # 3.2. Create Fields in Tables
             training_fields = []
@@ -79,6 +80,7 @@ class DatasetConverter:
             # 3.3. Add each partition to the Database
             if nb_partition == 0:
                 print("   No partition.")
+                database_manager.normalize = False
             for i in range(nb_partition):
                 data_training = {field: load(join(self.dataset_dir, f'{partitions[mode][field][i]}.npy'))
                                  for field, _ in training_fields}
@@ -143,4 +145,3 @@ class DatasetConverter:
                     all_partitions[mode][name].append(partition)
 
         return all_partitions
-
