@@ -1,17 +1,12 @@
 Visualizer
 ==========
 
-.. toctree::
-    :hidden:
+.. _visualizer.vedofactory:
 
-    factories.rst
-
-.. _visualizer.vedoobjects:
-
-VedoObjects
+VedoFactory
 -----------
 
-.. autoclass:: VedoObjects.VedoObjects
+.. autoclass:: VedoFactory.VedoFactory
     :members:
 
 .. _visualizer.vedovisualizer:

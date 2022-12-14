@@ -30,5 +30,5 @@ BaseOptimization
 DataTransformation
 ------------------
 
-.. autoclass:: DataTransformation.DataTransformation
+.. autoclass:: BaseTransformation.BaseTransformation
     :members:

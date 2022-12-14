@@ -12,7 +12,7 @@ import sys
 import vtk
 
 import numpy as np
-from vedo import Mesh, Sphere, Arrows, Plotter, Text2D, Box, fitSphere
+from vedo import Mesh, Sphere, Arrows, Plotter, Text2D, Box
 
 # DeepPhysX related imports
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
@@ -28,20 +28,14 @@ from utils import filter_by_distance
 class Liver(BaseEnvironment):
 
     def __init__(self,
-                 ip_address='localhost',
-                 port=10000,
-                 instance_id=0,
-                 number_of_instances=1,
                  as_tcp_ip_client=True,
-                 environment_manager=None):
+                 instance_id=1,
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self,
-                                 ip_address=ip_address,
-                                 port=port,
-                                 instance_id=instance_id,
-                                 number_of_instances=number_of_instances,
                                  as_tcp_ip_client=as_tcp_ip_client,
-                                 environment_manager=environment_manager)
+                                 instance_id=instance_id,
+                                 instance_nb=instance_nb)
 
         # Topologies & mappings
         self.mesh = None
@@ -67,6 +61,11 @@ class Liver(BaseEnvironment):
         # Data sizes
         self.input_size = (p_model.nb_nodes_mesh, 3)
         self.output_size = (p_model.nb_nodes_grid, 3)
+
+    def init_database(self):
+
+        # Define the fields of the Training database
+        self.define_training_fields(fields=[('input', np.ndarray), ('ground_truth', np.ndarray)])
 
     def create(self):
 
@@ -95,6 +94,7 @@ class Liver(BaseEnvironment):
 
         # Create plotter
         self.plotter = Plotter(title='Interactive Armadillo', N=1, interactive=True, offscreen=False, bg2='lightgray')
+        self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(box)
         self.plotter.add(self.mesh)
@@ -114,8 +114,8 @@ class Liver(BaseEnvironment):
         # Launch Vedo window
         self.plotter.show().close()
         # Smooth close
-        self.set_training_data(input_array=np.zeros(self.input_size),
-                               output_array=np.zeros(self.output_size))
+        self.set_training_data(input=np.zeros(self.input_size),
+                               ground_truth=np.zeros(self.output_size))
 
     def key_press(self, evt):
 
@@ -163,7 +163,7 @@ class Liver(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.computeWorldPosition(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
             move_3D = (mouse_3D - self.mesh_coarse.points()[self.spheres_init[self.selected]]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 1.5:
                 move_3D = 1.5 * move_3D / np.linalg.norm(move_3D)
@@ -171,7 +171,7 @@ class Liver(BaseEnvironment):
             F[self.areas[self.selected]] = move_3D * p_forces.amplitude
 
             # Apply output displacement
-            U = self.get_prediction(F).reshape(self.output_size)
+            U = self.get_prediction(input=F)['prediction'].reshape(self.output_size)
             updated_grid = self.sparse_grid.points().copy() + U
             updated_coarse = self.mapping_coarse.apply(updated_grid)
 

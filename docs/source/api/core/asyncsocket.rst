@@ -1,14 +1,6 @@
 AsyncSocket
 ===========
 
-.. _asyncsocket.abstractenvironment:
-
-AbstractEnvironment
-___________________
-
-.. autoclass:: AbstractEnvironment.AbstractEnvironment
-    :members:
-
 .. _asyncsocket.bytesconverter:
 
 BytesConverter
@@ -23,7 +15,6 @@ TcpIpClient
 ___________
 
 Bases:
-:py:class:`AbstractEnvironment.AbstractEnvironment`
 :py:class:`TcpIpObject.TcpIpObject`
 
 .. autoclass:: TcpIpClient.TcpIpClient

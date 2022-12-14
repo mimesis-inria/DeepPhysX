@@ -26,20 +26,14 @@ from parameters import p_model
 class Beam(BaseEnvironment):
 
     def __init__(self,
-                 ip_address='localhost',
-                 port=10000,
-                 instance_id=0,
-                 number_of_instances=1,
                  as_tcp_ip_client=True,
-                 environment_manager=None):
+                 instance_id=1,
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self,
-                                 ip_address=ip_address,
-                                 port=port,
-                                 instance_id=instance_id,
-                                 number_of_instances=number_of_instances,
                                  as_tcp_ip_client=as_tcp_ip_client,
-                                 environment_manager=environment_manager)
+                                 instance_id=instance_id,
+                                 instance_nb=instance_nb)
 
         # Topologies & mappings
         self.mesh = None
@@ -62,10 +56,16 @@ class Beam(BaseEnvironment):
         # Data sizes
         self.data_size = (p_model.nb_nodes, 3)
 
+    def init_database(self):
+
+        # Define the fields of the Training database
+        self.define_training_fields(fields=[('input', np.ndarray), ('ground_truth', np.ndarray)])
+
     def create(self):
 
         # Load the meshes and the sparse grid
         self.mesh = Mesh(p_model.grid, c='o').lineWidth(0.1).lighting('ambient')
+        self.mesh.shift(0, -7.5, -7.5)
         self.mesh_init = self.mesh.clone().points()
 
         # Get the surface points
@@ -110,18 +110,12 @@ class Beam(BaseEnvironment):
                                 (pts[:, other[1]] >= o1_min) & (pts[:, other[1]] <= o1_max))
                 self.areas.append(np.array(list(set(zone[0].tolist()).intersection(set(list(self.surface))))))
 
-        # Define fixed plane
-        mesh_x = self.mesh.points()[:, 0]
-        fixed = np.where(mesh_x <= np.min(mesh_x) + 0.05 * (np.max(mesh_x) - np.min(mesh_x)))
-        plane_origin = [np.min(mesh_x),
-                        np.mean(self.mesh.points()[:, 1][fixed]),
-                        np.mean(self.mesh.points()[:, 2][fixed])]
-
         # Create plotter
         self.plotter = Plotter(title='Interactive Beam', N=1, interactive=True, offscreen=False, bg2='lightgray')
+        self.plotter.render()
         self.plotter.add(*self.spheres)
         self.plotter.add(self.mesh)
-        self.plotter.add(Plane(pos=plane_origin, normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
+        self.plotter.add(Plane(pos=[0., 0., 0.], normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
         self.plotter.add(Text2D("Press 'Alt' to interact with the object.\n"
                                 "Left click to select a sphere.\n"
                                 "Right click to unselect a sphere.", s=0.75))
@@ -138,8 +132,8 @@ class Beam(BaseEnvironment):
         # Launch Vedo window
         self.plotter.show().close()
         # Smooth close
-        self.set_training_data(input_array=np.zeros(self.data_size),
-                               output_array=np.zeros(self.data_size))
+        self.set_training_data(input=np.zeros(self.data_size),
+                               ground_truth=np.zeros(self.data_size))
 
     def key_press(self, evt):
 
@@ -187,7 +181,7 @@ class Beam(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.computeWorldPosition(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
             move_3D = (mouse_3D - self.mesh_init[self.spheres_init[self.selected]]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 10:
                 move_3D = 10 * move_3D / np.linalg.norm(move_3D)
@@ -195,7 +189,7 @@ class Beam(BaseEnvironment):
             F[self.areas[self.selected]] = move_3D * 2
 
             # Apply output displacement
-            U = self.get_prediction(F).reshape(self.data_size)
+            U = self.get_prediction(input=F)['prediction'].reshape(self.data_size)
             updated_grid = self.mesh_init + U
 
             # Update view

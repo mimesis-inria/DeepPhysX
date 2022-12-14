@@ -20,9 +20,9 @@ class BeamDownloader(DataDownloader):
                            'session': [312],
                            'network': [315],
                            'stats': [314],
-                           'dataset_info': [309],
-                           'dataset_valid': [313, 316],
-                           'dataset_train': [310, 311]}
+                           'dataset_info': [329],
+                           'dataset_valid': [328],
+                           'dataset_train': [327]}
 
 
 if __name__ == '__main__':

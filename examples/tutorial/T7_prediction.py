@@ -4,28 +4,30 @@ Launch a running session.
 """
 
 # DeepPhysX related imports
-from DeepPhysX.Core.Pipelines.BaseRunner import BaseRunner
+from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
+from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 
 # Tutorial related imports
-from T3_configuration import DummyEnvironment, net_config, dataset_config
+from T1_environment import DummyEnvironment
+from T2_network import DummyNetwork
 
 
 def launch_prediction():
-    # Adapt the Environment config to avoid using Client / Server Architecture
-    env_config = BaseEnvironmentConfig(environment_class=DummyEnvironment,
-                                       visualizer=None,
-                                       simulations_per_step=1,
-                                       use_dataset_in_environment=False,
-                                       param_dict={'increment': 1},
-                                       as_tcp_ip_client=False)
+
+    # Create the Environment config
+    env_config = BaseEnvironmentConfig(environment_class=DummyEnvironment)
+
+    # Create the Network config
+    net_config = BaseNetworkConfig(network_class=DummyNetwork)
+
     # Create the Pipeline
-    pipeline = BaseRunner(session_dir='sessions',
-                          session_name='tutorial_online_training',
-                          environment_config=env_config,
-                          dataset_config=dataset_config,
-                          network_config=net_config,
-                          nb_steps=20)
+    pipeline = BasePrediction(network_config=net_config,
+                              environment_config=env_config,
+                              session_dir='sessions',
+                              session_name='tutorial_online_training',
+                              step_nb=20)
+
     # Launch the Pipeline
     pipeline.execute()
 

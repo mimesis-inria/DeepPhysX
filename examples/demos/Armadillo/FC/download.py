@@ -20,11 +20,11 @@ class ArmadilloDownloader(DataDownloader):
                            'session': [240],
                            'network': [193],
                            'stats':   [192],
-                           'dataset_info':  [242],
-                           'dataset_valid': [244, 239],
-                           'dataset_train': [241, 243]}
+                           'dataset_info':  [317],
+                           'dataset_valid': [319],
+                           'dataset_train': [318]}
 
 
 if __name__ == '__main__':
 
-    ArmadilloDownloader().get_session('valid_data')
+    ArmadilloDownloader().get_session('all')

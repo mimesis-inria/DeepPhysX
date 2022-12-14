@@ -20,12 +20,11 @@ class LiverDownloader(DataDownloader):
                            'session': [290],
                            'network': [302],
                            'stats': [285],
-                           'dataset_info': [291],
-                           'dataset_valid': [292, 296],
-                           'dataset_train': [295, 286, 297, 299, 294, 287,
-                                             289, 300, 288, 301, 298, 293]}
+                           'dataset_info': [333],
+                           'dataset_valid': [336],
+                           'dataset_train': [335, 334]}
 
 
 if __name__ == '__main__':
 
-    LiverDownloader().get_session('valid_data')
+    LiverDownloader().get_session('all')

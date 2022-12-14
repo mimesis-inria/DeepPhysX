@@ -1,15 +1,15 @@
 Pipelines
 =========
 
-.. _pipelines.basedatagenerator:
+.. _pipelines.basedatageneration:
 
-BaseDataGenerator
------------------
+BaseDataGeneration
+------------------
 
 Bases:
 :py:class:`BasePipeline.BasePipeline`
 
-.. autoclass:: BaseDataGenerator.BaseDataGenerator
+.. autoclass:: BaseDataGeneration.BaseDataGeneration
     :members:
 
 .. _pipelines.basepipeline:
@@ -20,18 +20,18 @@ BasePipeline
 .. autoclass:: BasePipeline.BasePipeline
     :members:
 
-.. _pipelines.baserunner:
+.. _pipelines.baseprediction:
 
-BaseRunner
-----------
+BasePrediction
+--------------
 
 Bases:
 :py:class:`BasePipeline.BasePipeline`
 
-.. autoclass:: BaseRunner.BaseRunner
+.. autoclass:: BasePrediction.BasePrediction
     :members:
 
-.. _pipelines.basetrainer:
+.. _pipelines.basetraining:
 
 BaseTrainer
 -----------
@@ -39,5 +39,5 @@ BaseTrainer
 Bases:
 :py:class:`BasePipeline.BasePipeline`
 
-.. autoclass:: BaseTrainer.BaseTrainer
+.. autoclass:: BaseTraining.BaseTraining
     :members:

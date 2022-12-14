@@ -11,25 +11,22 @@ CORE
       - :doc:`core/environment`
       - :doc:`core/manager`
 
-    * - | :ref:`asyncsocket.abstractenvironment`
-        | :ref:`asyncsocket.bytesconverter`
+    * - | :ref:`asyncsocket.bytesconverter`
         | :ref:`asyncsocket.tcpipclient`
         | :ref:`asyncsocket.tcpipobject`
         | :ref:`asyncsocket.tcpipserver`
 
-      - | :ref:`dataset.basedataset`
-        | :ref:`dataset.basedatasetconfig`
+      - | :ref:`database.databasehandler`
+        | :ref:`database.basedatabaseconfig`
 
       - | :ref:`environment.baseenvironment`
         | :ref:`environment.baseenvironmentconfig`
 
       - | :ref:`manager.datamanager`
-        | :ref:`manager.datasetmanager`
+        | :ref:`manager.databasemanager`
         | :ref:`manager.environmentmanager`
-        | :ref:`manager.manager`
         | :ref:`manager.networkmanager`
         | :ref:`manager.statsmanager`
-        | :ref:`manager.visualizermanager`
 
 
 .. list-table::
@@ -46,15 +43,13 @@ CORE
         | :ref:`network.baseoptimization`
         | :ref:`network.datatransformation`
 
-      - | :ref:`pipelines.basedatagenerator`
+      - | :ref:`pipelines.basedatageneration`
         | :ref:`pipelines.basepipeline`
-        | :ref:`pipelines.baserunner`
-        | :ref:`pipelines.basetrainer`
+        | :ref:`pipelines.baseprediction`
+        | :ref:`pipelines.basetraining`
 
-      - | :ref:`visualizer.vedoobjects`
+      - | :ref:`visualizer.vedofactory`
         | :ref:`visualizer.vedovisualizer`
-        |
-        | :ref:`Visualizer.Factories <factories>`
 
 
 .. toctree::

@@ -8,16 +8,16 @@ import os
 import sys
 
 # DeepPhysX related imports
-from DeepPhysX.Core.Dataset.BaseDatasetConfig import BaseDatasetConfig
+from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Visualizer.VedoVisualizer import VedoVisualizer
-from DeepPhysX.Core.Pipelines.BaseRunner import BaseRunner
+from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
+from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 # Session related imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from download import LiverDownloader
-LiverDownloader().get_session('valid_data')
+LiverDownloader().get_session('all')
 from Environment.Liver import Liver
 from Environment.parameters import p_model
 
@@ -25,36 +25,30 @@ from Environment.parameters import p_model
 def launch_runner():
 
     # Environment config
-    env_config = BaseEnvironmentConfig(environment_class=Liver,
-                                       visualizer=VedoVisualizer,
-                                       as_tcp_ip_client=False,
-                                       param_dict={'compute_sample': True,
-                                                   'nb_forces': 3})
+    environment_config = BaseEnvironmentConfig(environment_class=Liver,
+                                               visualizer=VedoVisualizer,
+                                               env_kwargs={'nb_forces': 3})
 
     # FC config
     nb_hidden_layers = 3
     nb_neurons = p_model.nb_nodes_mesh * 3
     nb_final_neurons = p_model.nb_nodes_grid * 3
     layers_dim = [nb_neurons] + [nb_neurons for _ in range(nb_hidden_layers)] + [nb_final_neurons]
-    net_config = FCConfig(network_name='liver_FC',
-                          dim_output=3,
-                          dim_layers=layers_dim,
-                          biases=True)
+    network_config = FCConfig(dim_layers=layers_dim,
+                              dim_output=3,
+                              biases=True)
 
     # Dataset config
-    dataset_config = BaseDatasetConfig(dataset_dir='sessions/liver_dpx',
-                                       normalize=True,
-                                       use_mode='Validation')
+    database_config = BaseDatabaseConfig(normalize=True)
 
     # Runner
-    runner = BaseRunner(session_dir='sessions',
-                        session_name='liver_dpx',
-                        dataset_config=dataset_config,
-                        environment_config=env_config,
-                        network_config=net_config,
-                        nb_steps=500)
+    runner = BasePrediction(network_config=network_config,
+                            database_config=database_config,
+                            environment_config=environment_config,
+                            session_dir='sessions',
+                            session_name='liver_dpx',
+                            step_nb=500)
     runner.execute()
-    runner.close()
 
 
 if __name__ == '__main__':

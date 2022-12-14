@@ -5,24 +5,27 @@ DummyOptimizer: nothing to optimize in our DummyNetwork.
 """
 
 # Python related imports
-from numpy import save, array
+from numpy import save, array, ndarray
 
 # DeepPhysX related imports
 from DeepPhysX.Core.Network.BaseNetwork import BaseNetwork
 from DeepPhysX.Core.Network.BaseOptimization import BaseOptimization
+from DeepPhysX.Core.Network.BaseTransformation import BaseTransformation
 
 
 # Create a Network as a BaseNetwork child class
 class DummyNetwork(BaseNetwork):
 
     def __init__(self, config):
+
         BaseNetwork.__init__(self, config)
         # There is no Network architecture to define in our DummyNetwork
 
     # MANDATORY
-    def forward(self, x):
+    def forward(self, input_data):
+
         # Return the input
-        return x
+        return input_data
 
     """
     The following methods should be already defined in a DeepPhysX AI package.
@@ -57,19 +60,12 @@ class DummyNetwork(BaseNetwork):
     def nb_parameters(self):
         return 0
 
-    # MANDATORY
-    def transform_from_numpy(self, x, grad=True):
-        return x
-
-    # MANDATORY
-    def transform_to_numpy(self, x):
-        return x
-
 
 # Create an Optimization as a BaseOptimization child class
 class DummyOptimization(BaseOptimization):
 
     def __init__(self, config):
+
         BaseOptimization.__init__(self, config)
 
     """
@@ -82,11 +78,11 @@ class DummyOptimization(BaseOptimization):
         pass
 
     # MANDATORY
-    def compute_loss(self, prediction, ground_truth, data):
+    def compute_loss(self, data_pred, data_opt):
         return {'loss': 0.}
 
     # Optional
-    def transform_loss(self, data):
+    def transform_loss(self, data_opt):
         pass
 
     # MANDATORY
@@ -96,3 +92,27 @@ class DummyOptimization(BaseOptimization):
     # MANDATORY
     def optimize(self):
         pass
+
+
+# Create a BaseTransformation as a BaseTransformation child class
+class DummyTransformation(BaseTransformation):
+
+    def __init__(self, config):
+
+        BaseTransformation.__init__(self, config)
+        self.data_type = ndarray
+
+    def transform_before_prediction(self, data_net):
+
+        # Do not transform the Network data
+        return data_net
+
+    def transform_before_loss(self, data_pred, data_opt=None):
+
+        # Do not transform the Prediction data and the Optimizer data
+        return data_pred, data_opt
+
+    def transform_before_apply(self, data_pred):
+
+        # Do not transform Prediction data
+        return data_pred

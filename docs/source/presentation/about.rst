@@ -70,5 +70,5 @@ typically contains the following **tree structure**:
     :width: 80%
     :align: center
 
-    * - .. image:: ../_static/image/about_working_session.png
+    * - .. image:: ../_static/image/about_tree.png
             :alt: about_working_session.png

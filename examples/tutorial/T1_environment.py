@@ -4,7 +4,7 @@ DummyEnvironment: simply set the current step index as training data.
 """
 
 # Python related imports
-from numpy import array
+from numpy import array, ndarray
 
 # DeepPhysX related imports
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
@@ -14,57 +14,48 @@ from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 class DummyEnvironment(BaseEnvironment):
 
     def __init__(self,
-                 ip_address='localhost',
-                 port=10000,
+                 as_tcp_ip_client=True,
                  instance_id=1, 
-                 number_of_instances=1, 
-                 as_tcp_ip_client=True,  
-                 environment_manager=None):
+                 instance_nb=1):
 
         BaseEnvironment.__init__(self, 
-                                 ip_address=ip_address, 
-                                 port=port,
+                                 as_tcp_ip_client=as_tcp_ip_client,
                                  instance_id=instance_id, 
-                                 number_of_instances=number_of_instances,
-                                 as_tcp_ip_client=as_tcp_ip_client, 
-                                 environment_manager=environment_manager)
+                                 instance_nb=instance_nb)
 
-        self.nb_step = 0
-        self.increment = 0
+        self.step_nb: int = 0
 
     """
     INITIALIZING ENVIRONMENT - Methods will be automatically called it this order:
-       - recv_parameters: Receive a dictionary of parameters that can be set in EnvironmentConfig
        - create: Create the Environment
        - init: Initialize the Environment if required
-       - send_parameters: Same as recv_parameters, Environment can send back a set of parameters if required
-       - send_visualization: Send initial visualization data (see Example/CORE/Features to add visualization data)
+       - init_database: Define the training data fields
+       - init_visualization: Define and send initial visualization data
     """
-
-    # Optional
-    def recv_parameters(self, param_dict):
-        # Set data size
-        self.increment = param_dict['increment'] if 'increment' in param_dict else 1
 
     # MANDATORY
     def create(self):
+
         # Nothing to create in our DummyEnvironment
         pass
 
     # Optional
     def init(self):
+
         # Nothing to init in our DummyEnvironment
         pass
 
-    # Optional
-    def send_parameters(self):
-        # Nothing to send back
-        return {}
+    # MANDATORY
+    def init_database(self):
+
+        # Define the fields of the training Database
+        self.define_training_fields(fields=[('input', ndarray), ('ground_truth', ndarray)])
 
     # Optional
-    def send_visualization(self):
-        # Nothing to visualize (see Example/CORE/Features to add visualization data)
-        return {}
+    def init_visualization(self):
+
+        # Nothing to visualize
+        pass
 
     """
     ENVIRONMENT BEHAVIOR - Methods will be automatically called at each simulation step in this order:
@@ -79,25 +70,26 @@ class DummyEnvironment(BaseEnvironment):
 
     # MANDATORY
     async def step(self):
+
         # Setting (and sending) training data
-        self.set_training_data(input_array=array([self.nb_step]),
-                               output_array=array([self.nb_step]))
-        self.nb_step += self.increment
-        # Other data fields can be filled:
-        #   - set_loss_data: Define an additional data to compute loss value (see Optimization.transform_loss)
-        #   - set_additional_dataset: Add a field to the dataset
+        self.step_nb += 1
+        self.set_training_data(input=array([self.step_nb]),
+                               ground_truth=array([self.step_nb]))
 
     # Optional
-    def check_sample(self, check_input=True, check_output=True):
+    def check_sample(self):
+
         # Nothing to check in our DummyEnvironment
         return True
 
     # Optional
     def apply_prediction(self, prediction):
+
         # Nothing to apply in our DummyEnvironment
-        print(f"Prediction at step {self.nb_step - 1} = {prediction}")
+        print(f"Prediction at step {self.step_nb} = {prediction}")
 
     # Optional
     def close(self):
+
         # Shutdown procedure
         print("Bye!")

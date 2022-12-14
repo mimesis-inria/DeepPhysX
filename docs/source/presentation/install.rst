@@ -20,23 +20,25 @@ Prerequisites
 .. table::
     :widths: 20 20 10 30
 
-    +-----------------------------+-------------------------------+--------------+-------------------------------------+
-    | **Package**                 | **Dependency**                | **Type**     | **Install**                         |
-    +=============================+===============================+==============+=====================================+
-    | :guilabel:`DeepPhysX_Core`  | :Numpy:`Numpy <>`             | **Required** | ``pip install numpy``               |
-    |                             +-------------------------------+--------------+-------------------------------------+
-    |                             | :Vedo:`Vedo <>`               | **Required** | ``pip install vedo``                |
-    |                             +-------------------------------+--------------+-------------------------------------+
-    |                             | :Tensorboard:`Tensorboard <>` | **Required** | ``pip install tensorboard``         |
-    +-----------------------------+-------------------------------+--------------+-------------------------------------+
-    | :guilabel:`DeepPhysX_Sofa`  | :SOFA:`SOFA Framework <>`     | **Required** | :SOFAI:`Follow instructions <>`     |
-    |                             +-------------------------------+--------------+-------------------------------------+
-    |                             | :SP3:`SofaPython3 <>`         | **Required** | :SP3I:`Follow instructions <>`      |
-    |                             +-------------------------------+--------------+-------------------------------------+
-    |                             | :Caribou:`Caribou <>`         | Optional     | :CaribouI:`Follow instructions <>`  |
-    +-----------------------------+-------------------------------+--------------+-------------------------------------+
-    | :guilabel:`DeepPhysX_Torch` | :PyTorch:`PyTorch <>`         | **Required** | ``pip install torch``               |
-    +-----------------------------+-------------------------------+--------------+-------------------------------------+
+    +-----------------------------+-------------------------------+--------------+------------------------------------------+
+    | **Package**                 | **Dependency**                | **Type**     | **Install**                              |
+    +=============================+===============================+==============+==========================================+
+    | :guilabel:`DeepPhysX_Core`  | :Numpy:`Numpy <>`             | **Required** | ``pip install numpy``                    |
+    |                             +-------------------------------+--------------+------------------------------------------+
+    |                             | :Vedo:`Vedo <>`               | **Required** | ``pip install vedo``                     |
+    |                             +-------------------------------+--------------+------------------------------------------+
+    |                             | :Tensorboard:`Tensorboard <>` | **Required** | ``pip install tensorboard``              |
+    |                             +-------------------------------+--------------+------------------------------------------+
+    |                             | :SSD:`SSD <>`                 | **Required** | ``pip install SimulationSimpleDatabase`` |
+    +-----------------------------+-------------------------------+--------------+------------------------------------------+
+    | :guilabel:`DeepPhysX_Sofa`  | :SOFA:`SOFA Framework <>`     | **Required** | :SOFAI:`Follow instructions <>`          |
+    |                             +-------------------------------+--------------+------------------------------------------+
+    |                             | :SP3:`SofaPython3 <>`         | **Required** | :SP3I:`Follow instructions <>`           |
+    |                             +-------------------------------+--------------+------------------------------------------+
+    |                             | :Caribou:`Caribou <>`         | Optional     | :CaribouI:`Follow instructions <>`       |
+    +-----------------------------+-------------------------------+--------------+------------------------------------------+
+    | :guilabel:`DeepPhysX_Torch` | :PyTorch:`PyTorch <>`         | **Required** | ``pip install torch``                    |
+    +-----------------------------+-------------------------------+--------------+------------------------------------------+
 
 .. note::
     :guilabel:`DeepPhysX.Sofa` has a dependency to :Caribou:`Caribou <>` to run the demo scripts from
@@ -53,17 +55,17 @@ They can easily be installed with ``pip``:
 
 .. code-block:: bash
 
-    pip3 install DeepPhysX
-    pip3 install DeepPhysX.Sofa
-    pip3 install DeepPhysX.Torch
+    $ pip3 install DeepPhysX
+    $ pip3 install DeepPhysX.Sofa
+    $ pip3 install DeepPhysX.Torch
 
 Then, you should be able to run:
 
 .. code-block:: bash
 
-    pip3 show DeepPhysX
-    pip3 show DeepPhysX.Sofa
-    pip3 show DeepPhysX.Torch
+    $ pip3 show DeepPhysX
+    $ pip3 show DeepPhysX.Sofa
+    $ pip3 show DeepPhysX.Torch
 
 .. code-block:: python
 
@@ -92,51 +94,48 @@ Start by cloning the **DeepPhysX** source code from its Github repository in a d
     $ mkdir DeepPhysX
     $ cd DeepPhysX
     $ git clone https://github.com/mimesis-inria/DeepPhysX.git Core
-    $ cd Core
 
-Specify which packages to install by running the configuration script.
-This way, all the packages are gathered in a single installation.
+Then, you can add compatibility layers to your **DeepPhysX** environment and install packages:
 
-.. code-block:: bash
+* **Option 1 (recommended):** run one of the ``setup_.py`` scripts that handle the installation of all packages
 
-    $ python3 config.py
-    >   Available AI packages : ['Torch']
-    >    >> Installing package Torch (y/n): yes
-    >
-    >   Available Simulation packages : ['Sofa']
-    >    >> Installing package Sofa (y/n): yes
-    >
-    >   Applying following configuration:
-    >     * DeepPhysX.Core:  True (default)
-    >     * DeepPhysX.Torch: True
-    >     * DeepPhysX.Sofa:  True
-    >   Confirm (y/n): yes
-    >   Configuration saved in 'config.json'
+    * Use ``setup_user.py`` to install and manage packages with ``pip`` as non-editable.
 
+      .. code-block:: bash
 
-.. note::
-    Configuration script will **automatically clone** missing packages.
+            $ python3 setup_user.py
 
-Finally, install the defined packages:
+    * Use ``setup_dev.py`` to link packages in the site-packages.
 
-* by using ``pip`` to install and manage them as non-editable
+      .. code-block:: bash
+
+            $ python3 setup_dev.py set
+
+  .. note::
+      Both scripts will asks the packages to install and will **automatically clone** missing packages.
+
+* **Option 2:** clone the corresponding Github repositories in the created ``DeepPhysX`` directory, then install
+  packages manually.
 
   .. code-block:: bash
 
-      $ pip3 install .
+        # Clone compatibility layers
+        $ git clone https://github.com/mimesis-inria/DeepPhysX.Sofa.git Sofa
+        $ git clone https://github.com/mimesis-inria/DeepPhysX.Torch.git Torch
 
-* by running ``dev.py`` to link them as editable in the site-packages
+        # Install packages manually
+        $ cd Core ; pip3 install .
+        $ cd ../Sofa ; pip3 install .
+        $ cd ../Torch ; pip3 install .
 
-  .. code-block:: bash
-
-      $ python3 dev.py set
-
-Then, you should be able to run:
+Finally, you should be able to run:
 
 .. code-block:: bash
 
     # If installed with pip
-    $ pip show DeepPhysX
+    $ pip3 show DeepPhysX
+    $ pip3 show DeepPhysX.Sofa
+    $ pip3 show DeepPhysX.Torch
 
 .. code-block:: python
 

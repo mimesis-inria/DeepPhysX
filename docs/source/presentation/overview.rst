@@ -31,7 +31,7 @@ This package is named :guilabel:`DeepPhysX.Core`.
 
 .. admonition:: Dependencies
 
-    NumPy, Tensorboard, Vedo
+    NumPy, Tensorboard, Vedo, SimulationSimpleDatabase
 
 Simulation
 """"""""""
@@ -70,7 +70,7 @@ Users might use one of the provided *Pipelines* for their **data generation**, t
 These *Pipelines* trigger a **loop** which defines the number of samples to produce, the number of epochs to perform
 during a training session or the number of steps of prediction.
 
-.. figure:: ../_static/image/overview_architecture.png
+.. figure:: ../_static/image/overview_components.png
     :alt: overview_architecture.png
     :width: 80%
     :align: center
@@ -81,12 +81,12 @@ The *Pipeline* will involve several components (data producers and data consumer
 communicate with their *Manager* first.
 A main *Manager* will provide the *Pipeline* an intermediary with all the existing *Managers*:
 
-:``DatasetManager``: It will manage the *Dataset* component to create **storage** partitions, to fill these partitions
- with the synthetic training data produced by the *Environment* and to **reload** an existing *Dataset* for training or
+:``DatabaseManager``: It will manage the *Database* component to create **storage** partitions, to fill these partitions
+ with the synthetic training data produced by the *Environment* and to **reload** an existing *Database* for training or
  prediction sessions.
 
  .. note::
-    If training and data generation are done simultaneously (by default for the training *Pipeline*), the *Dataset*
+    If training and data generation are done simultaneously (by default for the training *Pipeline*), the *Database*
     can be built only during the first epoch and then reloaded for the remaining epochs.
 
 :``EnvironmentManager``: It will manage the *Environment* (the numerical simulation) component to **create** it, to
@@ -99,10 +99,10 @@ A main *Manager* will provide the *Pipeline* an intermediary with all the existi
     :ref:`dedicated section <environment-tcpip>`).
 
 .. note::
-    The two above *Managers* are managed by the ``DataManager`` since both the *Environment* and the *Dataset*
+    The two above *Managers* are managed by the ``DataManager`` since both the *Environment* and the *Database*
     components provide training data to the *Network*.
     This ``DataManager`` is the one who decides if data should be requested from the *Environment* or from the
-    *Dataset* depending on the current state of the *Pipeline* and on the components configurations.
+    *Database* depending on the current state of the *Pipeline* and on the components configurations.
 
 :``NetworkManager``: It will manage several objects to **train** or **exploit** your *Network*:
 
@@ -125,16 +125,6 @@ A main *Manager* will provide the *Pipeline* an intermediary with all the existi
     Usual curves will be automatically provided in the board (such as the evolution of the loss value, the smoothed
     mean and the variance of this loss value per batch and per epoch), but other custom fields can be added and filled
     as well.
-
-:``VisualizerManager``: It will manage the *Visualizer* which **initialize** and **update** visualization data.
- Then, it updates the **render** of the simulated objects defined in the visualization data.
- *Factories* are provided to easily **template** visualization data for a wide variety of objects (meshes, point clouds,
- etc.).
-
- .. note::
-    It must be specified in an *Environment* which objects to add in the *Visualizer* and when they must be updated.
-    In the case where several *Environments* are running in parallel, the rendering windows will be split in several
-    sub-windows to gather all the renderings.
 
 .. warning::
     It is not possible to use the default *Network* and *Environment* provided in the :core:`CORE` package, since they

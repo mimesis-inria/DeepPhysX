@@ -8,9 +8,9 @@ General Policy
 
 Several *Pipelines* are available with **DeepPhysX**, allowing the user to:
 
-    * **Generate** synthetic data from simulations → ``DataGenerator``
-    * **Train** artificial neural networks with synthetic data → ``Trainer``
-    * Use the **predictions** of trained networks inside a simulation → ``Runner``
+    * **Generate** synthetic data from simulations → ``DataGeneration``
+    * **Train** artificial neural networks with synthetic data → ``Training``
+    * Use the **predictions** of trained networks inside a simulation → ``Prediction``
 
 A *Pipeline* is always associated with a :ref:`working session <about-working-sessions>`, whether it already exists or
 whether it is automatically created when the *Pipeline* is launched.
@@ -27,8 +27,8 @@ Once these *Configurations* are defined, the *Pipeline* can be created and launc
 Pipeline - Data generation
 --------------------------
 
-The *DataGenerator* will only involve an *Environment* and a *Dataset*, so this *Pipeline* requires the corresponding
-*Configurations*
+The *DataGeneration* will only involve an *Environment* and a *Dataset*, so this *Pipeline* requires the corresponding
+*Configurations*.
 
 As the purpose of this *Pipeline* is only to create synthetic data, the working session will always be created at the
 same time.
@@ -48,8 +48,8 @@ Furthermore, users have to define which data to save and how much :
 
 See following example::
 
-    # Import BaseDataGenerator and Config objects
-    from DeepPhysX_Core.Pipelines.BaseDataGenerator import BaseDataGenerator
+    # Import BaseDataGeneration and Config objects
+    from DeepPhysX.Core.Pipelines.BaseDataGeneration import BaseDataGeneration
     ...
 
     # Define configs
@@ -57,11 +57,12 @@ See following example::
     environment_config = ...
 
     # Create the pipeline
-    data_generator = BaseDataGenerator(session_name='sessions/my_data_generation',
-                                       dataset_config=dataset_config,
-                                       environment_config=environment_config,
-                                       nb_batches=500,
-                                       batch_size=16)
+    data_generator = BaseDataGeneration(session_dir='sessions',
+                                        session_name='my_data_generation',
+                                        dataset_config=dataset_config,
+                                        environment_config=environment_config,
+                                        batch_nb=500,
+                                        batch_size=16)
 
     # Launch the pipeline
     data_generator.execute()
@@ -70,12 +71,12 @@ See following example::
 Pipeline - Training
 -------------------
 
-The *Trainer* can involve an *Environment*, a *Dataset* and a *Network*, so this *Pipeline* might require the
+The *Training* can involve an *Environment*, a *Dataset* and a *Network*, so this *Pipeline* might require the
 corresponding *Configurations*.
 There are several ways to use this pipeline:
 
     **Training a Network from scratch**
-        To train a *Network* from scratch, the *Trainer* requires the whole set of *Configurations*.
+        To train a *Network* from scratch, the *Training* requires the whole set of *Configurations*.
         A new working session will be created, whose name can be set as a parameter.
 
     **Training a Network with an existing Dataset**
@@ -88,7 +89,7 @@ There are several ways to use this pipeline:
 
     **Training a Network from an existing Network state**
         Training from an existing *Network* state can be done both in an existing session or in a new session.
-        If you want to work in the same session, you have to configure the *Trainer* to do so, otherwise a new working
+        If you want to work in the same session, you have to configure the *Training* to do so, otherwise a new working
         session will be automatically created.
         In the same session, a new set of trained parameters will be added in the ``network`` repository, either trained
         with data from an external *Dataset* (whose path must be provided) or with data from the *Environment* (whose
@@ -109,8 +110,8 @@ The last parameters to set in the *Trainer* are:
 
 See following example::
 
-    # Import BaseTrainer and Config objects
-    from DeepPhysX_Core.Pipelines.BaseTrainer import BaseTrainer
+    # Import BaseTraining and Config objects
+    from DeepPhysX.Core.Pipelines.BaseTraining import BaseTraining
     ...
 
     # Define configs
@@ -119,13 +120,14 @@ See following example::
     network_config = ...
 
     # Create the pipeline
-    trainer = BaseTrainer(session_name='sessions/my_training',
-                          dataset_config=dataset_config,
-                          environment_config=env_config,
-                          network_config=net_config,
-                          nb_epochs=100,
-                          nb_batches=500,
-                          batch_size=16)
+    trainer = BaseTraining(session_dir='sessions',
+                           session_name='my_training',
+                           dataset_config=dataset_config,
+                           environment_config=env_config,
+                           network_config=net_config,
+                           epoch_nb=100,
+                           batch_nb=500,
+                           batch_size=16)
 
     # Launch the pipeline
     trainer.execute()
@@ -134,25 +136,25 @@ See following example::
 Pipeline - Prediction
 ---------------------
 
-The *Runner* always requires a *Network* to compute predictions and an *Environment* to apply them, so this *Pipeline*
-will always require the corresponding *Configurations*.
+The *Prediction* always requires a *Network* to compute predictions and an *Environment* to apply them, so this
+*Pipeline* will always require the corresponding *Configurations*.
 
-This *Pipeline* always works with an existing working session, no new sessions can be created within a *Runner*.
+This *Pipeline* always works with an existing working session, no new sessions can be created within a *Prediction*.
 The path to the session is therefore required, assuming that it contains a trained *Network*.
 
-The *Runner* can either run a specified **number of steps** or run an **infinite loop**.
+The *Prediction* can either run a specified **number of steps** or run an **infinite loop**.
 
 A *Dataset* configuration can be provided.
-In this case, the *Runner* can record input or / and output data.
+In this case, the *Prediction* can record prediction data.
 Each sample computed during the prediction phase will then be added to the *Dataset* in dedicated partitions.
-With a *Dataset*, the *Runner* can also load its data to **replay** stored samples.
+With a *Dataset*, the *Prediction* can also load its data to **replay** stored samples.
 
 .. highlight:: python
 
 See following example::
 
-    # Import BaseRunner and Config objects
-    from DeepPhysX_Core.Pipelines.BaseRunner import BaseTrainer
+    # Import BasePrediction and Config objects
+    from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
     ...
 
     # Define configs
@@ -161,11 +163,12 @@ See following example::
     network_config = ...
 
     # Create the pipeline
-    runner = BaseRunner(session_dir='sessions/my_training',
-                        dataset_config=dataset_config,
-                        environment_config=env_config,
-                        network_config=net_config,
-                        nb_steps=-1)
+    runner = BasePrediction(session_dir='sessions',
+                            session_name='my_training',
+                            dataset_config=dataset_config,
+                            environment_config=env_config,
+                            network_config=net_config,
+                            step_nb=-1)
 
     # Launch the pipeline
     runner.execute()
