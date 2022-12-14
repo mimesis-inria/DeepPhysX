@@ -55,3 +55,11 @@ $ DPX --run <demo>      # Run one of the demo scripts
 |          **Armadillo**<br>`DPX -r armadillo`          |          **Beam**<br>`DPX -r beam`          |          **Liver**<br>`DPX -r liver`          |
 |:-----------------------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
 | ![armadillo](docs/source/_static/image/armadillo.png) | ![beam](docs/source/_static/image/beam.png) | ![liver](docs/source/_static/image/liver.png) |
+
+
+### References
+
+Did this project help you for your research ? Please cite us as:
+
+R. Enjalbert, A. Odot and S. Cotin, *DeepPhysX, a python framework to interface AI with numerical simulation*, 
+Zenodo, 2022, [**DOI**](https://doi.org/10.5281/zenodo.7389505)
