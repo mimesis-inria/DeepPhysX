@@ -45,6 +45,8 @@ class Beam(BaseEnvironment):
         self.selected = None
         self.interactive_window = True
         self.mouse_factor = 10
+        self.key_on = False
+        self.click_on = False
 
         # Force fields
         self.arrows = None
@@ -87,7 +89,7 @@ class Beam(BaseEnvironment):
                     for z in (np.min(self.mesh_init[:, 2]), np.max(self.mesh_init[:, 2])):
                         center = [x, y, z]
                         self.spheres_init.append(self.mesh_init.copy().tolist().index(center))
-                        self.spheres.append(self.sphere(self.mesh.points()[self.spheres_init[-1]]))
+                        self.spheres.append(self.sphere(self.mesh.points()[self.spheres_init[-1]]).alpha(0.5))
                         x_min, x_max = x - sx / 4, x + sx / 4
                         y_min, y_max = y - sy / 2, y + sy / 2
                         z_min, z_max = z - sz / 2, z + sz / 2
@@ -101,7 +103,7 @@ class Beam(BaseEnvironment):
                 center = [sx / 2, sy / 2, sz / 2]
                 center[i] = a
                 self.spheres_init.append(self.mesh_init.copy().tolist().index(center))
-                self.spheres.append(self.sphere(self.mesh.points()[self.spheres_init[-1]]))
+                self.spheres.append(self.sphere(self.mesh.points()[self.spheres_init[-1]]).alpha(0.5))
                 other = [0, 1, 2]
                 other.remove(i)
                 o0_min, o0_max = np.min(self.mesh_init[:, other[0]]), np.max(self.mesh_init[:, other[0]])
@@ -116,15 +118,12 @@ class Beam(BaseEnvironment):
         self.plotter.add(*self.spheres)
         self.plotter.add(self.mesh)
         self.plotter.add(Plane(pos=[0., 0., 0.], normal=[1, 0, 0], s=(20, 20), c='darkred', alpha=0.2))
-        self.plotter.add(Text2D("Press 'Alt' to interact with the object.\n"
-                                "Left click to select a sphere.\n"
-                                "Right click to unselect a sphere.", s=0.75))
+        self.plotter.add(Text2D("Press 'b' to interact with the spheres / with the environment.\n"
+                                "Left click to select / unselect a sphere.", s=0.75))
 
         # Add callbacks
         self.plotter.addCallback('KeyPress', self.key_press)
-        self.plotter.addCallback('KeyRelease', self.key_release)
         self.plotter.addCallback('LeftButtonPress', self.left_button_press)
-        self.plotter.addCallback('RightButtonPress', self.right_button_press)
         self.plotter.addCallback('MouseMove', self.mouse_move)
 
     async def step(self):
@@ -138,42 +137,39 @@ class Beam(BaseEnvironment):
     def key_press(self, evt):
 
         # Only react to an 'Alt' press
-        if 'alt' in evt.keyPressed.lower():
-            # Switch from environment to object interaction
-            self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyle3D())
-            self.interactive_window = False
-
-    def key_release(self, evt):
-
-        # Only react with an 'Alt' release
-        if 'alt' in evt.keyPressed.lower():
-            # Switch from object to environment interaction
-            self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-            self.interactive_window = True
-            self.selected = None
-            # Reset all
-            self.update_mesh()
-            self.update_arrows()
-            self.update_spheres()
+        if 'b' in evt.keyPressed.lower():
+            self.key_on = not self.key_on
+            if self.key_on:
+                # Switch from environment to object interaction
+                self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyle3D())
+                self.interactive_window = False
+                self.update_spheres()
+            else:
+                # Switch from object to environment interaction
+                self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+                self.interactive_window = True
+                self.selected = None
+                # Reset all
+                self.update_mesh()
+                self.update_arrows()
+                self.update_spheres()
 
     def left_button_press(self, evt):
 
         # Select a sphere only in object interaction mode
         if not self.interactive_window:
-            # Pick a unique sphere
-            if evt.actor in self.spheres:
-                self.selected = self.spheres.index(evt.actor)
-                self.update_spheres(center=self.spheres_init[self.selected])
-
-    def right_button_press(self, evt):
-
-        # Unselect a sphere only in object interaction mode
-        if not self.interactive_window:
-            self.selected = None
-            # Reset all
-            self.update_mesh()
-            self.update_arrows()
-            self.update_spheres()
+            self.click_on = not self.click_on
+            if self.click_on:
+                # Pick a unique sphere
+                if evt.actor in self.spheres:
+                    self.selected = self.spheres.index(evt.actor)
+                    self.update_spheres(center=self.spheres_init[self.selected])
+            else:
+                self.selected = None
+                # Reset all
+                self.update_mesh()
+                self.update_arrows()
+                self.update_spheres()
 
     def mouse_move(self, evt):
 
@@ -224,7 +220,9 @@ class Beam(BaseEnvironment):
         # Remove actual spheres
         self.plotter.remove(*self.spheres)
         # If no center provided, reset all the spheres
-        if center is None:
+        if self.interactive_window:
+            self.spheres = [self.sphere(self.mesh_init[c]).alpha(0.5) for c in self.spheres_init]
+        elif center is None:
             self.spheres = [self.sphere(self.mesh_init[c]) for c in self.spheres_init]
         # Otherwise, update the selected cell
         else:

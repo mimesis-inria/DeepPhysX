@@ -9,7 +9,6 @@ import os
 # DeepPhysX related imports
 from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 
@@ -25,7 +24,7 @@ def launch_prediction(session):
 
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
-                                               visualizer=VedoVisualizer,
+                                               visualizer='open3d',
                                                env_kwargs={'constant': False,
                                                            'data_size': [nb_points, dimension],
                                                            'delay': True,

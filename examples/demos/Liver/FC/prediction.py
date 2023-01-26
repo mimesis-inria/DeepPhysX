@@ -11,7 +11,6 @@ import sys
 from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 # Session related imports
@@ -26,7 +25,7 @@ def launch_runner():
 
     # Environment config
     environment_config = BaseEnvironmentConfig(environment_class=Liver,
-                                               visualizer=VedoVisualizer,
+                                               visualizer='vedo',
                                                env_kwargs={'nb_forces': 3})
 
     # FC config

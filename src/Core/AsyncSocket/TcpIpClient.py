@@ -5,6 +5,8 @@ from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
 from numpy import ndarray
 
+from SSD.Core.Storage.Database import Database
+
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
 from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
 
@@ -97,8 +99,9 @@ class TcpIpClient(TcpIpObject):
         self.environment.init()
         self.environment.init_database()
         if visualization_db is not None:
-            self.environment._create_visualization(visualization_db=visualization_db)
-            self.environment.init_visualization()
+            db = Database(database_dir=visualization_db[0],
+                          database_name=visualization_db[1]).load()
+            self.environment._create_visualization(visualization_db=db)
 
         # Initialization done
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
@@ -106,6 +109,10 @@ class TcpIpClient(TcpIpObject):
         # Synchronize Database
         _ = await self.receive_data(loop=loop, sender=self.sock)
         self.environment.get_database_handler().load()
+
+        # Connect to Visualizer
+        if visualization_db is not None:
+            self.environment._connect_visualization()
 
     ##########################################################################################
     ##########################################################################################
@@ -157,6 +164,8 @@ class TcpIpClient(TcpIpObject):
             self.environment.close()
         except NotImplementedError:
             pass
+        if self.environment.factory is not None:
+            self.environment.factory.close()
         # Confirm exit command to the server
         loop = get_event_loop()
         await self.send_command_exit(loop=loop, receiver=self.sock)

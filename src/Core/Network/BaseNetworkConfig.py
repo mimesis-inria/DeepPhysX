@@ -1,6 +1,6 @@
 from typing import Any, Optional, Type
 from os.path import isdir
-from numpy import typeDict
+from numpy import sctypeDict
 
 from DeepPhysX.Core.Network.BaseNetwork import BaseNetwork
 from DeepPhysX.Core.Network.BaseOptimization import BaseOptimization
@@ -70,7 +70,7 @@ class BaseNetworkConfig:
             raise TypeError(
                 f"[{self.__class__.__name__}] Wrong 'save each epoch' type: bool required, get {type(save_each_epoch)}")
         # Check data type
-        if data_type not in typeDict:
+        if data_type not in sctypeDict:
             raise ValueError(
                 f"[{self.__class__.__name__}] The following data type is not a numpy type: {data_type}")
 

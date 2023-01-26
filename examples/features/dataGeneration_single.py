@@ -7,7 +7,7 @@ Run the pipeline DataGenerator to produce a Dataset only.
 from DeepPhysX.Core.Pipelines.BaseDataGeneration import BaseDataGeneration
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
+# from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 # Session related imports
 from Environment import MeanEnvironment
@@ -21,7 +21,7 @@ def launch_data_generation():
 
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
-                                               visualizer=VedoVisualizer,
+                                               visualizer='vedo',
                                                as_tcp_ip_client=False,
                                                env_kwargs={'constant': False,
                                                            'data_size': (nb_points, dimension),

@@ -12,7 +12,6 @@ from torch.optim import Adam
 from DeepPhysX.Core.Pipelines.BaseTraining import BaseTraining
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 # Session related imports
@@ -27,7 +26,7 @@ def launch_training():
 
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
-                                               visualizer=VedoVisualizer,
+                                               visualizer='vedo',
                                                as_tcp_ip_client=False,
                                                env_kwargs={'constant': True,
                                                            'data_size': [nb_points, dimension],
