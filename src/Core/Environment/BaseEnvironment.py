@@ -3,8 +3,8 @@ from numpy import ndarray
 from os.path import isfile, join
 
 from SSD.Core.Storage.Database import Database
+from SSD.Core.Rendering.UserAPI import UserAPI
 
-from DeepPhysX.Core.Visualization.VedoFactory import VedoFactory
 from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
@@ -42,9 +42,6 @@ class BaseEnvironment(AbstractEnvironment):
 
         # Connect the Environment to the data Database
         self.__database_handler = DatabaseHandler(on_init_handler=self.__database_handler_init)
-
-        # Connect the Factory to the visualization Database
-        self.factory: Optional[VedoFactory] = None
 
     ##########################################################################################
     ##########################################################################################
@@ -289,9 +286,6 @@ class BaseEnvironment(AbstractEnvironment):
         """
 
         if self.factory is not None:
-            # If Environment is a TcpIpClient, request to the Server
-            if self.as_tcp_ip_client:
-                self.tcp_ip_client.request_update_visualization()
             self.factory.render()
 
     def _get_prediction(self):
@@ -329,18 +323,29 @@ class BaseEnvironment(AbstractEnvironment):
         self.__database_handler.load()
 
     def _create_visualization(self,
-                              visualization_db: Union[Database, Tuple[str, str]]) -> None:
+                              visualization_db: Union[Database, Tuple[str, str]],
+                              produce_data: bool = True) -> None:
         """
         Create a Factory for the Environment.
         """
 
         if type(visualization_db) == list:
-            self.factory = VedoFactory(database_path=visualization_db,
-                                       idx_instance=self.instance_id,
-                                       remote=True)
+            self.factory = UserAPI(database_dir=visualization_db[0],
+                                   database_name=visualization_db[1],
+                                   idx_instance=self.instance_id,
+                                   non_storing=not produce_data)
         else:
-            self.factory = VedoFactory(database=visualization_db,
-                                       idx_instance=self.instance_id)
+            self.factory = UserAPI(database=visualization_db,
+                                   idx_instance=self.instance_id,
+                                   non_storing=not produce_data)
+        self.init_visualization()
+
+    def _connect_visualization(self) -> None:
+        """
+        Connect the Factory to the Visualizer.
+        """
+
+        self.factory.connect_visualizer()
 
     def _send_training_data(self) -> List[int]:
         """

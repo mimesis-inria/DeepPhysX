@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any, Union, Tuple
 from numpy import ndarray
 
-from SSD.Core.Storage.Database import Database
+from SSD.Core.Rendering.UserAPI import UserAPI, Database
 
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
@@ -11,7 +11,8 @@ class AbstractEnvironment:
     def __init__(self,
                  as_tcp_ip_client: bool = True,
                  instance_id: int = 1,
-                 instance_nb: int = 1):
+                 instance_nb: int = 1,
+                 **kwargs):
         """
         AbstractEnvironment sets the Environment API for TcpIpClient.
         Do not use AbstractEnvironment to implement an Environment, use BaseEnvironment instead.
@@ -42,6 +43,9 @@ class AbstractEnvironment:
         self.update_line: Optional[int] = None
         self.sample_training: Optional[Dict[str, Any]] = None
         self.sample_additional: Optional[Dict[str, Any]] = None
+
+        # Visualization Factory
+        self.factory: Optional[UserAPI] = None
 
     ##########################################################################################
     ##########################################################################################
@@ -88,7 +92,10 @@ class AbstractEnvironment:
     def get_database_handler(self) -> DatabaseHandler:
         raise NotImplementedError
 
-    def _create_visualization(self, visualization_db: Union[Database, Tuple[str, str]]) -> None:
+    def _create_visualization(self, visualization_db: Union[Database, Tuple[str, str]], produce_data: bool) -> None:
+        raise NotImplementedError
+
+    def _connect_visualization(self) -> None:
         raise NotImplementedError
 
     def _send_training_data(self) -> None:

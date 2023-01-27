@@ -7,7 +7,6 @@ from sys import modules, executable
 
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
 from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 
 class BaseEnvironmentConfig:
@@ -23,7 +22,7 @@ class BaseEnvironmentConfig:
                  load_samples: bool = False,
                  only_first_epoch: bool = True,
                  always_produce: bool = False,
-                 visualizer: Optional[Type[VedoVisualizer]] = None,
+                 visualizer: Optional[str] = None,
                  record_wrong_samples: bool = False,
                  env_kwargs: Optional[Dict[str, Any]] = None):
         """
@@ -41,7 +40,7 @@ class BaseEnvironmentConfig:
         :param only_first_epoch: If True, data will always be created from environment. If False, data will be created
                                  from the environment during the first epoch and then re-used from the Dataset.
         :param always_produce: If True, data will always be produced in Environment(s).
-        :param visualizer: Class of the Visualizer to use.
+        :param visualizer: Backend of the Visualizer to use.
         :param record_wrong_samples: If True, wrong samples are recorded through Visualizer.
         :param env_kwargs: Additional arguments to pass to the Environment.
         """
@@ -90,7 +89,7 @@ class BaseEnvironmentConfig:
         self.env_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
 
         # Visualizer variables
-        self.visualizer: Optional[Type[VedoVisualizer]] = visualizer
+        self.visualizer: Optional[str] = visualizer
         self.record_wrong_samples: bool = record_wrong_samples
 
     def create_server(self,

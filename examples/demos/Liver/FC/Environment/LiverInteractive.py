@@ -50,6 +50,8 @@ class Liver(BaseEnvironment):
         self.selected = None
         self.interactive_window = True
         self.mouse_factor = 0.1
+        self.key_on = False
+        self.click_on = False
 
         # Force fields
         self.arrows = None
@@ -85,7 +87,7 @@ class Liver(BaseEnvironment):
         for center in self.mesh_coarse.points()[self.spheres_init]:
             self.areas.append(np.argwhere(np.sum(np.power(self.mesh_coarse.points() - center, 2), axis=1) <=
                                           np.power(radius, 2)))
-            self.spheres.append(self.sphere(center))
+            self.spheres.append(self.sphere(center).alpha(0.5))
 
         # Define boundaries
         origin, corner = np.array(p_model.boundaries[:3]), np.array(p_model.boundaries[3:])
@@ -98,15 +100,12 @@ class Liver(BaseEnvironment):
         self.plotter.add(*self.spheres)
         self.plotter.add(box)
         self.plotter.add(self.mesh)
-        self.plotter.add(Text2D("Press 'Alt' to interact with the object.\n"
-                                "Left click to select a sphere.\n"
-                                "Right click to unselect a sphere.", s=0.75))
+        self.plotter.add(Text2D("Press 'b' to interact with the spheres / with the environment.\n"
+                                "Left click to select / unselect a sphere.", s=0.75))
 
         # Add callbacks
         self.plotter.addCallback('KeyPress', self.key_press)
-        self.plotter.addCallback('KeyRelease', self.key_release)
         self.plotter.addCallback('LeftButtonPress', self.left_button_press)
-        self.plotter.addCallback('RightButtonPress', self.right_button_press)
         self.plotter.addCallback('MouseMove', self.mouse_move)
 
     async def step(self):
@@ -120,42 +119,39 @@ class Liver(BaseEnvironment):
     def key_press(self, evt):
 
         # Only react to an 'Alt' press
-        if 'alt' in evt.keyPressed.lower():
-            # Switch from environment to object interaction
-            self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyle3D())
-            self.interactive_window = False
-
-    def key_release(self, evt):
-
-        # Only react with an 'Alt' release
-        if 'alt' in evt.keyPressed.lower():
-            # Switch from object to environment interaction
-            self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-            self.interactive_window = True
-            self.selected = None
-            # Reset all
-            self.update_mesh()
-            self.update_arrows()
-            self.update_spheres()
+        if 'b' in evt.keyPressed.lower():
+            self.key_on = not self.key_on
+            if self.key_on:
+                # Switch from environment to object interaction
+                self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyle3D())
+                self.interactive_window = False
+                self.update_spheres()
+            else:
+                # Switch from object to environment interaction
+                self.plotter.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+                self.interactive_window = True
+                self.selected = None
+                # Reset all
+                self.update_mesh()
+                self.update_arrows()
+                self.update_spheres()
 
     def left_button_press(self, evt):
 
         # Select a sphere only in object interaction mode
         if not self.interactive_window:
-            # Pick a unique sphere
-            if evt.actor in self.spheres:
-                self.selected = self.spheres.index(evt.actor)
-                self.update_spheres(center=self.mesh_coarse.points()[self.spheres_init[self.selected]])
-
-    def right_button_press(self, evt):
-
-        # Unselect a sphere only in object interaction mode
-        if not self.interactive_window:
-            self.selected = None
-            # Reset all
-            self.update_mesh()
-            self.update_arrows()
-            self.update_spheres()
+            self.click_on = not self.click_on
+            if self.click_on:
+                # Pick a unique sphere
+                if evt.actor in self.spheres:
+                    self.selected = self.spheres.index(evt.actor)
+                    self.update_spheres(center=self.mesh_coarse.points()[self.spheres_init[self.selected]])
+            else:
+                self.selected = None
+                # Reset all
+                self.update_mesh()
+                self.update_arrows()
+                self.update_spheres()
 
     def mouse_move(self, evt):
 
@@ -207,7 +203,9 @@ class Liver(BaseEnvironment):
         # Remove actual spheres
         self.plotter.remove(*self.spheres)
         # If no center provided, reset all the spheres
-        if center is None:
+        if self.interactive_window:
+            self.spheres = [self.sphere(c).alpha(0.5) for c in self.mesh_coarse.points()[self.spheres_init]]
+        elif center is None:
             self.spheres = [self.sphere(c) for c in self.mesh_coarse.points()[self.spheres_init]]
         # Otherwise, update the selected cell
         else:

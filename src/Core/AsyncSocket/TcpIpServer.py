@@ -187,6 +187,22 @@ class TcpIpServer(TcpIpObject):
         for client_id, client in self.clients:
             await self.send_data(data_to_send='sync', loop=loop, receiver=client)
 
+    def connect_visualization(self) -> None:
+        """
+        Connect the Factories of the Clients to the Visualizer.
+        """
+
+        async_run(self.__connect_visualization())
+
+    async def __connect_visualization(self):
+        """
+        Connect the Factories of the Clients to the Visualizer.
+        """
+
+        loop = get_event_loop()
+        for _, client in self.clients:
+            await self.send_data(data_to_send='conn', loop=loop, receiver=client)
+
     ##########################################################################################
     ##########################################################################################
     #                          Data: produce batch & dispatch batch                          #

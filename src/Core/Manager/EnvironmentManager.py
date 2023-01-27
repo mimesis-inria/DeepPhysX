@@ -4,7 +4,7 @@ from os.path import join
 
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig, TcpIpServer, BaseEnvironment
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
+from SSD.Core.Rendering.Visualizer import Visualizer, Database
 
 
 class EnvironmentManager:
@@ -44,12 +44,10 @@ class EnvironmentManager:
 
         # Create a Visualizer to provide the visualization Database
         force_local = pipeline == 'prediction'
-        self.visualizer: Optional[VedoVisualizer] = None
+        visualizer_db: Optional[Database] = None
         if environment_config.visualizer is not None:
-            self.visualizer = environment_config.visualizer(database_dir=join(session, 'dataset'),
-                                                            database_name='Visualization',
-                                                            remote=environment_config.as_tcp_ip_client and not force_local,
-                                                            record=produce_data)
+            visualizer_db = Database(database_dir=join(session, 'dataset'),
+                                     database_name='Visualization').new()
 
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = 1 if force_local else environment_config.number_of_thread
@@ -57,10 +55,19 @@ class EnvironmentManager:
         self.environment: Optional[BaseEnvironment] = None
         # Create Server
         if environment_config.as_tcp_ip_client and not force_local:
+            if visualizer_db is not None:
+                visualizer_db.create_table(table_name='Temp')
             self.server = environment_config.create_server(environment_manager=self,
                                                            batch_size=batch_size,
-                                                           visualization_db=None if self.visualizer is None else
-                                                           self.visualizer.get_path())
+                                                           visualization_db=None if visualizer_db is None else
+                                                           visualizer_db.get_path())
+            if visualizer_db is not None:
+                visualizer_db.remove_table(table_name='Temp')
+                Visualizer.launch(backend=environment_config.visualizer,
+                                  database_dir=join(session, 'dataset'),
+                                  database_name=visualizer_db.get_path()[1],
+                                  nb_clients=environment_config.number_of_thread)
+            self.server.connect_visualization()
         # Create Environment
         else:
             self.environment = environment_config.create_environment()
@@ -69,20 +76,18 @@ class EnvironmentManager:
             self.environment.create()
             self.environment.init()
             self.environment.init_database()
-            if self.visualizer is not None:
-                self.environment._create_visualization(visualization_db=self.visualizer.get_database())
-                self.environment.init_visualization()
+            if visualizer_db is not None:
+                self.environment._create_visualization(visualization_db=visualizer_db,
+                                                       produce_data=produce_data)
+                Visualizer.launch(backend=environment_config.visualizer,
+                                  database_dir=join(session, 'dataset'),
+                                  database_name=visualizer_db.get_path()[1])
+                self.environment._connect_visualization()
 
         # Define whether methods are used for environment or server
         self.get_database_handler = self.__get_server_db_handler if self.server else self.__get_environment_db_handler
         self.get_data = self.__get_data_from_server if self.server else self.__get_data_from_environment
         self.dispatch_batch = self.__dispatch_batch_to_server if self.server else self.__dispatch_batch_to_environment
-
-        # Init the Visualizer once Environments are initialized
-        if self.visualizer is not None:
-            if len(self.visualizer.get_database().get_tables()) == 1:
-                self.visualizer.get_database().load()
-            self.visualizer.init_visualizer()
 
     ##########################################################################################
     ##########################################################################################
@@ -209,23 +214,6 @@ class EnvironmentManager:
 
     ##########################################################################################
     ##########################################################################################
-    #                                   Requests management                                  #
-    ##########################################################################################
-    ##########################################################################################
-
-    def update_visualizer(self,
-                          instance: int) -> None:
-        """
-        Update the Visualizer.
-
-        :param instance: Index of the Environment render to update.
-        """
-
-        if self.visualizer is not None:
-            self.visualizer.render_instance(instance)
-
-    ##########################################################################################
-    ##########################################################################################
     #                                   Manager behavior                                     #
     ##########################################################################################
     ##########################################################################################
@@ -241,11 +229,9 @@ class EnvironmentManager:
 
         # Environment case
         if self.environment:
+            if self.environment.factory is not None:
+                self.environment.factory.close()
             self.environment.close()
-
-        # Visualizer
-        if self.visualizer:
-            self.visualizer.close()
 
     def __str__(self) -> str:
 

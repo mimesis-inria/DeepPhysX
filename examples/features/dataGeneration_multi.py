@@ -12,7 +12,7 @@ from time import time
 from DeepPhysX.Core.Pipelines.BaseDataGeneration import BaseDataGeneration
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
-from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
+# from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 # Session related imports
 from Environment import MeanEnvironment
@@ -26,7 +26,7 @@ def launch_data_generation(use_tcp_ip):
 
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=MeanEnvironment,
-                                               visualizer=VedoVisualizer,
+                                               visualizer='vedo',
                                                as_tcp_ip_client=use_tcp_ip,
                                                number_of_thread=5,
                                                env_kwargs={'constant': False,
@@ -52,10 +52,10 @@ def launch_data_generation(use_tcp_ip):
 
 if __name__ == '__main__':
     # Run single process
-    single_process_time = launch_data_generation(use_tcp_ip=False)
+    # single_process_time = launch_data_generation(use_tcp_ip=False)
     # Run multiprocess
     multi_process_time = launch_data_generation(use_tcp_ip=True)
     # Show results
     print(f"\nSINGLE PROCESS VS MULTIPROCESS"
-          f"\n    Single process elapsed time: {round(single_process_time, 2)}s"
+          # f"\n    Single process elapsed time: {round(single_process_time, 2)}s"
           f"\n    Multiprocess elapsed time:   {round(multi_process_time, 2)}s")
