@@ -34,7 +34,7 @@ def get_SSD():
 
 # Installation
 setup(name=f'{PROJECT}',
-      version='22.12',
+      version='22.12.1',
       description='A Python framework interfacing AI with numerical simulation.',
       long_description=long_description,
       long_description_content_type='text/markdown',
