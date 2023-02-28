@@ -332,11 +332,11 @@ class BaseEnvironment(AbstractEnvironment):
         if type(visualization_db) == list:
             self.factory = UserAPI(database_dir=visualization_db[0],
                                    database_name=visualization_db[1],
-                                   idx_instance=self.instance_id,
+                                   idx_instance=self.instance_id - 1,
                                    non_storing=not produce_data)
         else:
             self.factory = UserAPI(database=visualization_db,
-                                   idx_instance=self.instance_id,
+                                   idx_instance=self.instance_id - 1,
                                    non_storing=not produce_data)
         self.init_visualization()
 
