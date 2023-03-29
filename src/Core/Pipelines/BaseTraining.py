@@ -194,7 +194,10 @@ class BaseTraining(BasePipeline):
         | Pulls data from the manager and run a prediction step.
         """
         self.data_manager.get_data(epoch=0)
-        prediction, self.loss_dict = self.manager.get_prediction()
+        self.loss_dict = self.network_manager.compute_prediction_and_loss(
+            data_lines=self.data_manager.data_lines,
+            normalization=self.data_manager.normalization,
+            optimize=False)
 
     def batch_count(self) -> None:
         """
