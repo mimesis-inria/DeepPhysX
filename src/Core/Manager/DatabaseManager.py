@@ -41,7 +41,6 @@ class DatabaseManager:
         self.data_manager: Optional[Any] = data_manager
         self.database_dir: str = join(session, 'dataset')
         self.database_handlers: List[DatabaseHandler] = []
-        root = get_first_caller()
         database_config = BaseDatabaseConfig() if database_config is None else database_config
 
         # Dataset parameters
@@ -93,7 +92,7 @@ class DatabaseManager:
                     self.create_partition()
                 # Complete a Database in a new session --> copy and load the existing directory
                 else:
-                    copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
+                    copy_dir(src_dir=database_config.existing_dir, dest_dir=session,
                              sub_folders='dataset')
                     self.load_directory(rename_partitions=True)
             # Complete a Database in the same session --> load the directory
@@ -113,7 +112,7 @@ class DatabaseManager:
                         self.create_partition()
                     # Complete a Database in a new session --> copy and load the existing directory
                     else:
-                        copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
+                        copy_dir(src_dir=database_config.existing_dir, dest_dir=session,
                                  sub_folders='dataset')
                         self.load_directory()
                 # Complete a Database in the same directory --> load the directory
@@ -124,7 +123,7 @@ class DatabaseManager:
             else:
                 # Load data in a new session  --> link and load the existing directory
                 if new_session:
-                    symlink(src=join(root, database_config.existing_dir, 'dataset'),
+                    symlink(src=join(database_config.existing_dir, 'dataset'),
                             dst=join(session, 'dataset'))
                     self.load_directory()
                 # Load data in the same session  --> load the directory
