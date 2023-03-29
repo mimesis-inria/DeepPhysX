@@ -609,6 +609,12 @@ class DatabaseManager:
     ##########################################################################################
     ##########################################################################################
 
+    def set_eval(self):
+        self.change_mode('validation')
+
+    def set_train(self):
+        self.change_mode('training')
+
     def close(self):
         """
         Launch the closing procedure of the DatabaseManager.
