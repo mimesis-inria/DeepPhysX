@@ -10,7 +10,7 @@ from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
+from DeepPhysX.Core.Utils.path import create_dir
 
 
 class BaseTraining(BasePipeline):
@@ -52,17 +52,12 @@ class BaseTraining(BasePipeline):
                               new_session=new_session,
                               pipeline='training')
 
-        # Define the session repository
-        root = get_first_caller()
-        session_dir = join(root, session_dir)
-
         # Create a new session if required
-        if not new_session:
-            new_session = not exists(join(session_dir, session_name))
-        if new_session:
-            session_name = create_dir(session_dir=session_dir,
-                                      session_name=session_name).split(sep)[-1]
-        self.session = join(session_dir, session_name)
+        if not self.new_session:
+            self.new_session = not exists(join(self.session_dir, self.session_name))
+        if self.new_session:
+            self.session_name = create_dir(session_dir=self.session_dir,
+                                           session_name=self.session_name).split(sep)[-1]
 
         # Configure 'produce_data' flag
         if environment_config is None and database_config.existing_dir is None:
@@ -73,7 +68,7 @@ class BaseTraining(BasePipeline):
         self.data_manager = DataManager(pipeline=self,
                                         database_config=database_config,
                                         environment_config=environment_config,
-                                        session=self.session,
+                                        session=join(self.session_dir, self.session_name),
                                         new_session=new_session,
                                         produce_data=produce_data,
                                         batch_size=batch_size)
@@ -82,13 +77,13 @@ class BaseTraining(BasePipeline):
         # Create a NetworkManager
         self.network_manager = NetworkManager(network_config=network_config,
                                               pipeline=self.type,
-                                              session=self.session,
+                                              session=join(self.session_dir, self.session_name),
                                               new_session=new_session)
         self.data_manager.connect_handler(self.network_manager.get_database_handler())
         self.network_manager.link_clients(self.data_manager.nb_environment)
 
         # Create a StatsManager
-        self.stats_manager = StatsManager(session=self.session) if not debug else None
+        self.stats_manager = StatsManager(session=join(self.session_dir, self.session_name)) if not debug else None
 
         # Training variables
         self.epoch_nb = epoch_nb
@@ -101,7 +96,6 @@ class BaseTraining(BasePipeline):
         self.debug = debug
 
         # Progressbar
-        self.progress_counter = 0
         self.digits = ['{' + f':0{len(str(self.epoch_nb))}d' + '}',
                        '{' + f':0{len(str(self.batch_nb))}d' + '}']
         epoch_id, epoch_nb = self.digits[0].format(0), self.digits[0].format(self.epoch_nb)
@@ -163,11 +157,10 @@ class BaseTraining(BasePipeline):
         Called one at the beginning of a batch production.
         """
 
-        self.progress_counter += 1
         id_epoch, nb_epoch = self.digits[0].format(self.epoch_id + 1), self.digits[0].format(self.epoch_nb)
         id_batch, nb_batch = self.digits[1].format(self.batch_id + 1), self.digits[1].format(self.batch_nb)
         self.progress_bar.title = f'Epoch n°{id_epoch}/{nb_epoch} - Batch n°{id_batch}/{nb_batch} '
-        self.progress_bar.print(counts=self.progress_counter)
+        self.progress_bar.print()
 
     def optimize(self) -> None:
         """
@@ -233,7 +226,7 @@ class BaseTraining(BasePipeline):
         Save a .txt file that provides a template for user notes and the description of all the components.
         """
 
-        filename = join(self.session, 'info.txt')
+        filename = join(join(self.session_dir, self.session_name), 'info.txt')
         date_time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         if not isfile(filename):
             f = open(filename, "w+")

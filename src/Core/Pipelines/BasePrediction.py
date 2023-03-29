@@ -43,23 +43,20 @@ class BasePrediction(BasePipeline):
                               pipeline='prediction')
 
         # Define the session repository
-        root = get_first_caller()
-        session_dir = join(root, session_dir)
-        if not exists(join(session_dir, session_name)):
-            raise ValueError(f"[{self.name}] The following directory does not exist: {join(session_dir, session_name)}")
-        self.session = join(session_dir, session_name)
+        if not exists(path := join(self.session_dir, self.session_name)):
+            raise ValueError(f"[{self.name}] The following directory does not exist: {path}")
 
         # Create a NetworkManager
         self.network_manager = NetworkManager(network_config=network_config,
                                               pipeline=self.type,
-                                              session=self.session,
+                                              session=path,
                                               new_session=False)
 
         # Create a DataManager
         self.data_manager = DataManager(pipeline=self,
                                         database_config=database_config,
                                         environment_config=environment_config,
-                                        session=self.session,
+                                        session=path,
                                         new_session=False,
                                         produce_data=record,
                                         batch_size=1)

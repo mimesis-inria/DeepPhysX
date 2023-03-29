@@ -13,8 +13,8 @@ class DataManager:
                  pipeline: Any,
                  database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
-                 session: str = 'sessions/default',
                  new_session: bool = True,
+                 session: str = 'sessions/default',
                  produce_data: bool = True,
                  batch_size: int = 1):
 
@@ -24,8 +24,8 @@ class DataManager:
         :param pipeline: Pipeline that handle the DataManager.
         :param database_config: Configuration object with the parameters of the Database.
         :param environment_config: Configuration object with the parameters of the Environment.
-        :param session: Path to the session repository.
         :param new_session: If True, the session is done in a new repository.
+        :param session: Path to the session repository.
         :param produce_data: If True, this session will store data in the Database.
         :param batch_size: Number of samples in a single batch.
         """

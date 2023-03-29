@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from os.path import isfile, isdir, join
-from os import listdir, symlink, sep, remove, rename
+from os import listdir, symlink, sep, remove, rename, makedirs
 from json import dump as json_dump
 from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt, empty, concatenate
@@ -10,7 +10,7 @@ from SSD.Core.Storage.Database import Database
 
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
-from DeepPhysX.Core.Utils.path import create_dir, copy_dir, get_first_caller
+from DeepPhysX.Core.Utils.path import copy_dir
 from DeepPhysX.Core.Utils.jsonUtils import CustomJSONEncoder
 
 
@@ -20,8 +20,8 @@ class DatabaseManager:
                  database_config: Optional[BaseDatabaseConfig] = None,
                  data_manager: Optional[Any] = None,
                  pipeline: str = '',
-                 session: str = 'sessions/default',
                  new_session: bool = True,
+                 session: str = 'sessions/default',
                  produce_data: bool = True):
         """
         DatabaseManager handle all operations with input / output files. Allows saving and read tensors from files.
@@ -29,8 +29,8 @@ class DatabaseManager:
         :param database_config: Configuration object with the parameters of the Database.
         :param data_manager: DataManager that handles the DatabaseManager.
         :param pipeline: Type of the Pipeline.
-        :param session: Path to the session repository.
         :param new_session: If True, the session is done in a new repository.
+        :param session: Path to the session repository.
         :param produce_data: If True, this session will store data in the Database.
         """
 
@@ -41,7 +41,6 @@ class DatabaseManager:
         self.data_manager: Optional[Any] = data_manager
         self.database_dir: str = join(session, 'dataset')
         self.database_handlers: List[DatabaseHandler] = []
-        root = get_first_caller()
         database_config = BaseDatabaseConfig() if database_config is None else database_config
 
         # Dataset parameters
@@ -89,12 +88,11 @@ class DatabaseManager:
             if new_session:
                 # Generate data from scratch --> create a new directory
                 if database_config.existing_dir is None:
-                    create_dir(session_dir=session, session_name='dataset')
+                    makedirs(join(session, 'dataset'))
                     self.create_partition()
                 # Complete a Database in a new session --> copy and load the existing directory
                 else:
-                    copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
-                             sub_folders='dataset')
+                    copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
                     self.load_directory(rename_partitions=True)
             # Complete a Database in the same session --> load the directory
             else:
@@ -109,12 +107,11 @@ class DatabaseManager:
                 if new_session:
                     # Generate data from scratch --> create a new directory
                     if database_config.existing_dir is None:
-                        create_dir(session_dir=session, session_name='dataset')
+                        makedirs(join(session, 'dataset'))
                         self.create_partition()
                     # Complete a Database in a new session --> copy and load the existing directory
                     else:
-                        copy_dir(src_dir=join(root, database_config.existing_dir), dest_dir=session,
-                                 sub_folders='dataset')
+                        copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
                         self.load_directory()
                 # Complete a Database in the same directory --> load the directory
                 else:
@@ -124,7 +121,7 @@ class DatabaseManager:
             else:
                 # Load data in a new session  --> link and load the existing directory
                 if new_session:
-                    symlink(src=join(root, database_config.existing_dir, 'dataset'),
+                    symlink(src=join(database_config.existing_dir, 'dataset'),
                             dst=join(session, 'dataset'))
                     self.load_directory()
                 # Load data in the same session  --> load the directory
