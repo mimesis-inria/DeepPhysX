@@ -507,7 +507,7 @@ class DatabaseManager:
         for field in self.json_content['data_shape']:
             table_name, field_name = field.split('.')
             fields += [field_name] if table_name == 'Training' else []
-        normalization = {field: [0., 0.] for field in fields}
+        normalization = {field: [0., 1.] for field in fields}
 
         # 2. Compute the mean of samples for each field
         means = {field: [] for field in fields}
