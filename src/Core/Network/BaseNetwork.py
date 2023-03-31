@@ -1,6 +1,8 @@
 from typing import Any, Dict
 from numpy import ndarray
 from collections import namedtuple
+from torch import as_tensor
+import torch
 
 
 class BaseNetwork:
@@ -115,7 +117,7 @@ class BaseNetwork:
         :return: Converted tensor.
         """
 
-        return data.astype(self.config.data_type)
+        return as_tensor(data, dtype=getattr(torch, self.config.data_type)).requires_grad_(grad)
 
     def tensor_to_numpy(self,
                         data: Any) -> ndarray:
@@ -126,7 +128,7 @@ class BaseNetwork:
         :return: Converted array.
         """
 
-        return data.astype(self.config.data_type)
+        return data.detach().cpu().numpy()
 
     def __str__(self) -> str:
 
