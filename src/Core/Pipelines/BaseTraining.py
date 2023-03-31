@@ -101,7 +101,6 @@ class BaseTraining(BasePipeline):
         self.debug = debug
 
         # Progressbar
-        self.progress_counter = 0
         self.digits = ['{' + f':0{len(str(self.epoch_nb))}d' + '}',
                        '{' + f':0{len(str(self.batch_nb))}d' + '}']
         epoch_id, epoch_nb = self.digits[0].format(0), self.digits[0].format(self.epoch_nb)
@@ -164,11 +163,10 @@ class BaseTraining(BasePipeline):
         Called one at the beginning of a batch production.
         """
 
-        self.progress_counter += 1
         id_epoch, nb_epoch = self.digits[0].format(self.epoch_id + 1), self.digits[0].format(self.epoch_nb)
         id_batch, nb_batch = self.digits[1].format(self.batch_id + 1), self.digits[1].format(self.batch_nb)
         self.progress_bar.title = f'Epoch n°{id_epoch}/{nb_epoch} - Batch n°{id_batch}/{nb_batch} '
-        self.progress_bar.print(counts=self.progress_counter)
+        self.progress_bar.print()
 
     def optimize(self) -> None:
         """
