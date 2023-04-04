@@ -177,7 +177,7 @@ class Beam(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_coordinate(evt.picked2d)
             move_3D = (mouse_3D - self.mesh_init[self.spheres_init[self.selected]]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 10:
                 move_3D = 10 * move_3D / np.linalg.norm(move_3D)
