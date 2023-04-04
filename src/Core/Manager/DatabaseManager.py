@@ -167,10 +167,6 @@ class DatabaseManager:
         if not json_found or self.json_content == self.json_default:
             self.search_partitions_info()
             self.update_json()
-        if self.recompute_normalization or (
-                self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
-            self.json_content['normalization'] = self.compute_normalization()
-            self.update_json()
 
         # 4. Load partitions for each mode
         self.partition_names = self.json_content['partitions']
@@ -198,6 +194,12 @@ class DatabaseManager:
 
         # 6. Index partitions
         self.index_samples()
+
+        # 7. Check normalization
+        if self.recompute_normalization or (
+                self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
+            self.json_content['normalization'] = self.compute_normalization()
+            self.update_json()
 
     def create_partition(self) -> None:
         """
@@ -535,7 +537,6 @@ class DatabaseManager:
         for field in fields:
             normalization[field][1] = sqrt(sum([(n / sum(nb_samples)) * std
                                                 for n, std in zip(nb_samples, stds[field])]))
-
         return normalization
 
     def update_normalization(self,

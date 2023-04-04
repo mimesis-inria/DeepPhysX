@@ -1,5 +1,4 @@
 from typing import Optional, Any, List, Union
-from os.path import join
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
@@ -144,5 +143,5 @@ class BasePipeline:
         description = "\n"
         description += f"# {self.name}\n"
         description += f"    Pipeline type: {self.type}\n"
-        description += f"    Session repository: {self.session}\n"
+        description += f"    Session repository: {self.session_dir}\n"
         return description
