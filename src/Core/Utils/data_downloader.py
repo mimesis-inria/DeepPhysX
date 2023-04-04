@@ -7,14 +7,14 @@ class DataDownloader:
     def __init__(self, DOI, session_name, session_dir='sessions'):
 
         # Connect to Dataverse API
-        base_url = 'https://data-qualif.loria.fr'
-        self.api = NativeApi(base_url)
-        self.data_api = DataAccessApi(base_url)
+        # base_url = 'https://data-qualif.loria.fr'
+        # self.api = NativeApi(base_url)
+        # self.data_api = DataAccessApi(base_url)
 
         # Get files data for desired Dataset
-        self.filenames = {}
-        for file in self.api.get_dataset(DOI).json()['data']['latestVersion']['files']:
-            self.filenames[file['dataFile']['id']] = file['dataFile']['filename']
+        # self.filenames = {}
+        # for file in self.api.get_dataset(DOI).json()['data']['latestVersion']['files']:
+        #     self.filenames[file['dataFile']['id']] = file['dataFile']['filename']
 
         # Sessions repositories and content
         self.root = os.getcwd()
@@ -43,9 +43,10 @@ class DataDownloader:
 
     def show_content(self):
 
+        raise NotImplementedError
         # Print the content of the desired Dataset
-        for file_id in sorted(list(self.filenames.keys())):
-            print(f"\t{file_id}: {self.filenames[file_id]}")
+        # for file_id in sorted(list(self.filenames.keys())):
+        #     print(f"\t{file_id}: {self.filenames[file_id]}")
 
     def get_session(self, session_name):
 
@@ -55,46 +56,54 @@ class DataDownloader:
         self.check_tree(session_name)
 
         # Download missing files
-        if self.nb_files > 0:
-            print("Connecting to DeepPhysX online storage to download missing data...")
-            self.download_files(session_name)
-            self.nb_files = 0
+        # if self.nb_files > 0:
+        #     print("Connecting to DeepPhysX online storage to download missing data...")
+        #     self.download_files(session_name)
+        #     self.nb_files = 0
 
     def check_tree(self, session_name):
 
+        url = "Automatic fetch of the demo data is temporary unavailable. " \
+              "Please follow manual instructions at https://mybox.inria.fr/d/a209cb0eff8b4fb89484/."
+        if not os.path.exists(os.path.join(self.root, self.tree['models'])):
+            raise ConnectionError(url)
+        if not os.path.exists(os.path.join(self.root, self.tree['session'])):
+            raise ConnectionError(url)
+
         # Check for each data category
-        for category in self.sessions[session_name]:
-
-            # Only 'models' is created in an existing directory
-            if category != 'models':
-
-                # Check session repository
-                if not os.path.exists(os.path.join(self.root, self.session_dir)):
-                    os.mkdir(os.path.join(self.root, self.session_dir))
-                if not os.path.exists(os.path.join(self.root, self.tree['session'])):
-                    os.mkdir(os.path.join(self.root, self.tree['session']))
-
-            # Check the last level of subdirectories
-            last_level = 'dataset' if 'dataset' in category else category
-            if not os.path.exists(os.path.join(self.root, self.tree[last_level])):
-                os.mkdir(os.path.join(self.root, self.tree[last_level]))
-
-            # Get the number of file to download
-            for file in self.categories[category]:
-                if not os.path.exists(os.path.join(self.root, self.tree[last_level], self.filenames[file])):
-                    self.nb_files += 1
+        # for category in self.sessions[session_name]:
+        #
+        #     # Only 'models' is created in an existing directory
+        #     if category != 'models':
+        #
+        #         # Check session repository
+        #         if not os.path.exists(os.path.join(self.root, self.session_dir)):
+        #             os.mkdir(os.path.join(self.root, self.session_dir))
+        #         if not os.path.exists(os.path.join(self.root, self.tree['session'])):
+        #             os.mkdir(os.path.join(self.root, self.tree['session']))
+        #
+        #     # Check the last level of subdirectories
+        #     last_level = 'dataset' if 'dataset' in category else category
+        #     if not os.path.exists(os.path.join(self.root, self.tree[last_level])):
+        #         os.mkdir(os.path.join(self.root, self.tree[last_level]))
+        #
+        #     # Get the number of file to download
+        #     for file in self.categories[category]:
+        #         if not os.path.exists(os.path.join(self.root, self.tree[last_level], self.filenames[file])):
+        #             self.nb_files += 1
 
     def download_files(self, session_name):
 
-        # Download each missing file of the required categories
-        nb_file = 0
-        for category in self.sessions[session_name]:
-            for file in self.categories[category]:
-                last_level = 'dataset' if 'dataset' in category else category
-                if not os.path.exists(os.path.join(self.root, self.tree[last_level], self.filenames[file])):
-                    nb_file += 1
-                    print(f"\tDownloading file {nb_file}/{self.nb_files} in "
-                          f"{os.path.join(self.tree[last_level], self.filenames[file])}")
-                    data = self.data_api.get_datafile(file)
-                    with open(os.path.join(self.root, self.tree[last_level], self.filenames[file]), 'wb') as f:
-                        f.write(data.content)
+        raise NotImplementedError
+        # # Download each missing file of the required categories
+        # nb_file = 0
+        # for category in self.sessions[session_name]:
+        #     for file in self.categories[category]:
+        #         last_level = 'dataset' if 'dataset' in category else category
+        #         if not os.path.exists(os.path.join(self.root, self.tree[last_level], self.filenames[file])):
+        #             nb_file += 1
+        #             print(f"\tDownloading file {nb_file}/{self.nb_files} in "
+        #                   f"{os.path.join(self.tree[last_level], self.filenames[file])}")
+        #             data = self.data_api.get_datafile(file)
+        #             with open(os.path.join(self.root, self.tree[last_level], self.filenames[file]), 'wb') as f:
+        #                 f.write(data.content)
