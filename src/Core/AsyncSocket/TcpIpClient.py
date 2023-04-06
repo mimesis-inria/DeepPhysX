@@ -69,10 +69,7 @@ class TcpIpClient(TcpIpObject):
         await self.receive_dict(recv_to=env_kwargs, loop=loop, sender=self.sock)
         env_kwargs = env_kwargs['env_kwargs'] if 'env_kwargs' in env_kwargs else {}
 
-        self.environment = self.environment_class(as_tcp_ip_client=True,
-                                                  instance_id=self.environment_instance[0],
-                                                  instance_nb=self.environment_instance[1],
-                                                  **env_kwargs)
+        self.environment = self.environment_class(instance_id=self.environment_instance, **env_kwargs)
         self.environment.tcp_ip_client = self
 
         # Receive prediction requests authorization

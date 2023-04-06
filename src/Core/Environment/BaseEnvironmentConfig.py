@@ -163,8 +163,7 @@ class BaseEnvironmentConfig:
         """
 
         # Create instance
-        environment = self.environment_class(as_tcp_ip_client=False,
-                                             **self.env_kwargs)
+        environment = self.environment_class(**self.env_kwargs)
         if not isinstance(environment, BaseEnvironment):
             raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "
                             f"BaseEnvironment.")

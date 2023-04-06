@@ -8,25 +8,18 @@ from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
 class BaseEnvironment:
 
-    def __init__(self,
-                 as_tcp_ip_client: bool = True,
-                 instance_id: int = 1,
-                 instance_nb: int = 1,
-                 **kwargs):
+    def __init__(self, instance_id: Tuple[int, int] = (1, 1), **kwargs):
         """
         BaseEnvironment computes simulated data for the Network and its training process.
 
-        :param as_tcp_ip_client: Environment is a TcpIpObject if True, is owned by an EnvironmentManager if False.
-        :param instance_id: ID of the instance.
-        :param instance_nb: Number of simultaneously launched instances.
+        :param instance_id: Tuple containing the ID of the instance & the number of simultaneously launched instances.
         """
 
         self.name: str = self.__class__.__name__ + f" n°{instance_id}"
 
         # TcpIpClient variables
-        self.as_tcp_ip_client: bool = as_tcp_ip_client
-        self.instance_id: int = max(1, instance_id)
-        self.instance_nb: int = instance_nb
+        self.instance_id: int = max(1, instance_id[0])
+        self.instance_nb: int = instance_id[0]
 
         # Manager of the Environment
         self.environment_manager: Any = None
