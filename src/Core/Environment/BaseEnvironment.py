@@ -2,14 +2,11 @@ from typing import Any, Optional, Dict, Union, Tuple, List, Type
 from numpy import ndarray
 from os.path import isfile, join
 
-from SSD.Core.Storage.Database import Database
-from SSD.Core.Rendering.UserAPI import UserAPI
-
-from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
+from SSD.Core.Rendering.UserAPI import UserAPI, Database
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
 
 
-class BaseEnvironment(AbstractEnvironment):
+class BaseEnvironment:
 
     def __init__(self,
                  as_tcp_ip_client: bool = True,
@@ -24,10 +21,27 @@ class BaseEnvironment(AbstractEnvironment):
         :param instance_nb: Number of simultaneously launched instances.
         """
 
-        AbstractEnvironment.__init__(self,
-                                     as_tcp_ip_client=as_tcp_ip_client,
-                                     instance_id=instance_id,
-                                     instance_nb=instance_nb)
+        self.name: str = self.__class__.__name__ + f" n°{instance_id}"
+
+        # TcpIpClient variables
+        self.as_tcp_ip_client: bool = as_tcp_ip_client
+        self.instance_id: int = max(1, instance_id)
+        self.instance_nb: int = instance_nb
+
+        # Manager of the Environment
+        self.environment_manager: Any = None
+        self.tcp_ip_client: Any = None
+
+        # Training data variables
+        self.compute_training_data: bool = True
+
+        # Dataset data variables
+        self.update_line: Optional[int] = None
+        self.sample_training: Optional[Dict[str, Any]] = None
+        self.sample_additional: Optional[Dict[str, Any]] = None
+
+        # Visualization Factory
+        self.factory: Optional[UserAPI] = None
 
         # Training data variables
         self.__data_training: Dict[str, ndarray] = {}

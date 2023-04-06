@@ -8,13 +8,13 @@ from numpy import ndarray
 from SSD.Core.Storage.Database import Database
 
 from DeepPhysX.Core.AsyncSocket.TcpIpObject import TcpIpObject
-from DeepPhysX.Core.AsyncSocket.AbstractEnvironment import AbstractEnvironment
+from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 
 
 class TcpIpClient(TcpIpObject):
 
     def __init__(self,
-                 environment: Type[AbstractEnvironment],
+                 environment: Type[BaseEnvironment],
                  ip_address: str = 'localhost',
                  port: int = 10000,
                  instance_id: int = 0,
@@ -34,7 +34,7 @@ class TcpIpClient(TcpIpObject):
                              port=port)
 
         # Environment instance
-        self.environment: AbstractEnvironment
+        self.environment: BaseEnvironment
         self.environment_class = environment
         self.environment_instance = (instance_id, instance_nb)
 
