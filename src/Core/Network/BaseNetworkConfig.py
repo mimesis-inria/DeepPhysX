@@ -23,7 +23,11 @@ class BaseNetworkConfig:
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
                  loss: Optional[Any] = None,
-                 optimizer: Optional[Any] = None):
+                 loss_parameters: Type[dict] = None,
+                 optimizer: Optional[Any] = None,
+                 optimizer_parameters: Type[dict] = None,
+                 scheduler_class: Any = None,
+                 scheduler_parameters: dict = None):
         """
         BaseNetworkConfig is a configuration class to parameterize and create BaseNetwork, BaseOptimization and
         BaseTransformation for the NetworkManager.
@@ -88,7 +92,11 @@ class BaseNetworkConfig:
                                                            configuration_name='optimization_config',
                                                            loss=loss,
                                                            lr=lr,
-                                                           optimizer=optimizer)
+                                                           optimizer=optimizer,
+                                                           optimizer_parameters=optimizer_parameters,
+                                                           loss_parameters=loss_parameters,
+                                                           scheduler_class=scheduler_class,
+                                                           scheduler_parameters=scheduler_parameters)
         self.training_stuff: bool = (loss is not None) and (optimizer is not None) or (not require_training_stuff)
 
         # NetworkManager parameterization
