@@ -206,7 +206,7 @@ class BaseEnvironment:
             required_fields = list(set(self.__database_handler.get_fields(table_name='Training')) - {'id', 'env_id'})
             if len(required_fields) > 0:
                 for field in kwargs.keys():
-                    if field not in required_fields:
+                    if field not in required_fields and field not in ['id', 'env_id']:
                         raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
                                          f"Required fields are {required_fields}.")
                 for field in required_fields:
@@ -218,6 +218,8 @@ class BaseEnvironment:
         if self.compute_training_data:
             self.__data_training = kwargs
             self.__data_training['env_id'] = self.instance_id
+            if 'id' in kwargs:
+                del self.__data_training['id']
 
     def set_additional_data(self,
                             **kwargs) -> None:
@@ -256,7 +258,7 @@ class BaseEnvironment:
             self.__first_add[1] = False
             required_fields = list(set(self.__database_handler.get_fields(table_name='Exchange')) - {'id'})
             for field in kwargs.keys():
-                if field not in required_fields:
+                if field not in required_fields and field != 'id':
                     raise ValueError(f"[{self.name}] The field '{field}' is not in the training Database."
                                      f"Required fields are {required_fields}.")
 
@@ -398,8 +400,10 @@ class BaseEnvironment:
         self.update_line = line_id
         self.sample_training = self.__database_handler.get_line(table_name='Training',
                                                                 line_id=line_id)
+        self.set_training_data(**self.sample_training)
         self.sample_additional = self.__database_handler.get_line(table_name='Additional',
                                                                   line_id=line_id)
+        self.set_additional_data(**self.sample_additional)
         self.sample_additional = None if len(self.sample_additional) == 1 else self.sample_additional
 
     def _reset_training_data(self) -> None:

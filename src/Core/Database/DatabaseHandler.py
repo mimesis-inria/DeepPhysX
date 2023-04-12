@@ -28,6 +28,12 @@ class DatabaseHandler:
     def default_handler(self):
         pass
 
+    def set_init_handler(self, on_init_handler: Callable):
+        self.__on_init_handler = on_init_handler
+
+    def set_partitions_handler(self, on_partitions_handler: Callable):
+        self.__on_partitions_handler = on_partitions_handler
+
     ##########################################################################################
     ##########################################################################################
     #                                 Partitions management                                  #

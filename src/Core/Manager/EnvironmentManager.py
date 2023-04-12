@@ -192,7 +192,7 @@ class EnvironmentManager:
         self.__get_data_from_server(animate=animate)
 
     def __dispatch_batch_to_environment(self,
-                                        data_lines: List[int],
+                                        data_lines: Optional[List[int]] = None,
                                         animate: bool = True,
                                         save_data: bool = True,
                                         request_prediction: bool = False) -> None:
@@ -206,7 +206,7 @@ class EnvironmentManager:
         """
 
         # Define the batch to dispatch
-        self.dataset_batch = data_lines.copy()
+        self.dataset_batch = data_lines.copy() if data_lines is not None else None
         # Get data
         self.__get_data_from_environment(animate=animate,
                                          save_data=save_data,

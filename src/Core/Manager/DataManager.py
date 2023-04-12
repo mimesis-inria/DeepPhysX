@@ -132,8 +132,7 @@ class DataManager:
 
             # Get data from Dataset
             if self.environment_manager.load_samples:
-                if load_samples:
-                    self.data_lines = self.database_manager.get_data(batch_size=1)
+                self.data_lines = self.database_manager.get_data(batch_size=1) if load_samples else None
                 self.environment_manager.dispatch_batch(data_lines=self.data_lines,
                                                         animate=animate,
                                                         request_prediction=True,
