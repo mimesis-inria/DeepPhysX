@@ -601,6 +601,13 @@ class DatabaseManager:
                                    fields=fields,
                                    batched=True)
 
+    @staticmethod
+    def load_normalization(session_dir: str) -> Dict[str, List[float]]:
+
+        with open(join(session_dir, 'dataset', 'dataset.json')) as json_file:
+            json_content = json_load(json_file)
+        return json_content['normalization']
+
     ##########################################################################################
     ##########################################################################################
     #                                     Manager behavior                                   #
