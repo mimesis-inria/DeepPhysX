@@ -1,6 +1,5 @@
 import numpy as np
 from vedo import Mesh
-from time import time
 
 
 class GridMapping:
@@ -44,7 +43,7 @@ class GridMapping:
 
         return bars, cells
 
-    def apply(self, source_positions):
+    def apply(self, source_positions) -> np.ndarray:
         """
         Apply mapping between new master positions and slave with barycentric coordinates.
         """
