@@ -248,12 +248,24 @@ class BaseTraining(BasePipeline):
             self.stats_manager.close()
 
     def set_eval(self):
+        # Set DBManager mode, build indices
         self.data_manager.set_eval()
+        # Set network to eval mode
         self.network_manager.set_eval()
+        # Connect the handler to the validation partition
+        self.data_manager.connect_handler(self.network_manager.get_database_handler())
+        # Create the links
+        self.network_manager.link_clients(self.data_manager.nb_environment)
 
     def set_train(self):
+        # Set DBManager mode, build indices
         self.data_manager.set_train()
+        # Set network to train mode
         self.network_manager.set_train()
+        # Connect the handler to the training partition
+        self.data_manager.connect_handler(self.network_manager.get_database_handler())
+        # Create the links
+        self.network_manager.link_clients(self.data_manager.nb_environment)
 
     def save_info_file(self) -> None:
         """
