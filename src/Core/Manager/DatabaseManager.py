@@ -416,6 +416,7 @@ class DatabaseManager:
         Create a new indexing list of samples. Samples are identified by [partition_id, line_id].
         """
 
+        self.sample_indices = empty((0, 2), dtype=int)
         # Create the indices for each sample such as [partition_id, line_id]
         for i, nb_sample in enumerate(self.json_content['nb_samples'][self.mode]):
             partition_indices = empty((nb_sample, 2), dtype=int)
