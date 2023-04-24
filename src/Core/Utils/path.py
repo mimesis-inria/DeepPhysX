@@ -1,6 +1,6 @@
 from typing import Optional
-from os.path import join, isdir, abspath, normpath, dirname, basename
-from os import listdir, pardir, makedirs
+from os.path import join, isdir, abspath, dirname, isabs
+from os import listdir, makedirs
 from inspect import getmodule, stack
 from shutil import copytree
 
@@ -16,6 +16,38 @@ def get_first_caller() -> str:
     module = getmodule(scripts_list[0])
     # Return the path of this script
     return dirname(abspath(module.__file__))
+
+
+def get_session_dir(session_dir: str, new_session: bool):
+    """
+    Get the DPX session root directory.
+    """
+
+    # 1. Check if the given path is absolute
+    if isabs(session_dir):
+        # For an existing session, this sessions dir must exist
+        if not new_session and not isdir(session_dir):
+            raise ValueError(f"Impossible to locate the repository containing your sessions. \n"
+                             f"   - {session_dir} not found ('session_dir' variable as absolute path).")
+        return session_dir
+
+    # 2. The path is relative, make it absolute for a new session
+    if new_session:
+        return join(get_first_caller(), session_dir)
+
+    # 3. The path is relative, find the absolute path for an existing session
+    else:
+        # 3.1. Relative path from the working directory
+        if isdir(rel_wd := abspath(session_dir)):
+            return rel_wd
+        # 3.2. Relative path from the script directory
+        elif isdir(rel_sd := join(get_first_caller(), session_dir)):
+            return rel_sd
+        # 3.3. Impossible to find the existing sessions repository
+        else:
+            raise ValueError(f"Impossible to locate the repository containing your sessions. \n"
+                             f"   - {rel_wd} not found ('session_dir' variable as relative path from the current dir;"
+                             f"   - {rel_sd} not found ('session_dir' variable as relative path from the script dir.")
 
 
 def create_dir(session_dir: str, session_name: str) -> str:

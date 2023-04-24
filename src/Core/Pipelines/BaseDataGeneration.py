@@ -14,9 +14,9 @@ class BaseDataGeneration(BasePipeline):
     def __init__(self,
                  environment_config: BaseEnvironmentConfig,
                  database_config: Optional[BaseDatabaseConfig] = None,
+                 new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
-                 new_session: bool = True,
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
@@ -24,9 +24,9 @@ class BaseDataGeneration(BasePipeline):
 
         :param database_config: Configuration object with the parameters of the Database.
         :param environment_config: Configuration object with the parameters of the Environment.
-        :param session_dir: Relative path to the directory which contains sessions repositories.
-        :param session_name: Name of the new the session repository.
         :param new_session: If True, a new repository will be created for this session.
+        :param session_dir: Path to the directory which contains your DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
         :param batch_nb: Number of batches to produce.
         :param batch_size: Number of samples in a single batch.
         """
@@ -34,29 +34,24 @@ class BaseDataGeneration(BasePipeline):
         BasePipeline.__init__(self,
                               database_config=database_config,
                               environment_config=environment_config,
+                              new_session=new_session,
                               session_dir=session_dir,
                               session_name=session_name,
-                              new_session=new_session,
                               pipeline='data_generation')
 
-        # Define the session repository
-        root = get_first_caller()
-        session_dir = join(root, session_dir)
-
         # Create a new session if required
-        if not new_session:
-            new_session = not exists(join(session_dir, session_name))
-        if new_session:
-            session_name = create_dir(session_dir=session_dir,
-                                      session_name=session_name).split(sep)[-1]
-        self.session = join(session_dir, session_name)
+        if not self.new_session:
+            self.new_session = not exists(join(self.session_dir, self.session_name))
+        if self.new_session:
+            self.session_name = create_dir(session_dir=self.session_dir,
+                                           session_name=self.session_name).split(sep)[-1]
 
         # Create a DataManager
         self.data_manager = DataManager(pipeline=self,
                                         database_config=database_config,
                                         environment_config=environment_config,
-                                        session=join(session_dir, session_name),
-                                        new_session=new_session,
+                                        session=join(self.session_dir, self.session_name),
+                                        new_session=self.new_session,
                                         produce_data=True,
                                         batch_size=batch_size)
 
@@ -121,7 +116,7 @@ class BaseDataGeneration(BasePipeline):
         Called once at the end of a batch production.
         """
 
-        self.progress_bar.print(counts=self.batch_id)
+        self.progress_bar.print()
 
     def data_generation_end(self) -> None:
         """

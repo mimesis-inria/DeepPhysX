@@ -1,5 +1,4 @@
 from typing import Optional, Any, List, Union
-from os.path import join
 
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
@@ -9,6 +8,7 @@ from DeepPhysX.Core.Manager.StatsManager import StatsManager
 from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
 from DeepPhysX.Core.Manager.DatabaseManager import DatabaseManager
 from DeepPhysX.Core.Manager.EnvironmentManager import EnvironmentManager
+from DeepPhysX.Core.Utils.path import get_session_dir
 
 
 class BasePipeline:
@@ -17,9 +17,9 @@ class BasePipeline:
                  network_config: Optional[BaseNetworkConfig] = None,
                  database_config: Optional[BaseDatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
+                 new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'default',
-                 new_session: bool = True,
                  pipeline: str = ''):
         """
         Pipelines implement the main loop that defines data flow through components (Environment, Dataset, Network...).
@@ -27,9 +27,9 @@ class BasePipeline:
         :param network_config: Configuration object with the parameters of the Network.
         :param database_config: Configuration object with the parameters of the Database.
         :param environment_config: Configuration object with the parameters of the Environment.
-        :param session_dir: Relative path to the directory which contains sessions repositories.
-        :param session_name: Name of the new the session repository.
         :param new_session: If True, a new repository will be created for this session.
+        :param session_dir: Path to the directory which contains your DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
         :param pipeline: Name of the Pipeline.
         """
 
@@ -59,7 +59,8 @@ class BasePipeline:
         self.environment_config: BaseEnvironmentConfig = environment_config
 
         # Session variables
-        self.session = join(session_dir, session_name)
+        self.session_dir = get_session_dir(session_dir, new_session)
+        self.session_name = session_name
         self.new_session = new_session
         self.type = pipeline
 
@@ -142,5 +143,5 @@ class BasePipeline:
         description = "\n"
         description += f"# {self.name}\n"
         description += f"    Pipeline type: {self.type}\n"
-        description += f"    Session repository: {self.session}\n"
+        description += f"    Session repository: {self.session_dir}\n"
         return description

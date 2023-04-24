@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from os.path import isfile, isdir, join
-from os import listdir, symlink, sep, remove, rename
+from os import listdir, symlink, sep, remove, rename, makedirs
 from json import dump as json_dump
 from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt, empty, concatenate
@@ -10,7 +10,7 @@ from SSD.Core.Storage.Database import Database
 
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
-from DeepPhysX.Core.Utils.path import create_dir, copy_dir, get_first_caller
+from DeepPhysX.Core.Utils.path import copy_dir
 from DeepPhysX.Core.Utils.jsonUtils import CustomJSONEncoder
 
 
@@ -20,8 +20,8 @@ class DatabaseManager:
                  database_config: Optional[BaseDatabaseConfig] = None,
                  data_manager: Optional[Any] = None,
                  pipeline: str = '',
-                 session: str = 'sessions/default',
                  new_session: bool = True,
+                 session: str = 'sessions/default',
                  produce_data: bool = True):
         """
         DatabaseManager handle all operations with input / output files. Allows saving and read tensors from files.
@@ -29,8 +29,8 @@ class DatabaseManager:
         :param database_config: Configuration object with the parameters of the Database.
         :param data_manager: DataManager that handles the DatabaseManager.
         :param pipeline: Type of the Pipeline.
-        :param session: Path to the session repository.
         :param new_session: If True, the session is done in a new repository.
+        :param session: Path to the session repository.
         :param produce_data: If True, this session will store data in the Database.
         """
 
@@ -88,7 +88,7 @@ class DatabaseManager:
             if new_session:
                 # Generate data from scratch --> create a new directory
                 if database_config.existing_dir is None:
-                    create_dir(session_dir=session, session_name='dataset')
+                    makedirs(join(session, 'dataset'))
                     self.create_partition()
                 # Complete a Database in a new session --> copy and load the existing directory
                 else:
@@ -108,7 +108,7 @@ class DatabaseManager:
                 if new_session:
                     # Generate data from scratch --> create a new directory
                     if database_config.existing_dir is None:
-                        create_dir(session_dir=session, session_name='dataset')
+                        makedirs(join(session, 'dataset'))
                         self.create_partition()
                     # Complete a Database in a new session --> copy and load the existing directory
                     else:
@@ -169,10 +169,6 @@ class DatabaseManager:
         if not json_found or self.json_content == self.json_default:
             self.search_partitions_info()
             self.update_json()
-        if self.recompute_normalization or (
-                self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
-            self.json_content['normalization'] = self.compute_normalization()
-            self.update_json()
 
         # 4. Load partitions for each mode
         self.partition_names = self.json_content['partitions']
@@ -200,6 +196,12 @@ class DatabaseManager:
 
         # 6. Index partitions
         self.index_samples()
+
+        # 7. Check normalization
+        if self.recompute_normalization or (
+                self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
+            self.json_content['normalization'] = self.compute_normalization()
+            self.update_json()
 
     def create_partition(self) -> None:
         """
@@ -538,7 +540,6 @@ class DatabaseManager:
         for field in fields:
             normalization[field][1] = sqrt(sum([(n / sum(nb_samples)) * std
                                                 for n, std in zip(nb_samples, stds[field])]))
-
         return normalization
 
     def update_normalization(self,

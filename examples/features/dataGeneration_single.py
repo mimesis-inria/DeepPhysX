@@ -7,7 +7,6 @@ Run the pipeline DataGenerator to produce a Dataset only.
 from DeepPhysX.Core.Pipelines.BaseDataGeneration import BaseDataGeneration
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
-# from DeepPhysX.Core.Visualization.VedoVisualizer import VedoVisualizer
 
 # Session related imports
 from Environment import MeanEnvironment

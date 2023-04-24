@@ -90,7 +90,7 @@ class Armadillo(BaseEnvironment):
                 if sphere(pts, p_forces.centers[zone]) <= pow(p_forces.radius[zone], 2):
                     self.areas[-1].append(i)
             # Create sphere at initial state
-            self.spheres_init.append(self.mesh_coarse.points(self.areas[-1]).mean(axis=0))
+            self.spheres_init.append(self.mesh_coarse.points()[self.areas[-1]].mean(axis=0))
             self.spheres.append(self.sphere(self.spheres_init[-1]).alpha(0.5))
 
         # Define fixed plane
@@ -166,7 +166,7 @@ class Armadillo(BaseEnvironment):
         if not self.interactive_window and self.selected is not None:
 
             # Compute input force vector
-            mouse_3D = self.plotter.compute_world_position(evt.picked2d)
+            mouse_3D = self.plotter.compute_world_coordinate(evt.picked2d)
             move_3D = (mouse_3D - self.spheres_init[self.selected]) / self.mouse_factor
             if np.linalg.norm(move_3D) > 2:
                 move_3D = 2 * move_3D / np.linalg.norm(move_3D)
