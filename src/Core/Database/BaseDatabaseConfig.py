@@ -31,7 +31,7 @@ class BaseDatabaseConfig:
             if not isdir(existing_dir):
                 raise ValueError(f"[{self.name}] The given 'existing_dir'={existing_dir} does not exist.")
             if len(existing_dir.split(sep)) > 1 and existing_dir.split(sep)[-1] == 'dataset':
-                existing_dir = join(*existing_dir.split(sep)[:-1])
+                existing_dir = sep.join(existing_dir.split(sep)[:-1])
 
         # Check storage variables
         if mode is not None:

@@ -168,6 +168,12 @@ class DataManager:
         self.pipeline.network_manager.compute_online_prediction(instance_id=instance_id,
                                                                 normalization=self.normalization)
 
+    def set_eval(self):
+        self.database_manager.set_eval()
+
+    def set_train(self):
+        self.database_manager.set_train()
+
     def close(self) -> None:
         """
         Launch the closing procedure of the DataManager.

@@ -186,6 +186,9 @@ class NetworkManager:
                                                     lines_id=data_lines)
             # Apply normalization and convert to tensor
             for field in batch.keys():
+                # batch can contain dicts if fields refer to joined tables
+                if isinstance(batch[field], dict):
+                    batch[field] = batch[field][field]
                 batch[field] = array(batch[field])
                 if field in normalization:
                     batch[field] = self.normalize_data(data=batch[field],
@@ -228,6 +231,8 @@ class NetworkManager:
 
         # Apply normalization and convert to tensor
         for field in sample.keys():
+            if isinstance(sample[field], dict):
+                sample[field] = sample[field][field]
             sample[field] = array([sample[field]])
             if field in normalization.keys():
                 sample[field] = self.normalize_data(data=sample[field],

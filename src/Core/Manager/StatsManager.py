@@ -37,8 +37,16 @@ class StatsManager:
 
         # Open Tensorboard
         tb = program.TensorBoard()
-        tb.configure(argv=[None, '--logdir', self.log_dir])
-        url = tb.launch()
+        port = 6006
+        tb.configure(argv=[None, '--logdir', self.log_dir, '--port', str(port)])
+        while True and port<7000:
+            try:
+                url = tb.launch()
+                break
+            except:
+                port +=1
+                tb.configure(argv=[None, '--logdir', self.log_dir, '--port', str(port)])
+                continue
         w_open(url)
 
         # Values
