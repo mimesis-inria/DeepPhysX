@@ -19,9 +19,11 @@ class BaseEnvironmentController(AbstractController):
         self.tcp_ip_client: Any = None
 
         # Create the Environment instance
+        self.__environment: Optional[BaseEnvironment] = None
+        self.__environment_class: Type[BaseEnvironment] = environment_class
+        self.__environment_kwargs: Dict[str, Any] = environment_kwargs
         self.__environment_id: int = environment_ids[0]
         self.__environment_nb: int = environment_ids[1]
-        self.__environment: BaseEnvironment = environment_class(**environment_kwargs, environment_controller=self)
 
         # Create the Database Handler
         self.__use_database: bool = use_database
@@ -66,6 +68,8 @@ class BaseEnvironmentController(AbstractController):
 
     def create_environment(self) -> None:
 
+        self.__environment: BaseEnvironment = self.__environment_class(**self.__environment_kwargs,
+                                                                       environment_controller=self)
         self.__environment.create()
         self.__environment.init()
         self.__environment.init_database()

@@ -4,21 +4,21 @@ from numpy.random import uniform
 from vedo import Spring, Cube, Box, Text2D, Plotter
 
 from DeepPhysX.Core.Pipelines.BasePrediction import BasePrediction
-from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
+from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig, BaseEnvironment
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
-from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 
 
 class SpringEnvironment(BaseEnvironment):
 
-    def __init__(self, instance_id=(1, 1),
+    def __init__(self,
                  spring_length: float = 1.,
                  spring_stiffness: float = 30.,
                  cube_mass: float = 20.,
-                 cube_friction: float = 2.):
+                 cube_friction: float = 2.,
+                 **kwargs):
 
-        BaseEnvironment.__init__(self, instance_id=instance_id)
+        BaseEnvironment.__init__(self, **kwargs)
 
         # Spring parameters
         self.spring_length: float = spring_length

@@ -29,14 +29,14 @@ if __name__ == '__main__':
 
     # Dataset configuration with the path to the existing Dataset
     database_config = BaseDatabaseConfig(
-        existing_dir='/home/robin/Projects/DeepPhysX/Core/examples/new_tuto/sessions/data_generation/',
+        existing_dir='/home/robin/Projects/DeepPhysX/Core/examples/new_tuto/new_sessions/data_generation/',
         shuffle=True,
         normalize=False)
 
     # Create DataGenerator
     trainer = BaseTraining(network_config=network_config,
                            database_config=database_config,
-                           session_dir='sessions',
+                           session_dir='new_sessions',
                            session_name='training',
                            epoch_nb=100,
                            batch_nb=500,

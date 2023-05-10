@@ -18,8 +18,8 @@ if __name__ == '__main__':
     environment_config = BaseEnvironmentConfig(environment_class=SpringEnvironment,
                                                visualizer=None,
                                                as_tcp_ip_client=True,
-                                               number_of_thread=8,
-                                               simulations_per_step=5)
+                                               number_of_thread=5,
+                                               simulations_per_step=1)
     # Database configuration
     database_config = BaseDatabaseConfig(max_file_size=1,
                                          normalize=True)
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # Create DataGenerator
     data_generator = BaseDataGeneration(environment_config=environment_config,
                                         database_config=database_config,
-                                        session_dir='sessions',
+                                        session_dir='new_sessions',
                                         session_name='data_generation',
                                         batch_nb=500,
                                         batch_size=32)
