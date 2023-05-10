@@ -157,11 +157,15 @@ class NetworkManager:
             for temp_file in temp_files:
                 remove(join(self.network_dir, temp_file))
             # Save intermediate state (either checkpoint, either backup)
-            self.saved_counter += 1
-            if self.saved_counter % self.save_every_epoch:
-                path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
-                print(f"[{self.name}] Saving intermediate network at {path}.")
-                self.network.save_parameters(path)
+            if self.save_every_epoch > 0:
+                self.saved_counter += 1
+                if self.saved_counter % self.save_every_epoch:
+                    path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
+                    print(f"[{self.name}] Saving intermediate network at {path}.")
+                    self.network.save_parameters(path)
+                else:
+                    path = join(self.network_dir, 'backup_network')
+                    self.network.save_parameters(path)
             else:
                 path = join(self.network_dir, 'backup_network')
                 self.network.save_parameters(path)
