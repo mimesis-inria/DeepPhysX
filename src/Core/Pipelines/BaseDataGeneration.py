@@ -6,7 +6,7 @@ from DeepPhysX.Core.Pipelines.BasePipeline import BasePipeline
 from DeepPhysX.Core.Manager.DataManager import DataManager
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Utils.path import get_first_caller, create_dir
+from DeepPhysX.Core.Utils.path import create_dir
 
 
 class BaseDataGeneration(BasePipeline):

@@ -7,7 +7,6 @@ from DeepPhysX.Core.Manager.NetworkManager import NetworkManager
 from DeepPhysX.Core.Network.BaseNetworkConfig import BaseNetworkConfig
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig
-from DeepPhysX.Core.Utils.path import get_first_caller
 
 
 class BasePrediction(BasePipeline):
