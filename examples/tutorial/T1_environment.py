@@ -61,7 +61,7 @@ class DummyEnvironment(BaseEnvironment):
     ENVIRONMENT BEHAVIOR - Methods will be automatically called at each simulation step in this order:
        - step: Transition in simulation state, compute training data
        - check_sample: Check if current data sample is usable
-       - apply_prediction: Network prediction will be applied in Environment
+       - apply_prediction: network prediction will be applied in Environment
        - close: Shutdown procedure when data producer is no longer used
      Some requests can be performed here:
        - get_prediction: Get an online prediction from an input array

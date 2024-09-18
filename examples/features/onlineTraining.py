@@ -1,6 +1,6 @@
 """
 onlineTraining.py
-Run the pipeline BaseTrainer to create a new Dataset while training the Network.
+Run the pipeline BaseTrainer to create a new Dataset while training the network.
 """
 
 # Python related imports

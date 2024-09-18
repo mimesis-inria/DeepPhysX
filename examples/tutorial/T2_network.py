@@ -1,5 +1,5 @@
 """
-#02 - Implementing a Network
+#02 - Implementing a network
 DummyNetwork: simply returns the input as output.
 DummyOptimizer: nothing to optimize in our DummyNetwork.
 """
@@ -13,13 +13,13 @@ from DeepPhysX.Core.Network.BaseOptimization import BaseOptimization
 from DeepPhysX.Core.Network.BaseTransformation import BaseTransformation
 
 
-# Create a Network as a BaseNetwork child class
+# Create a network as a BaseNetwork child class
 class DummyNetwork(BaseNetwork):
 
     def __init__(self, config):
 
         BaseNetwork.__init__(self, config)
-        # There is no Network architecture to define in our DummyNetwork
+        # There is no network architecture to define in our DummyNetwork
 
     # MANDATORY
     def forward(self, input_data):
@@ -104,7 +104,7 @@ class DummyTransformation(BaseTransformation):
 
     def transform_before_prediction(self, data_net):
 
-        # Do not transform the Network data
+        # Do not transform the network data
         return data_net
 
     def transform_before_loss(self, data_pred, data_opt=None):

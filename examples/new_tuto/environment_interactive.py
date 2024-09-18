@@ -42,7 +42,7 @@ class SpringEnvironment(BaseEnvironment):
         self.X_rest: ndarray = self.X.copy()
         self.X_init: ndarray = self.X.copy()
 
-        # State vectors predicted by the Network
+        # State vectors predicted by the network
         self.V_net: ndarray = self.V.copy()
         self.X_net: ndarray = self.X.copy()
 
@@ -91,7 +91,7 @@ class SpringEnvironment(BaseEnvironment):
     def time_step(self, _):
 
         if self.animate:
-            # Compute the prediction of the Network
+            # Compute the prediction of the network
             net_input = array([self.X[0], self.V[0], self.spring_length, self.spring_stiffness, self.cube_mass,
                                self.cube_friction])
             prediction = self.get_prediction(input=net_input)
@@ -162,7 +162,7 @@ class SpringEnvironment(BaseEnvironment):
 if __name__ == '__main__':
 
     if not exists('sessions/training'):
-        quit(print("Trained Network required, 'sessions/training' not found. Run training.py script first."))
+        quit(print("Trained network required, 'sessions/training' not found. Run training.py script first."))
 
     environment_config = BaseEnvironmentConfig(environment_class=SpringEnvironment,
                                                env_kwargs={'spring_length': round(uniform(0.5, 2.), 2),

@@ -19,7 +19,7 @@ from environment import SpringEnvironment
 if __name__ == '__main__':
 
     if not exists('sessions/training'):
-        quit(print("Trained Network required, 'sessions/training' not found. Run training.py script first."))
+        quit(print("Trained network required, 'sessions/training' not found. Run training.py script first."))
 
     # Environment configuration
     environment_config = BaseEnvironmentConfig(environment_class=SpringEnvironment,

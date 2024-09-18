@@ -1,6 +1,6 @@
 """
 #03 - Configurations
-Define configurations for Environment, Network and Dataset
+Define configurations for Environment, network and Dataset
 """
 
 # DeepPhysX related imports
@@ -23,14 +23,14 @@ env_config = BaseEnvironmentConfig(environment_class=DummyEnvironment,  # The En
                                    only_first_epoch=True,               # Use the Environment on the first epoch only
                                    always_produce=False)                # Environment is always producing data
 
-# Create the Network config
-net_config = BaseNetworkConfig(network_class=DummyNetwork,                     # The Network class to create
+# Create the network config
+net_config = BaseNetworkConfig(network_class=DummyNetwork,                     # The network class to create
                                optimization_class=DummyOptimization,           # The Optimization class to create
                                data_transformation_class=DummyTransformation,  # The DataTransformation class to create
-                               network_dir=None,                               # Path to an existing Network repository
-                               network_name='DummyNetwork',                    # Nickname of the Network
-                               network_type='Dummy',                           # Type of the Network
-                               which_network=-1,                               # The index of Network to load
+                               network_dir=None,                               # Path to an existing network repository
+                               network_name='DummyNetwork',                    # Nickname of the network
+                               network_type='Dummy',                           # Type of the network
+                               which_network=-1,                               # The index of network to load
                                save_each_epoch=False,                          # Do not save the network at each epoch
                                data_type='float32',                            # Training data type
                                require_training_stuff=False,                   # loss and optimizer can remain at None

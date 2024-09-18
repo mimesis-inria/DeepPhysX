@@ -52,7 +52,7 @@ if __name__ == '__main__':
     is_online_session = os.path.exists(os.path.join(os.getcwd(), 'sessions/online_training'))
 
     if not is_online_session and not is_offline_session:
-        print("Trained Network required, 'sessions/online_training' or 'sessions/offline_training' not found. "
+        print("Trained network required, 'sessions/online_training' or 'sessions/offline_training' not found. "
               "Run onlineTraining.py script first.")
         from onlineTraining import launch_training
         launch_training()

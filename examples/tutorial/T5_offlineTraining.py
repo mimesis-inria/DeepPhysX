@@ -14,7 +14,7 @@ from T2_network import DummyNetwork, DummyOptimization, DummyTransformation
 
 def launch_training():
 
-    # Create the Network config
+    # Create the network config
     net_config = BaseNetworkConfig(network_class=DummyNetwork,
                                    optimization_class=DummyOptimization,
                                    data_transformation_class=DummyTransformation,

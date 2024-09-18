@@ -18,7 +18,7 @@ def launch_prediction():
     # Create the Environment config
     env_config = BaseEnvironmentConfig(environment_class=DummyEnvironment)
 
-    # Create the Network config
+    # Create the network config
     net_config = BaseNetworkConfig(network_class=DummyNetwork)
 
     # Create the Pipeline

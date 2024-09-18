@@ -74,10 +74,10 @@ class SpringEnvironment(BaseEnvironment):
             self.create()
         self.t += self.dt
 
-        # Define the input of the Network
+        # Define the input of the network
         net_input = array([self.X[0], self.V[0], self.spring_stiffness, self.cube_mass, self.cube_friction])
 
-        # Compute the ground truth of the Network
+        # Compute the ground truth of the network
         F = -self.spring_stiffness * (self.X - self.X_rest) - self.cube_friction * self.V
         self.A = F / self.cube_mass
         self.V = self.V + self.A * self.dt

@@ -21,7 +21,7 @@ def launch_training():
                                        as_tcp_ip_client=True,
                                        number_of_thread=3)
 
-    # Create the Network config
+    # Create the network config
     net_config = BaseNetworkConfig(network_class=DummyNetwork,
                                    optimization_class=DummyOptimization,
                                    data_transformation_class=DummyTransformation,
