@@ -15,7 +15,7 @@ import sys
 
 # DeepPhysX root
 root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src', 'Core'))
-all_modules = ['AsyncSocket', 'Database', 'Environment', 'Manager', 'network', 'pipelines', 'Visualization']
+all_modules = ['AsyncSocket', 'Database', 'Environment', 'Manager', 'networks', 'pipelines', 'Visualization']
 
 # Import all modules
 sys.path.append(root)
