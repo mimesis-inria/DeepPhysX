@@ -1,16 +1,16 @@
 from typing import Dict, Any
 from collections import namedtuple
 
-from DeepPhysX.networks.core.base_network import BaseNetwork
+from DeepPhysX.networks.core.dpx_network import DPXNetwork
 
 
-class BaseOptimization:
+class DPXOptimization:
 
     def __init__(self, config: namedtuple):
         """
-        BaseOptimization computes loss between prediction and target and optimizes the networks parameters.
+        DPXOptimization computes loss between prediction and target and optimizes the networks parameters.
 
-        :param config: Set of BaseOptimization parameters.
+        :param config: Set of DPXOptimization parameters.
         """
 
         self.manager: Any = None
@@ -30,7 +30,8 @@ class BaseOptimization:
         Initialize the loss function.
         """
 
-        raise NotImplementedError
+        if self.loss_class is not None:
+            self.loss = self.loss_class()
 
     def compute_loss(self,
                      data_pred: Dict[str, Any],
@@ -43,7 +44,9 @@ class BaseOptimization:
         :return: Loss value.
         """
 
-        raise NotImplementedError
+        self.loss_value = self.loss(data_pred['prediction'].view(data_opt['ground_truth'].shape),
+                                    data_opt['ground_truth'])
+        return self.transform_loss(data_opt)
 
     def transform_loss(self,
                        data_opt: Dict[str, Any]) -> Dict[str, float]:
@@ -54,24 +57,27 @@ class BaseOptimization:
         :return: Transformed loss value.
         """
 
-        raise NotImplementedError
+        return {'loss': self.loss_value.item()}
 
     def set_optimizer(self,
-                      net: BaseNetwork) -> None:
+                      net: DPXNetwork) -> None:
         """
         Define an optimization process.
 
         :param net: networks whose parameters will be optimized.
         """
 
-        raise NotImplementedError
+        if (self.optimizer_class is not None) and (self.lr is not None):
+            self.optimizer = self.optimizer_class(net.parameters(), self.lr)
 
     def optimize(self) -> None:
         """
         Run an optimization step.
         """
 
-        raise NotImplementedError
+        self.optimizer.zero_grad()
+        self.loss_value.backward()
+        self.optimizer.step()
 
     def __str__(self):
 

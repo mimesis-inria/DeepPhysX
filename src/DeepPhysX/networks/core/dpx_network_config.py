@@ -2,21 +2,21 @@ from typing import Any, Optional, Type
 from os.path import isdir
 from numpy import sctypeDict
 
-from DeepPhysX.networks.core.base_network import BaseNetwork
-from DeepPhysX.networks.core.base_optimization import BaseOptimization
-from DeepPhysX.networks.core.base_transformation import BaseTransformation
+from DeepPhysX.networks.core.dpx_network import DPXNetwork
+from DeepPhysX.networks.core.dpx_optimization import DPXOptimization
+from DeepPhysX.networks.core.dpx_transformation import DPXTransformation
 from DeepPhysX.utils.configs import make_config, namedtuple
 
 
-class BaseNetworkConfig:
+class DPXNetworkConfig:
 
     def __init__(self,
-                 network_class: Type[BaseNetwork] = BaseNetwork,
-                 optimization_class: Type[BaseOptimization] = BaseOptimization,
-                 data_transformation_class: Type[BaseTransformation] = BaseTransformation,
+                 network_class: Type[DPXNetwork] = DPXNetwork,
+                 optimization_class: Type[DPXOptimization] = DPXOptimization,
+                 data_transformation_class: Type[DPXTransformation] = DPXTransformation,
                  network_dir: Optional[str] = None,
                  network_name: str = 'networks',
-                 network_type: str = 'BaseNetwork',
+                 network_type: str = 'DPXNetwork',
                  which_network: int = -1,
                  save_intermediate_state_every: int = 0,
                  data_type: str = 'float32',
@@ -25,12 +25,12 @@ class BaseNetworkConfig:
                  loss: Optional[Any] = None,
                  optimizer: Optional[Any] = None):
         """
-        BaseNetworkConfig is a configuration class to parameterize and create BaseNetwork, BaseOptimization and
-        BaseTransformation for the NetworkManager.
+        DPXNetworkConfig is a configuration class to parameterize and create DPXNetwork, DPXOptimization and
+        DPXTransformation for the NetworkManager.
 
-        :param network_class: BaseNetwork class from which an instance will be created.
-        :param optimization_class: BaseOptimization class from which an instance will be created.
-        :param data_transformation_class: BaseTransformation class from which an instance will be created.
+        :param network_class: DPXNetwork class from which an instance will be created.
+        :param optimization_class: DPXOptimization class from which an instance will be created.
+        :param data_transformation_class: DPXTransformation class from which an instance will be created.
         :param network_dir: Name of an existing networks repository.
         :param network_name: Name of the networks.
         :param network_type: Type of the networks.
@@ -74,16 +74,16 @@ class BaseNetworkConfig:
             raise ValueError(
                 f"[{self.__class__.__name__}] The following data type is not a numpy type: {data_type}")
 
-        # BaseNetwork parameterization
-        self.network_class: Type[BaseNetwork] = network_class
+        # DPXNetwork parameterization
+        self.network_class: Type[DPXNetwork] = network_class
         self.network_config: namedtuple = make_config(configuration_object=self,
                                                       configuration_name='network_config',
                                                       network_name=network_name,
                                                       network_type=network_type,
                                                       data_type=data_type)
 
-        # BaseOptimization parameterization
-        self.optimization_class: Type[BaseOptimization] = optimization_class
+        # DPXOptimization parameterization
+        self.optimization_class: Type[DPXOptimization] = optimization_class
         self.optimization_config: namedtuple = make_config(configuration_object=self,
                                                            configuration_name='optimization_config',
                                                            loss=loss,
@@ -92,7 +92,7 @@ class BaseNetworkConfig:
         self.training_stuff: bool = (loss is not None) and (optimizer is not None) or (not require_training_stuff)
 
         # NetworkManager parameterization
-        self.data_transformation_class: Type[BaseTransformation] = data_transformation_class
+        self.data_transformation_class: Type[DPXTransformation] = data_transformation_class
         self.data_transformation_config: namedtuple = make_config(configuration_object=self,
                                                                   configuration_name='data_transformation_config')
 
@@ -101,45 +101,45 @@ class BaseNetworkConfig:
         self.which_network: int = which_network
         self.save_every_epoch: int = save_intermediate_state_every and self.training_stuff
 
-    def create_network(self) -> BaseNetwork:
+    def create_network(self) -> DPXNetwork:
         """
         Create an instance of network_class with given parameters.
 
-        :return: BaseNetwork object from network_class and its parameters.
+        :return: DPXNetwork object from network_class and its parameters.
         """
 
         # Create instance
         network = self.network_class(config=self.network_config)
-        if not isinstance(network, BaseNetwork):
-            raise TypeError(f"[{self.name}] The given 'network_class'={self.network_class} must be a BaseNetwork.")
+        if not isinstance(network, DPXNetwork):
+            raise TypeError(f"[{self.name}] The given 'network_class'={self.network_class} must be a DPXNetwork.")
         return network
 
-    def create_optimization(self) -> BaseOptimization:
+    def create_optimization(self) -> DPXOptimization:
         """
         Create an instance of optimization_class with given parameters.
 
-        :return: BaseOptimization object from optimization_class and its parameters.
+        :return: DPXOptimization object from optimization_class and its parameters.
         """
 
         # Create instance
         optimization = self.optimization_class(config=self.optimization_config)
-        if not isinstance(optimization, BaseOptimization):
+        if not isinstance(optimization, DPXOptimization):
             raise TypeError(f"[{self.name}] The given 'optimization_class'={self.optimization_class} must be a "
-                            f"BaseOptimization.")
+                            f"DPXOptimization.")
         return optimization
 
-    def create_data_transformation(self) -> BaseTransformation:
+    def create_data_transformation(self) -> DPXTransformation:
         """
         Create an instance of data_transformation_class with given parameters.
 
-        :return: BaseTransformation object from data_transformation_class and its parameters.
+        :return: DPXTransformation object from data_transformation_class and its parameters.
         """
 
         # Create instance
         data_transformation = self.data_transformation_class(config=self.data_transformation_config)
-        if not isinstance(data_transformation, BaseTransformation):
+        if not isinstance(data_transformation, DPXTransformation):
             raise TypeError(f"[{self.name}] The given 'data_transformation_class'={self.data_transformation_class} "
-                            f"must be a BaseTransformation.")
+                            f"must be a DPXTransformation.")
         return data_transformation
 
     def __str__(self):

@@ -1,20 +1,20 @@
 from typing import Any, List, Optional, Type
 
 from DeepPhysX.utils.configs import make_config
-from DeepPhysX.networks.torch.torch_network_config import TorchNetworkConfig
-from DeepPhysX.networks.torch.torch_optimization import TorchOptimization
-from DeepPhysX.networks.torch.UNet.UnetTransformation import UnetTransformation
-from DeepPhysX.networks.torch.UNet.UNet import UNet
+from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
+from DeepPhysX.networks.core.dpx_optimization import DPXOptimization
+from DeepPhysX.networks.architectures.unet.unet_transformation import UNetTransformation
+from DeepPhysX.networks.architectures.unet.unet_layers import UNet
 
 
-class UNetConfig(TorchNetworkConfig):
+class UNetConfig(DPXNetworkConfig):
 
     def __init__(self,
-                 optimization_class: Type[TorchOptimization] = TorchOptimization,
+                 optimization_class: Type[DPXOptimization] = DPXOptimization,
                  network_dir: Optional[str] = None,
                  network_name: str = "UNetNetwork",
                  which_network: int = 0,
-                 save_each_epoch: bool = False,
+                 save_intermediate_state_every: bool = False,
                  data_type: str = 'float32',
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
@@ -31,7 +31,7 @@ class UNetConfig(TorchNetworkConfig):
                  skip_merge: bool = False,
                  data_scale: float = 1.):
         """
-        UNetConfig is a configuration class to parameterize and create UNet, TorchOptimization and UNetTransformation
+        UNetConfig is a configuration class to parameterize and create unet, DPXOptimization and UNetTransformation
         for the NetworkManager.
 
         :param optimization_class: BaseOptimization class from which an instance will be created.
@@ -58,20 +58,19 @@ class UNetConfig(TorchNetworkConfig):
         :param data_scale: Scale to apply to data.
         """
 
-        TorchNetworkConfig.__init__(self,
-                                    network_class=UNet,
-                                    optimization_class=optimization_class,
-                                    data_transformation_class=UnetTransformation,
-                                    network_dir=network_dir,
-                                    network_name=network_name,
-                                    network_type='UNet',
-                                    which_network=which_network,
-                                    save_each_epoch=save_each_epoch,
-                                    data_type=data_type,
-                                    lr=lr,
-                                    require_training_stuff=require_training_stuff,
-                                    loss=loss,
-                                    optimizer=optimizer)
+        super().__init__(network_class=UNet,
+                         optimization_class=optimization_class,
+                         data_transformation_class=UNetTransformation,
+                         network_dir=network_dir,
+                         network_name=network_name,
+                         network_type='unet',
+                         which_network=which_network,
+                         save_intermediate_state_every=save_intermediate_state_every,
+                         data_type=data_type,
+                         lr=lr,
+                         require_training_stuff=require_training_stuff,
+                         loss=loss,
+                         optimizer=optimizer)
 
         name = self.__class__.__name__
         # Check the input size type
@@ -82,7 +81,7 @@ class UNetConfig(TorchNetworkConfig):
         if type(nb_dims) != int:
             raise TypeError(f"[{name}] Wrong 'nb_dims' type: int required, get {type(nb_dims)}")
         if nb_dims not in [2, 3]:
-            raise ValueError(f"[{name}] UNet works either with dimension 2 or 3, get {nb_dims}")
+            raise ValueError(f"[{name}] unet works either with dimension 2 or 3, get {nb_dims}")
         # Check the number of channels type and value, check the nb_of steps type and value
         for nb_channel, arg_name in zip([nb_input_channels, nb_first_layer_channels, nb_output_channels, nb_steps],
                                         ['nb_input_channels', 'nb_first_layer_channels', 'nb_output_channels',
@@ -104,11 +103,11 @@ class UNetConfig(TorchNetworkConfig):
         if type(data_scale) != float:
             raise TypeError(f"[{name}] Wrong 'data_scale' type: float required, get {type(data_scale)}")
 
-        # Define specific UNet configuration
+        # Define specific unet configuration
         self.network_config = make_config(configuration_object=self,
                                           configuration_name='network_config',
                                           network_name=network_name,
-                                          network_type='UNet',
+                                          network_type='unet',
                                           data_type=data_type,
                                           nb_dims=nb_dims,
                                           nb_input_channels=nb_input_channels,

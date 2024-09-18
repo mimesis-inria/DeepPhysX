@@ -1,19 +1,19 @@
 from typing import Any, Optional, Type, Union, List
 
+from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig, DPXOptimization, DPXTransformation
 from DeepPhysX.utils.configs import make_config
-from DeepPhysX.networks.torch.torch_network_config import TorchNetworkConfig, TorchTransformation, TorchOptimization
-from DeepPhysX.networks.torch.FC.FC import FC
+from DeepPhysX.networks.architectures.mlp.mlp_layers import MLP
 
 
-class FCConfig(TorchNetworkConfig):
+class MLPConfig(DPXNetworkConfig):
 
     def __init__(self,
-                 optimization_class: Type[TorchOptimization] = TorchOptimization,
-                 data_transformation_class: Type[TorchTransformation] = TorchTransformation,
+                 optimization_class: Type[DPXOptimization] = DPXOptimization,
+                 data_transformation_class: Type[DPXTransformation] = DPXTransformation,
                  network_dir: Optional[str] = None,
                  network_name: str = "FCNetwork",
                  which_network: int = 0,
-                 save_each_epoch: bool = False,
+                 save_intermediate_state_every: bool = False,
                  data_type: str = 'float32',
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
@@ -23,7 +23,7 @@ class FCConfig(TorchNetworkConfig):
                  dim_layers: list = None,
                  biases: Union[List[bool], bool] = True):
         """
-        FCConfig is a configuration class to parameterize and create FC, TorchOptimization and TorchDataTransformation
+        FCConfig is a configuration class to parameterize and create mlp, TorchOptimization and TorchDataTransformation
         for the NetworkManager.
 
         :param optimization_class: TorchOptimization class from which an instance will be created.
@@ -44,22 +44,22 @@ class FCConfig(TorchNetworkConfig):
                        a list to detail each layer.
         """
 
-        TorchNetworkConfig.__init__(self,
-                                    network_class=FC,
-                                    optimization_class=optimization_class,
-                                    data_transformation_class=data_transformation_class,
-                                    network_dir=network_dir,
-                                    network_name=network_name,
-                                    network_type='FC',
-                                    which_network=which_network,
-                                    save_each_epoch=save_each_epoch,
-                                    data_type=data_type,
-                                    require_training_stuff=require_training_stuff,
-                                    lr=lr,
-                                    loss=loss,
-                                    optimizer=optimizer)
+        DPXNetworkConfig.__init__(self,
+                                  network_class=MLP,
+                                  optimization_class=optimization_class,
+                                  data_transformation_class=data_transformation_class,
+                                  network_dir=network_dir,
+                                  network_name=network_name,
+                                  network_type='mlp',
+                                  which_network=which_network,
+                                  save_intermediate_state_every=save_intermediate_state_every,
+                                  data_type=data_type,
+                                  require_training_stuff=require_training_stuff,
+                                  lr=lr,
+                                  loss=loss,
+                                  optimizer=optimizer)
 
-        # Check FC variables
+        # Check mlp variables
         if dim_output is not None and type(dim_output) != int:
             raise TypeError(f"[{self.__class__.__name__}] Wrong 'dim_output' type: int required, get "
                             f"{type(dim_output)}")
@@ -70,7 +70,7 @@ class FCConfig(TorchNetworkConfig):
 
         self.network_config = make_config(configuration_object=self,
                                           configuration_name='network_config',
-                                          network_type='FC',
+                                          network_type='mlp',
                                           dim_output=dim_output,
                                           dim_layers=dim_layers,
                                           biases=biases)

@@ -4,8 +4,8 @@ from torch.nn import Module, Conv2d, Conv3d, BatchNorm2d, BatchNorm3d, ReLU, Seq
     ConvTranspose2d, ConvTranspose3d
 from collections import namedtuple
 
-from DeepPhysX.networks.torch.torch_network import TorchNetwork
-from DeepPhysX.networks.torch.UNet.utils import crop_and_merge
+from DeepPhysX.networks.core.dpx_network import DPXNetwork
+from DeepPhysX.networks.architectures.unet.utils import crop_and_merge
 
 
 class UNetLayer(Module):
@@ -15,22 +15,22 @@ class UNetLayer(Module):
                  nb_output_channels: int,
                  config: namedtuple):
         """
-        Create a UNet Layer.
+        Create a unet Layer.
 
         :param nb_input_channels: Number of channels in input data.
         :param nb_output_channels: Number of channels in output data.
-        :param config: Namedtuple containing UNet parameters.
+        :param config: Namedtuple containing unet parameters.
         """
 
         super().__init__()
 
-        # Configure the UNet layer
+        # Configure the unet layer
         convolution_layer: Union[Conv2d, Conv3d] = Conv2d if config.nb_dims == 2 else Conv3d
         normalization_layer: Union[BatchNorm2d, BatchNorm3d] = BatchNorm2d if config.nb_dims == 2 else BatchNorm3d
         padding: int = 0 if config.border_mode == 'valid' else 1
         kernel_size: Tuple[int, int, int] = (3,) * config.nb_dims
 
-        # Define the UNet layer: sequence of convolution, normalization and relu
+        # Define the unet layer: sequence of convolution, normalization and relu
         layers: List[Union[Conv2d, Conv3d, BatchNorm2d, BatchNorm3d, ReLU]] = [
             convolution_layer(in_channels=nb_input_channels,
                               out_channels=nb_output_channels,
@@ -39,7 +39,7 @@ class UNetLayer(Module):
             normalization_layer(num_features=nb_output_channels),
             ReLU()]
 
-        # Duplicate the UNet layer
+        # Duplicate the unet layer
         if config.two_sublayers:
             layers = layers + [convolution_layer(in_channels=nb_output_channels,
                                                  out_channels=nb_output_channels,
@@ -48,7 +48,7 @@ class UNetLayer(Module):
                                normalization_layer(num_features=nb_output_channels),
                                ReLU()]
 
-        # Set the UNet layer
+        # Set the unet layer
         self.unet_layer = Sequential(*layers)
 
     def forward(self,
@@ -104,19 +104,19 @@ class EncoderDecoder:
         return Sequential(*[*self.encoder, *self.decoder])
 
 
-class UNet(TorchNetwork):
+class UNet(DPXNetwork):
 
     def __init__(self,
                  config: namedtuple):
         """
-        Create a UNet Neural Network Architecture.
+        Create a unet Neural Network Architecture.
 
-        :param config: Set of UNet parameters.
+        :param config: Set of unet parameters.
         """
 
-        TorchNetwork.__init__(self, config)
+        super().__init__(config)
 
-        # Configure the UNet layers
+        # Configure the unet layers
         up_convolution_layer: Union[
             ConvTranspose2d, ConvTranspose3d] = ConvTranspose2d if config.nb_dims == 2 else ConvTranspose3d
         last_convolution_layer: Union[Conv2d, Conv3d] = Conv2d if config.nb_dims == 2 else Conv3d
@@ -149,7 +149,7 @@ class UNet(TorchNetwork):
         architecture: EncoderDecoder = EncoderDecoder(layers=layers,
                                                       nb_encoding_layers=config.nb_steps + 1)
 
-        # Set the parts of the UNet
+        # Set the parts of the unet
         self.down: Sequential = architecture.setupEncoder()
         self.up: Sequential = architecture.setupDecoder()
         self.finalLayer: Union[Conv2d, Conv3d] = last_convolution_layer(in_channels=channels,
@@ -180,7 +180,7 @@ class UNet(TorchNetwork):
 
     def __str__(self) -> str:
 
-        description = TorchNetwork.__str__(self)
+        description = DPXNetwork.__str__(self)
         description += f"    Number of dimensions: {self.config.nb_dims}\n"
         description += f"    Number of input channels: {self.config.nb_input_channels}\n"
         description += f"    Number of first layer channels: {self.config.nb_first_layer_channels}\n"

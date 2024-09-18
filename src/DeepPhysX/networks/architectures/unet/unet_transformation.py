@@ -4,20 +4,19 @@ from torch import reshape, Tensor
 from numpy import asarray
 from collections import namedtuple
 
-from DeepPhysX.networks.torch.torch_transformation import TorchTransformation
+from DeepPhysX.networks.core.dpx_transformation import DPXTransformation
 
 
-class UnetTransformation(TorchTransformation):
+class UNetTransformation(DPXTransformation):
 
-    def __init__(self,
-                 config: namedtuple):
+    def __init__(self, config: namedtuple):
         """
-        UNetDataTransformation manages data operations before and after UNet predictions.
+        UNetDataTransformation manages data operations before and after unet predictions.
 
         :param config: Set of TorchTransformation parameters.
         """
 
-        TorchTransformation.__init__(self, config)
+        super().__init__(config)
 
         # Configure the transformation parameters
         self.input_size: List[int] = self.config.input_size
@@ -35,9 +34,8 @@ class UnetTransformation(TorchTransformation):
         self.reverse_down_step = lambda x: (x + border) * 2
         self.reverse_up_step = lambda x: (x + border - 1) // 2 + 1
 
-    @TorchTransformation.check_type
-    def transform_before_prediction(self,
-                                    data_net: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    @DPXTransformation.check_type
+    def transform_before_prediction(self, data_net: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
         Apply data operations before networks's prediction.
 
@@ -59,7 +57,7 @@ class UnetTransformation(TorchTransformation):
         data_in = pad(data_in, self.pad_widths, mode='constant')
         return {'input': data_in}
 
-    @TorchTransformation.check_type
+    @DPXTransformation.check_type
     def transform_before_loss(self,
                               data_pred: Dict[str, Tensor],
                               data_opt: Dict[str, Optional[Tensor]] = None) -> Tuple[Dict[str, Tensor], Optional[Dict[str, Tensor]]]:
@@ -90,7 +88,7 @@ class UnetTransformation(TorchTransformation):
 
         return {'prediction': data_out}, data_opt
 
-    @TorchTransformation.check_type
+    @DPXTransformation.check_type
     def transform_before_apply(self,
                                data_pred: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """

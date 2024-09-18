@@ -4,14 +4,14 @@ from os.path import join, isdir, isfile, sep
 from numpy import ndarray, array
 
 from DeepPhysX.database.database_handler import DatabaseHandler
-from DeepPhysX.networks.core.base_network_config import BaseNetworkConfig
+from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
 from DeepPhysX.utils.path import copy_dir, create_dir
 
 
 class NetworkManager:
 
     def __init__(self,
-                 network_config: BaseNetworkConfig,
+                 network_config: DPXNetworkConfig,
                  pipeline: str = '',
                  session: str = 'sessions/default',
                  new_session: bool = True):

@@ -2,20 +2,19 @@ from torch import Tensor
 from torch.nn import Sequential, PReLU, Linear
 from collections import namedtuple
 
-from DeepPhysX.networks.torch.torch_network import TorchNetwork
+from DeepPhysX.networks.core.dpx_network_config import DPXNetwork
 
 
-class FC(TorchNetwork):
+class MLP(DPXNetwork):
 
-    def __init__(self,
-                 config: namedtuple):
+    def __init__(self, config: namedtuple):
         """
         Create a Fully Connected layers Neural Network Architecture.
 
-        :param config: Set of FC parameters.
+        :param config: Set of mlp parameters.
         """
 
-        TorchNetwork.__init__(self, config)
+        DPXNetwork.__init__(self, config)
 
         # Data fields
         self.net_fields = ['input']
@@ -54,7 +53,7 @@ class FC(TorchNetwork):
 
     def __str__(self):
 
-        description = TorchNetwork.__str__(self)
+        description = DPXNetwork.__str__(self)
         description += self.linear.__str__() + "\n"
         description += f"    Layers dimensions: {self.config.dim_layers}\n"
         description += f"    Output dimension: {self.config.dim_output}\n"

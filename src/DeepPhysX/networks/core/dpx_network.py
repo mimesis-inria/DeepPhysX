@@ -1,29 +1,34 @@
-from typing import Dict
+from typing import Any, Dict
 from os import cpu_count
-
-import torch
 from numpy import ndarray
+import torch
 from torch import Tensor, device, set_num_threads, load, save, as_tensor
 from torch.nn import Module
 from torch.cuda import is_available, empty_cache
 from gc import collect as gc_collect
 from collections import namedtuple
 
-from DeepPhysX.networks.core.base_network import BaseNetwork
 
+class DPXNetwork(Module):
 
-class TorchNetwork(Module, BaseNetwork):
-
-    def __init__(self,
-                 config: namedtuple):
+    def __init__(self, config: namedtuple):
         """
-        TorchNetwork computes predictions from input data according to actual set of weights.
+        DPXNetwork computes predictions from input data according to actual set of weights.
 
-        :param config: Set of TorchNetwork parameters.
+        :param config: Set of DPXNetwork parameters.
         """
 
-        Module.__init__(self)
-        BaseNetwork.__init__(self, config)
+        super().__init__(self)
+
+        # Config
+        self.device = None
+        self.config = config
+
+        # Data fields
+        self.net_fields = ['input']
+        self.opt_fields = ['ground_truth']
+        self.pred_fields = ['prediction']
+        self.pred_norm_fields = {'prediction': 'ground_truth'}
 
         # Data type
         if config.data_type == 'float64':
@@ -31,39 +36,45 @@ class TorchNetwork(Module, BaseNetwork):
         else:
             torch.set_default_dtype(torch.float32)
 
-        # Data fields
-        self.net_fields = ['input']
-        self.opt_fields = ['ground_truth']
-        self.pred_fields = ['prediction']
+    def predict(self,
+                data_net: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compute a forward pass of the networks.
+
+        :param data_net: Data used by the networks.
+        :return: Data produced by the networks.
+        """
+
+        return {'prediction': self.forward(data_net['input'])}
 
     def forward(self,
-                input_data: Tensor) -> Tensor:
+                input_data: Any) -> Any:
         """
-        Compute a forward pass of the Network.
+        Compute a forward pass of the networks.
 
         :param input_data: Input tensor.
-        :return: Network prediction.
+        :return: networks prediction.
         """
 
         raise NotImplementedError
 
     def set_train(self) -> None:
         """
-        Set the Network in train mode (compute gradient).
+        Set the networks in training mode (compute gradient).
         """
 
         self.train()
 
     def set_eval(self) -> None:
         """
-         Set the Network in eval mode (does not compute gradient).
-         """
+        Set the networks in prediction mode (does not compute gradient).
+        """
 
         self.eval()
 
     def set_device(self) -> None:
         """
-        Set computer device on which Network's parameters will be stored and tensors will be computed.
+        Set computer device on which networks's parameters will be stored and tensors will be computed.
         """
 
         if is_available():
@@ -82,19 +93,19 @@ class TorchNetwork(Module, BaseNetwork):
         """
         Load networks parameter from path.
 
-        :param path: Path to Network parameters to load.
+        :param path: Path to networks parameters to load.
         """
 
         self.load_state_dict(load(path, map_location=self.device))
 
-    def get_parameters(self) -> Dict[str, Tensor]:
+    def get_parameters(self) -> Dict[str, Any]:
         """
-        Return the current state of Network parameters.
+        Return the current state of networks parameters.
 
-        :return: Network parameters.
+        :return: networks parameters.
         """
 
-        return self.state_dict()
+        raise self.state_dict()
 
     def save_parameters(self,
                         path: str) -> None:
@@ -118,7 +129,7 @@ class TorchNetwork(Module, BaseNetwork):
 
     def numpy_to_tensor(self,
                         data: ndarray,
-                        grad: bool = True) -> Tensor:
+                        grad: bool = True) -> Any:
         """
         Transform and cast data from numpy to the desired tensor type.
 
@@ -133,7 +144,7 @@ class TorchNetwork(Module, BaseNetwork):
         return data
 
     def tensor_to_numpy(self,
-                        data: Tensor) -> ndarray:
+                        data: Any) -> ndarray:
         """
         Transform and cast data from tensor type to numpy.
 
@@ -157,8 +168,13 @@ class TorchNetwork(Module, BaseNetwork):
             architecture += '\n      ' + line
         return architecture
 
-    def __str__(self):
+    def __str__(self) -> str:
 
-        description = BaseNetwork.__str__(self)
+        description = "\n"
+        description += f"  {self.__class__.__name__}\n"
+        description += f"    Name: {self.config.network_name}\n"
+        description += f"    Type: {self.config.network_type}\n"
+        description += f"    Number of parameters: {self.nb_parameters()}\n"
+        description += f"    Estimated size: {self.nb_parameters() * 32 * 1.25e-10} Go\n"
         description += f"    Device: {self.device}\n"
         return description

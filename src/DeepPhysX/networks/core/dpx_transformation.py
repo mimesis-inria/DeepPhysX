@@ -1,8 +1,9 @@
 from typing import Callable, Any, Optional, Tuple, Dict
 from collections import namedtuple
+from torch import Tensor
 
 
-class BaseTransformation:
+class DPXTransformation:
 
     def __init__(self, config: namedtuple):
         """
@@ -14,7 +15,7 @@ class BaseTransformation:
         self.name = self.__class__.__name__
 
         self.config: Any = config
-        self.data_type = any
+        self.data_type = Tensor
 
     @staticmethod
     def check_type(func: Callable[[Any, Any], Any]):
@@ -28,8 +29,9 @@ class BaseTransformation:
 
         return inner
 
+    @check_type
     def transform_before_prediction(self,
-                                    data_net: Dict[str, Any]) -> Dict[str, Any]:
+                                    data_net: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
         Apply data operations before networks's prediction.
 
@@ -39,9 +41,10 @@ class BaseTransformation:
 
         return data_net
 
+    @check_type
     def transform_before_loss(self,
-                              data_pred: Dict[str, Any],
-                              data_opt: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+                              data_pred: Dict[str, Tensor],
+                              data_opt: Optional[Dict[str, Tensor]] = None) -> Tuple[Dict[str, Tensor], Optional[Dict[str, Tensor]]]:
         """
         Apply data operations between networks's prediction and loss computation.
 
@@ -52,8 +55,9 @@ class BaseTransformation:
 
         return data_pred, data_opt
 
+    @check_type
     def transform_before_apply(self,
-                               data_pred: Dict[str, Any]) -> Dict[str, Any]:
+                               data_pred: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
         Apply data operations between loss computation and prediction apply in environment.
 
