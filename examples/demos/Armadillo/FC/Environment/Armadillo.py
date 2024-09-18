@@ -97,7 +97,7 @@ class Armadillo(BaseEnvironment):
         # Mesh representing detailed Armadillo (object will have id = 0)
         self.factory.add_mesh(positions=self.mesh.points(),
                               cells=self.mesh.cells(),
-                              wireframe=True,
+                              wireframe=False,
                               c='orange',
                               at=self.instance_id)
         # Arrows representing the force fields (object will have id = 1)

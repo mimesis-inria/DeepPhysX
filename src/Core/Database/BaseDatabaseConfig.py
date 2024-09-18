@@ -1,5 +1,5 @@
 from typing import Optional
-from os.path import isdir, sep, join
+from os.path import isdir, sep, join, isabs, abspath
 
 
 class BaseDatabaseConfig:
@@ -32,6 +32,8 @@ class BaseDatabaseConfig:
                 raise ValueError(f"[{self.name}] The given 'existing_dir'={existing_dir} does not exist.")
             if len(existing_dir.split(sep)) > 1 and existing_dir.split(sep)[-1] == 'dataset':
                 existing_dir = join(*existing_dir.split(sep)[:-1])
+            if not isabs(existing_dir):
+                existing_dir = abspath(existing_dir)
 
         # Check storage variables
         if mode is not None:

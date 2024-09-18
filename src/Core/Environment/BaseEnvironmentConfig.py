@@ -6,7 +6,7 @@ from subprocess import run
 from sys import modules, executable
 
 from DeepPhysX.Core.AsyncSocket.TcpIpServer import TcpIpServer
-from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
+from DeepPhysX.Core.Environment.BaseEnvironmentController import BaseEnvironmentController, BaseEnvironment
 
 
 class BaseEnvironmentConfig:
@@ -86,7 +86,7 @@ class BaseEnvironmentConfig:
         self.load_samples: bool = load_samples
         self.only_first_epoch: bool = only_first_epoch
         self.always_produce: bool = always_produce
-        self.env_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
+        self.environment_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
 
         # Visualizer variables
         self.visualizer: Optional[str] = visualizer
@@ -140,7 +140,7 @@ class BaseEnvironmentConfig:
 
         server.connect()
         server.initialize(visualization_db=visualization_db,
-                          env_kwargs=self.env_kwargs)
+                          env_kwargs=self.environment_kwargs)
         self.server_is_ready = True
 
     def start_client(self,
@@ -155,20 +155,15 @@ class BaseEnvironmentConfig:
         run([executable, script, self.environment_file, self.environment_class.__name__,
              self.ip_address, str(self.port), str(idx), str(self.number_of_thread)])
 
-    def create_environment(self) -> BaseEnvironment:
+    def create_environment(self) -> BaseEnvironmentController:
         """
         Create an Environment that will not be a TcpIpObject.
 
         :return: Environment object.
         """
 
-        # Create instance
-        environment = self.environment_class(as_tcp_ip_client=False,
-                                             **self.env_kwargs)
-        if not isinstance(environment, BaseEnvironment):
-            raise TypeError(f"[{self.name}] The given 'environment_class'={self.environment_class} must be a "
-                            f"BaseEnvironment.")
-        return environment
+        return BaseEnvironmentController(environment_class=self.environment_class,
+                                         environment_kwargs=self.environment_kwargs)
 
     def __str__(self):
 

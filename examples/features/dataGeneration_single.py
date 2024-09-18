@@ -27,8 +27,7 @@ def launch_data_generation():
                                                            'delay': False,
                                                            'allow_request': False})
     # Database configuration
-    database_config = BaseDatabaseConfig(max_file_size=1,
-                                         normalize=False)
+    database_config = BaseDatabaseConfig()
 
     # Create DataGenerator
     data_generator = BaseDataGeneration(environment_config=environment_config,

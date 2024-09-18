@@ -2,7 +2,7 @@ from os import sep, chdir, mkdir, listdir, getcwd, rename, symlink, unlink, remo
 from os.path import dirname, join, isfile, exists, isdir, islink
 from pathlib import Path
 from shutil import move, rmtree, which
-from site import USER_SITE
+from site import getsitepackages
 from subprocess import run
 from sys import argv
 
@@ -14,6 +14,7 @@ SIMU_PACKAGES = ['Sofa']
 PACKAGES = ['Core'] + AI_PACKAGES + SIMU_PACKAGES
 GIT = {'Torch': 'https://github.com/mimesis-inria/DeepPhysX.Torch.git',
        'Sofa': 'https://github.com/mimesis-inria/DeepPhysX.Sofa.git'}
+USER_SITE = getsitepackages()[0]
 
 
 def check_repositories():

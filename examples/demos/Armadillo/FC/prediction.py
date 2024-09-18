@@ -16,7 +16,7 @@ from DeepPhysX.Torch.FC.FCConfig import FCConfig
 # Session related imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from download import ArmadilloDownloader
-ArmadilloDownloader().get_session('all')
+# ArmadilloDownloader().get_session('all')
 from Environment.Armadillo import Armadillo
 from Environment.parameters import p_model
 

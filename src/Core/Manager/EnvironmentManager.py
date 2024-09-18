@@ -2,9 +2,9 @@ from typing import Any, Optional, List
 from asyncio import run as async_run
 from os.path import join
 
-from DeepPhysX.Core.Environment.BaseEnvironmentConfig import BaseEnvironmentConfig, TcpIpServer, BaseEnvironment
+from DeepPhysX.Core.Environment.BaseEnvironmentConfig import TcpIpServer, BaseEnvironmentConfig, BaseEnvironmentController
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
-from SSD.Core.Rendering.Visualizer import Visualizer, Database
+from SSD.Core.Rendering.visualizer import Visualizer, Database
 
 
 class EnvironmentManager:
@@ -52,7 +52,7 @@ class EnvironmentManager:
         # Create a single Environment or a TcpIpServer
         self.number_of_thread: int = 1 if force_local else environment_config.number_of_thread
         self.server: Optional[TcpIpServer] = None
-        self.environment: Optional[BaseEnvironment] = None
+        self.environment_controller: Optional[BaseEnvironmentController] = None
         # Create Server
         if environment_config.as_tcp_ip_client and not force_local:
             if visualizer_db is not None:
@@ -70,19 +70,17 @@ class EnvironmentManager:
             self.server.connect_visualization()
         # Create Environment
         else:
-            self.environment = environment_config.create_environment()
-            self.environment.environment_manager = self
-            self.data_manager.connect_handler(self.environment.get_database_handler())
-            self.environment.create()
-            self.environment.init()
-            self.environment.init_database()
+            self.environment_controller = environment_config.create_environment()
+            self.environment_controller.environment_manager = self
+            self.data_manager.connect_handler(self.environment_controller.database_handler)
+            self.environment_controller.create_environment()
             if visualizer_db is not None:
-                self.environment._create_visualization(visualization_db=visualizer_db,
-                                                       produce_data=produce_data)
+                self.environment_controller.create_visualization(visualization_db=visualizer_db,
+                                                                 produce_data=produce_data)
                 Visualizer.launch(backend=environment_config.visualizer,
                                   database_dir=join(session, 'dataset'),
                                   database_name=visualizer_db.get_path()[1])
-                self.environment._connect_visualization()
+                self.environment_controller.connect_visualization()
 
         # Define whether methods are used for environment or server
         self.get_database_handler = self.__get_server_db_handler if self.server else self.__get_environment_db_handler
@@ -107,7 +105,7 @@ class EnvironmentManager:
         Get the DatabaseHandler of the Environment.
         """
 
-        return self.environment.get_database_handler()
+        return self.environment_controller.database_handler
 
     ##########################################################################################
     ##########################################################################################
@@ -146,33 +144,33 @@ class EnvironmentManager:
             update_line = None
             if self.dataset_batch is not None:
                 update_line = self.dataset_batch.pop(0)
-                self.environment._get_training_data(update_line)
+                self.environment_controller.trigger_get_data(line_id=update_line)
 
             # 2. Run the defined number of steps
             if animate:
                 for current_step in range(self.simulations_per_step):
                     # Sub-steps do not produce data
-                    self.environment.compute_training_data = current_step == self.simulations_per_step - 1
-                    async_run(self.environment.step())
+                    self.environment_controller.compute_training_data = current_step == self.simulations_per_step - 1
+                    async_run(self.environment_controller.environment.step())
 
             # 3. Add the produced sample index to the batch if the sample is validated
-            if self.environment.check_sample():
+            if self.environment_controller.environment.check_sample():
                 nb_sample += 1
                 # 3.1. The prediction Pipeline triggers a prediction request
                 if request_prediction:
-                    self.environment._get_prediction()
+                    self.environment_controller.trigger_prediction()
                 # 3.2. Add the data to the Database
                 if save_data:
                     # Update the line if the sample was given by the database
                     if update_line is None:
-                        new_line = self.environment._send_training_data()
+                        new_line = self.environment_controller.trigger_send_data()
                         dataset_lines.append(new_line)
                     # Create a new line otherwise
                     else:
-                        self.environment._update_training_data(update_line)
+                        self.environment_controller.trigger_update_data(line_id=update_line)
                         dataset_lines.append(update_line)
                 # 3.3. Rest the data variables
-                self.environment._reset_training_data()
+                self.environment_controller.reset_data()
 
         return dataset_lines
 
@@ -192,7 +190,7 @@ class EnvironmentManager:
         self.__get_data_from_server(animate=animate)
 
     def __dispatch_batch_to_environment(self,
-                                        data_lines: List[int],
+                                        data_lines: Optional[List[int]] = None,
                                         animate: bool = True,
                                         save_data: bool = True,
                                         request_prediction: bool = False) -> None:
@@ -206,7 +204,7 @@ class EnvironmentManager:
         """
 
         # Define the batch to dispatch
-        self.dataset_batch = data_lines.copy()
+        self.dataset_batch = data_lines.copy() if data_lines is not None else None
         # Get data
         self.__get_data_from_environment(animate=animate,
                                          save_data=save_data,
@@ -224,14 +222,14 @@ class EnvironmentManager:
         """
 
         # Server case
-        if self.server:
+        if self.server is not None:
             self.server.close()
 
         # Environment case
-        if self.environment:
-            if self.environment.factory is not None:
-                self.environment.factory.close()
-            self.environment.close()
+        if self.environment_controller is not None:
+            if self.environment_controller.visualization_factory is not None:
+                self.environment_controller.visualization_factory.close()
+            self.environment_controller.environment.close()
 
     def __str__(self) -> str:
 

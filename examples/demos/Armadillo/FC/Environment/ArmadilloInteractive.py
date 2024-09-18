@@ -91,7 +91,7 @@ class Armadillo(BaseEnvironment):
                     self.areas[-1].append(i)
             # Create sphere at initial state
             self.spheres_init.append(self.mesh_coarse.points()[self.areas[-1]].mean(axis=0))
-            self.spheres.append(self.sphere(self.spheres_init[-1]).alpha(0.5))
+            self.spheres.append(self.sphere(self.spheres_init[-1]).alpha(1.))
 
         # Define fixed plane
         mesh_y = self.mesh.points()[:, 1]
@@ -107,8 +107,8 @@ class Armadillo(BaseEnvironment):
         self.plotter.add(self.mesh)
         self.plotter.add(Plane(pos=plane_origin, normal=[0, 1, 0], s=(10 * p_model.scale, 10 * p_model.scale),
                                c='darkred', alpha=0.2))
-        self.plotter.add(Text2D("Press 'b' to interact with the spheres / with the environment.\n"
-                                "Left click to select / unselect a sphere.", s=0.75))
+        # self.plotter.add(Text2D("Press 'b' to interact with the spheres / with the environment.\n"
+        #                         "Left click to select / unselect a sphere.", s=0.75))
 
         # Add callbacks
         self.plotter.add_callback('KeyPress', self.key_press)
@@ -183,6 +183,7 @@ class Armadillo(BaseEnvironment):
             self.update_mesh(positions=self.mapping.apply(updated_grid))
             self.update_arrows(positions=updated_coarse, vectors=0.1 * (F / amp) * self.mouse_factor)
             self.update_spheres(center=updated_coarse[self.areas[self.selected]].mean(axis=0))
+            self.plotter.render()
 
     def update_mesh(self, positions=None):
 
@@ -212,12 +213,12 @@ class Armadillo(BaseEnvironment):
         self.plotter.remove(*self.spheres)
         # If no center provided, reset all the spheres
         if self.interactive_window:
-            self.spheres = [self.sphere(c).alpha(0.5) for c in self.spheres_init]
+            self.spheres = [self.sphere(c).alpha(1.) for c in self.spheres_init]
         elif center is None:
             self.spheres = [self.sphere(c) for c in self.spheres_init]
         # Otherwise, update the selected cell
         else:
-            self.spheres = [self.sphere(center).alpha(0.5)]
+            self.spheres = [self.sphere(center).alpha(0.)]
         # Update the view
         self.plotter.add(*self.spheres)
 

@@ -71,4 +71,4 @@ def get_nb_nodes(source_file):
     :return: Number of nodes in the mesh
     """
 
-    return Mesh(source_file).N()
+    return Mesh(source_file).npoints

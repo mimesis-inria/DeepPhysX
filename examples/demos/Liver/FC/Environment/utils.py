@@ -11,7 +11,7 @@ def get_nb_nodes(source_file):
     :return: Number of node
     """
 
-    return vedo.Mesh(source_file).N()
+    return vedo.Mesh(source_file).npoints
 
 
 def find_center(source_file, scale):
@@ -23,7 +23,7 @@ def find_center(source_file, scale):
     :return: Center of mass of the object
     """
 
-    return vedo.Mesh(source_file).scale(scale).centerOfMass()
+    return vedo.Mesh(source_file).scale(scale).center_of_mass()
 
 
 def find_boundaries(source_file, objects_files_list, scale):
@@ -43,7 +43,7 @@ def find_boundaries(source_file, objects_files_list, scale):
     # Find intersections for each object
     for object_file in objects_files_list:
         object_mesh = vedo.Mesh(object_file)
-        intersect = source_mesh.intersectWith(object_mesh)
+        intersect = source_mesh.intersect_with(object_mesh)
         boundaries += intersect.points().tolist()
 
     # Find min and max corners of the bounding box

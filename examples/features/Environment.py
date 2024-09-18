@@ -17,18 +17,14 @@ from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
 class MeanEnvironment(BaseEnvironment):
 
     def __init__(self,
-                 as_tcp_ip_client=True,
-                 instance_id=1,
-                 instance_nb=1,
+                 instance_id=(1, 1),
                  constant=False,
                  data_size=(30, 2),
                  delay=False,
                  allow_request=True):
 
         BaseEnvironment.__init__(self,
-                                 as_tcp_ip_client=as_tcp_ip_client,
-                                 instance_id=instance_id,
-                                 instance_nb=instance_nb)
+                                 instance_id=instance_id)
 
         # Define training data values
         self.pcd = array([])
@@ -122,3 +118,17 @@ class MeanEnvironment(BaseEnvironment):
     def close(self):
         # Shutdown message
         print("Bye!")
+
+
+if __name__ == '__main__':
+    from time import time
+    from asyncio import run
+    env = MeanEnvironment(constant=False, delay=False, allow_request=False)
+    env.create()
+    times = []
+    for _ in range(100):
+        start = time()
+        run(env.step())
+        times.append(time() - start)
+    from numpy import array
+    print(array(times).mean())

@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional, List
-from os import listdir
+from os import listdir, remove
 from os.path import join, isdir, isfile, sep
 from numpy import ndarray, array
 
@@ -35,7 +35,7 @@ class NetworkManager:
         self.network_dir: Optional[str] = None
         self.network_template_name: str = session.split(sep)[-1] + '_network_{}'
         self.saved_counter: int = 0
-        self.save_each_epoch: bool = network_config.save_each_epoch
+        self.save_every_epoch: int = network_config.save_every_epoch
 
         # Init Network
         self.network = network_config.create_network()
@@ -120,7 +120,7 @@ class NetworkManager:
         networks_list = sorted(networks_list)
         last_saved_network = [join(self.network_dir, f) for f in listdir(self.network_dir) if
                               isfile(join(self.network_dir, f)) and f.__contains__('network.')]
-        networks_list = networks_list + last_saved_network
+        networks_list += last_saved_network
 
         # 2. Check the Network to access
         if len(networks_list) == 0:
@@ -150,12 +150,25 @@ class NetworkManager:
             print(f"[{self.name}] Saving final network at {self.network_dir}.")
             self.network.save_parameters(path)
 
-        # Intermediate states saving
-        elif self.save_each_epoch:
-            path = self.network_dir + self.network_template_name.format(self.saved_counter)
-            self.saved_counter += 1
-            print(f"[{self.name}] Saving intermediate network at {path}.")
-            self.network.save_parameters(path)
+        # Intermediate session saving
+        else:
+            # Remove previous temp file
+            temp_files = [file for file in listdir(self.network_dir) if 'backup' in file]
+            for temp_file in temp_files:
+                remove(join(self.network_dir, temp_file))
+            # Save intermediate state (either checkpoint, either backup)
+            if self.save_every_epoch > 0:
+                self.saved_counter += 1
+                if self.saved_counter % self.save_every_epoch:
+                    path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
+                    print(f"[{self.name}] Saving intermediate network at {path}.")
+                    self.network.save_parameters(path)
+                else:
+                    path = join(self.network_dir, 'backup_network')
+                    self.network.save_parameters(path)
+            else:
+                path = join(self.network_dir, 'backup_network')
+                self.network.save_parameters(path)
 
     ##########################################################################################
     ##########################################################################################
@@ -293,7 +306,6 @@ class NetworkManager:
         description = "\n"
         description += f"# {self.__class__.__name__}\n"
         description += f"    Network Directory: {self.network_dir}\n"
-        description += f"    Save each Epoch: {self.save_each_epoch}\n"
         description += f"    Managed objects: Network: {self.network.__class__.__name__}\n"
         description += f"                     Optimization: {self.optimization.__class__.__name__}\n"
         description += f"                     Data Transformation: {self.data_transformation.__class__.__name__}\n"

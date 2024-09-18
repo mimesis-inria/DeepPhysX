@@ -18,7 +18,7 @@ class BaseNetworkConfig:
                  network_name: str = 'Network',
                  network_type: str = 'BaseNetwork',
                  which_network: int = -1,
-                 save_each_epoch: bool = False,
+                 save_intermediate_state_every: int = 0,
                  data_type: str = 'float32',
                  lr: Optional[float] = None,
                  require_training_stuff: bool = True,
@@ -35,8 +35,7 @@ class BaseNetworkConfig:
         :param network_name: Name of the network.
         :param network_type: Type of the network.
         :param which_network: If several networks in network_dir, load the specified one.
-        :param save_each_epoch: If True, network state will be saved at each epoch end; if False, network state
-                                will be saved at the end of the training.
+        :param save_intermediate_state_every: Save the current state of the Network periodically.
         :param data_type: Type of the training data.
         :param lr: Learning rate.
         :param require_training_stuff: If specified, loss and optimizer class can be not necessary for training.
@@ -65,10 +64,11 @@ class BaseNetworkConfig:
         if type(which_network) != int:
             raise TypeError(
                 f"[{self.__class__.__name__}] Wrong 'which_network' type: int required, get {type(which_network)}")
-        # Check save_each_epoch type
-        if type(save_each_epoch) != bool:
+        # Check save_intermediate_states type and value
+        if type(save_intermediate_state_every) != int:
             raise TypeError(
-                f"[{self.__class__.__name__}] Wrong 'save each epoch' type: bool required, get {type(save_each_epoch)}")
+                f"[{self.__class__.__name__}] Wrong 'save_intermediate_state_every' type: int required, get "
+                f"{type(save_intermediate_state_every)}")
         # Check data type
         if data_type not in sctypeDict:
             raise ValueError(
@@ -99,7 +99,7 @@ class BaseNetworkConfig:
         # NetworkManager parameterization
         self.network_dir: str = network_dir
         self.which_network: int = which_network
-        self.save_each_epoch: bool = save_each_epoch and self.training_stuff
+        self.save_every_epoch: int = save_intermediate_state_every and self.training_stuff
 
     def create_network(self) -> BaseNetwork:
         """

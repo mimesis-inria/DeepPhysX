@@ -28,7 +28,7 @@ def get_SSD():
     try:
         import SSD
     except ModuleNotFoundError:
-        return ['SimulationSimpleDatabase >= 22.12']
+        return ['SimulationSimpleDatabase >= 24.1']
     return []
 
 

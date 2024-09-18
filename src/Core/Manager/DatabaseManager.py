@@ -6,7 +6,7 @@ from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt, empty, concatenate
 from numpy.random import shuffle
 
-from SSD.Core.Storage.Database import Database
+from SSD.Core.Storage.database import Database
 
 from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Core.Database.DatabaseHandler import DatabaseHandler
@@ -600,6 +600,13 @@ class DatabaseManager:
         return partition.get_lines(table_name='Training',
                                    fields=fields,
                                    batched=True)
+
+    @staticmethod
+    def load_normalization(session_dir: str) -> Dict[str, List[float]]:
+
+        with open(join(session_dir, 'dataset', 'dataset.json')) as json_file:
+            json_content = json_load(json_file)
+        return json_content['normalization']
 
     ##########################################################################################
     ##########################################################################################
