@@ -1,19 +1,17 @@
-from typing import Optional
 from os.path import join, sep, exists
 from vedo import ProgressBar
 
 from DeepPhysX.pipelines.core.base_pipeline import BasePipeline
-from DeepPhysX.pipelines.core.data_manager import DataManager
-from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig, DatabaseHandler
+from DeepPhysX.simulation.core.environment_manager import EnvironmentManager, BaseEnvironmentConfig
 from DeepPhysX.utils.path import create_dir
 
 
-class BaseDataGeneration(BasePipeline):
+class DataGeneration(BasePipeline):
 
     def __init__(self,
                  environment_config: BaseEnvironmentConfig,
-                 database_config: Optional[DatabaseConfig] = None,
+                 database_config: DatabaseConfig,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
@@ -46,14 +44,18 @@ class BaseDataGeneration(BasePipeline):
             self.session_name = create_dir(session_dir=self.session_dir,
                                            session_name=self.session_name).split(sep)[-1]
 
-        # Create a DataManager
-        self.data_manager = DataManager(pipeline=self,
-                                        database_config=database_config,
-                                        environment_config=environment_config,
-                                        session=join(self.session_dir, self.session_name),
-                                        new_session=self.new_session,
-                                        produce_data=True,
-                                        batch_size=batch_size)
+        # Create Managers
+        self.database_manager = DatabaseManager(database_config=database_config,
+                                                pipeline=self.type,
+                                                session=join(self.session_dir, self.session_name),
+                                                new_session=self.new_session,
+                                                produce_data=True)
+        self.environment_manager = EnvironmentManager(environment_config=environment_config,
+                                                      pipeline=self.type,
+                                                      session=join(self.session_dir, self.session_name),
+                                                      produce_data=True,
+                                                      batch_size=batch_size)
+        self.environment_manager.connect_to_database(**self.database_manager.get_database_paths())
 
         # Data generation variables
         self.batch_nb: int = batch_nb
@@ -64,66 +66,18 @@ class BaseDataGeneration(BasePipeline):
     def execute(self) -> None:
         """
         Launch the data generation Pipeline.
-        Each event is already implemented for a basic Pipeline but can also be rewritten via inheritance to describe a
-        more complex Pipeline.
         """
 
-        self.data_generation_begin()
-        while self.batch_condition():
-            self.batch_begin()
-            self.batch_produce()
-            self.batch_count()
-            self.batch_end()
-        self.data_generation_end()
+        while self.batch_id < self.batch_nb:
 
-    def data_generation_begin(self) -> None:
-        """
-        Called once at the beginning of the data generation Pipeline.
-        """
+            lines_id = self.environment_manager.get_data(animate=True)
+            self.database_manager.add_data(data_lines=lines_id)
 
-        pass
+            self.batch_id += 1
+            self.progress_bar.print()
 
-    def batch_condition(self) -> bool:
-        """
-        Check the batch number condition.
-        """
-
-        return self.batch_id < self.batch_nb
-
-    def batch_begin(self) -> None:
-        """
-        Called once at the beginning of a batch production.
-        """
-
-        pass
-
-    def batch_produce(self) -> None:
-        """
-        Trigger the data production.
-        """
-
-        self.data_manager.get_data()
-
-    def batch_count(self) -> None:
-        """
-        Increment the batch counter.
-        """
-
-        self.batch_id += 1
-
-    def batch_end(self) -> None:
-        """
-        Called once at the end of a batch production.
-        """
-
-        self.progress_bar.print()
-
-    def data_generation_end(self) -> None:
-        """
-        Called once at the beginning of the data generation Pipeline.
-        """
-
-        self.data_manager.close()
+        self.database_manager.close()
+        self.environment_manager.close()
 
     def __str__(self):
 

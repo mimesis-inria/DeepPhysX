@@ -30,9 +30,7 @@ class TcpIpClient(TcpIpObject):
         :param instance_nb: Number of simultaneously launched instances.
         """
 
-        TcpIpObject.__init__(self,
-                             ip_address=ip_address,
-                             port=port)
+        TcpIpObject.__init__(self)
 
         # Environment instance
         self.environment_class = environment
@@ -82,13 +80,13 @@ class TcpIpClient(TcpIpObject):
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
 
         # Receive partitions
-        partitions_list = await self.receive_data(loop=loop, sender=self.sock)
-        partitions_list, exchange = partitions_list.split('%%%')
-        partitions = [[partitions_list.split('///')[0], partition_name]
-                      for partition_name in partitions_list.split('///')[1:]]
-        exchange = [exchange.split('///')[0], exchange.split('///')[1]]
-        self.environment_controller.database_handler.init_remote(storing_partitions=partitions,
-                                                                 exchange_db=exchange)
+        # partitions_list = await self.receive_data(loop=loop, sender=self.sock)
+        # partitions_list, exchange = partitions_list.split('%%%')
+        # partitions = [[partitions_list.split('///')[0], partition_name]
+        #               for partition_name in partitions_list.split('///')[1:]]
+        # exchange = [exchange.split('///')[0], exchange.split('///')[1]]
+        # self.environment_controller.database_handler.init_remote(storing_partitions=partitions,
+        #                                                          exchange_db=exchange)
 
         # Receive visualization database
         visualization_db = await self.receive_data(loop=loop, sender=self.sock)
@@ -105,8 +103,12 @@ class TcpIpClient(TcpIpObject):
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
         # Synchronize Database
-        _ = await self.receive_data(loop=loop, sender=self.sock)
-        self.environment_controller.database_handler.load()
+        database = (await self.receive_data(loop=loop, sender=self.sock),
+                    await self.receive_data(loop=loop, sender=self.sock))
+        exchange = (await self.receive_data(loop=loop, sender=self.sock),
+                    await self.receive_data(loop=loop, sender=self.sock))
+        self.environment_controller.connect_to_database(database=database, exchange_db=exchange)
+        await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
         # Connect to Visualizer
         if visualization_db is not None:

@@ -131,46 +131,25 @@ class BaseEnvironment:
     ##########################################################################################
     ##########################################################################################
 
-    def define_training_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+    def define_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
         """
-        Specify the training data fields names and types.
+        Specify the data fields names and types.
 
-        :param fields: Field or list of fields to tag as training data.
-        """
-
-        self.__controller.define_database_fields(table_name='Training', fields=fields)
-
-    def define_additional_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
-        """
-        Specify the additional data fields names and types.
-
-        :param fields: Field or list of Fields to tag as additional data.
+        :param fields: Field or list of fields to store data.
         """
 
-        self.__controller.define_database_fields(table_name='Additional', fields=fields)
+        self.__controller.define_database_fields(fields=fields)
 
-    def set_training_data(self, **kwargs) -> None:
+    def set_data(self, **kwargs) -> None:
         """
         Set the training data to send to the TcpIpServer or the EnvironmentManager.
         """
 
-        self.__controller.set_training_data(**kwargs)
-
-    def set_additional_data(self,
-                            **kwargs) -> None:
-        """
-        Set the additional data to send to the TcpIpServer or the EnvironmentManager.
-        """
-
-        self.__controller.set_additional_data(**kwargs)
+        self.__controller.set_data(**kwargs)
 
     @property
-    def training_data(self) -> Dict[str, ndarray]:
-        return self.__controller.get_training_data()
-
-    @property
-    def additional_data(self) -> Dict[str, ndarray]:
-        return self.__controller.get_additional_data()
+    def data(self) -> Dict[str, ndarray]:
+        return self.__controller.get_data()
 
     ##########################################################################################
     ##########################################################################################

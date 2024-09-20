@@ -16,14 +16,9 @@ Convertible = Union[type(None), bytes, str, bool, int, float, List, ndarray]
 
 class TcpIpObject:
 
-    def __init__(self,
-                 ip_address: str = 'localhost',
-                 port: int = 10000):
+    def __init__(self):
         """
         TcpIpObject defines communication protocols to send and receive data and commands.
-
-        :param ip_address: IP address of the TcpIpObject.
-        :param port: Port number of the TcpIpObject.
         """
 
         self.name: str = self.__class__.__name__
@@ -32,8 +27,8 @@ class TcpIpObject:
         self.sock: socket = socket(AF_INET, SOCK_STREAM)
         self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # Register IP and PORT
-        self.ip_address: str = ip_address
-        self.port: int = port
+        self.ip_address: str = 'localhost'
+        self.port: int = 0
         # Create data converter
         self.data_converter: BytesConverter = BytesConverter()
         # Available commands

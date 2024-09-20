@@ -13,10 +13,7 @@ class BaseEnvironmentConfig:
 
     def __init__(self,
                  environment_class: Type[BaseEnvironment],
-                 as_tcp_ip_client: bool = True,
-                 number_of_thread: int = 1,
-                 ip_address: str = 'localhost',
-                 port: int = 10000,
+                 nb_parallel_env: int = 1,
                  simulations_per_step: int = 1,
                  max_wrong_samples_per_step: int = 10,
                  load_samples: bool = False,
@@ -30,10 +27,7 @@ class BaseEnvironmentConfig:
         EnvironmentManager.
 
         :param environment_class: Class from which an instance will be created.
-        :param as_tcp_ip_client: Environment is owned by a TcpIpClient if True, by an EnvironmentManager if False.
-        :param number_of_thread: Number of thread to run.
-        :param ip_address: IP address of the TcpIpObject.
-        :param port: Port number of the TcpIpObject.
+        :param nb_parallel_env: Number of simulations to run in parallel.
         :param simulations_per_step: Number of iterations to compute in the Environment at each time step.
         :param max_wrong_samples_per_step: Maximum number of wrong samples to produce in a step.
         :param load_samples: If True, the dataset will always be used in the environment.
@@ -63,22 +57,16 @@ class BaseEnvironmentConfig:
         if type(only_first_epoch) != bool:
             raise TypeError(f"[{self.name}] Wrong always_create_data type: bool required, get "
                             f"{type(only_first_epoch)}")
-        if type(number_of_thread) != int:
-            raise TypeError(f"[{self.name}] The number_of_thread number must be a positive integer.")
-        if number_of_thread < 0:
-            raise ValueError(f"[{self.name}] The number_of_thread number must be a positive integer.")
+        if nb_parallel_env < 0:
+            raise ValueError(f"[{self.name}] The nb_parallel_env number must be a positive integer.")
 
         # TcpIpClients variables
         self.environment_class: Type[BaseEnvironment] = environment_class
         self.environment_file: str = modules[self.environment_class.__module__].__file__
-        self.as_tcp_ip_client: bool = as_tcp_ip_client
 
         # TcpIpServer variables
-        self.number_of_thread: int = min(max(number_of_thread, 1), cpu_count())  # Assert nb is between 1 and cpu_count
-        self.ip_address: str = ip_address
-        self.port: int = port
+        self.nb_parallel_env: int = min(max(nb_parallel_env, 1), cpu_count())  # Assert nb is between 1 and cpu_count
         self.server_is_ready: bool = False
-        self.max_client_connections: int = 100
 
         # EnvironmentManager variables
         self.simulations_per_step: int = simulations_per_step
@@ -106,10 +94,7 @@ class BaseEnvironmentConfig:
         """
 
         # Create server
-        server = TcpIpServer(ip_address=self.ip_address,
-                             port=self.port,
-                             nb_client=self.number_of_thread,
-                             max_client_count=self.max_client_connections,
+        server = TcpIpServer(nb_client=self.nb_parallel_env,
                              batch_size=batch_size,
                              manager=environment_manager)
         server_thread = Thread(target=self.start_server, args=(server, visualization_db))
@@ -117,8 +102,8 @@ class BaseEnvironmentConfig:
 
         # Create clients
         client_threads = []
-        for i in range(self.number_of_thread):
-            client_thread = Thread(target=self.start_client, args=(i + 1,))
+        for i in range(self.nb_parallel_env):
+            client_thread = Thread(target=self.start_client, args=(server, i + 1))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
@@ -144,16 +129,18 @@ class BaseEnvironmentConfig:
         self.server_is_ready = True
 
     def start_client(self,
+                     server: TcpIpServer,
                      idx: int = 1) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
+        :param server: TcpIpServer.
         :param idx: Index of client.
         """
 
         script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcher_base_environment.py')
         run([executable, script, self.environment_file, self.environment_class.__name__,
-             self.ip_address, str(self.port), str(idx), str(self.number_of_thread)])
+             server.ip_address, str(server.port), str(idx), str(self.nb_parallel_env)])
 
     def create_environment(self) -> BaseEnvironmentController:
         """

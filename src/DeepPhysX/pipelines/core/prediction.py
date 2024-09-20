@@ -4,7 +4,7 @@ from os.path import join, exists
 from DeepPhysX.pipelines.core.base_pipeline import BasePipeline
 from DeepPhysX.pipelines.core.data_manager import DataManager
 from DeepPhysX.networks.core.network_manager import NetworkManager
-from DeepPhysX.networks.core.base_network_config import BaseNetworkConfig
+from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
 

@@ -1,6 +1,6 @@
 from typing import Optional, Any, List, Union
 
-from DeepPhysX.networks.core.base_network_config import BaseNetworkConfig
+from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
 from DeepPhysX.pipelines.core.data_manager import DataManager
@@ -14,7 +14,7 @@ from DeepPhysX.utils.path import get_session_dir
 class BasePipeline:
 
     def __init__(self,
-                 network_config: Optional[BaseNetworkConfig] = None,
+                 network_config: Optional[DPXNetworkConfig] = None,
                  database_config: Optional[DatabaseConfig] = None,
                  environment_config: Optional[BaseEnvironmentConfig] = None,
                  new_session: bool = True,

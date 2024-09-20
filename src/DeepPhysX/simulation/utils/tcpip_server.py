@@ -12,31 +12,29 @@ from DeepPhysX.database.database_handler import DatabaseHandler
 class TcpIpServer(TcpIpObject):
 
     def __init__(self,
-                 ip_address: str = 'localhost',
-                 port: int = 10000,
                  nb_client: int = 5,
                  max_client_count: int = 10,
                  batch_size: int = 5,
-                 manager: Optional[Any] = None):
+                 manager: Optional[Any] = None,
+                 debug: bool = True):
         """
         TcpIpServer is used to communicate with clients associated with Environment to produce batches for the
         EnvironmentManager.
 
-        :param ip_address: IP address of the TcpIpObject.
-        :param port: Port number of the TcpIpObject.
         :param nb_client: Number of expected client connections.
         :param max_client_count: Maximum number of allowed clients.
         :param batch_size: Number of samples in a batch.
         :param manager: EnvironmentManager that handles the TcpIpServer.
         """
 
-        super(TcpIpServer, self).__init__(ip_address=ip_address,
-                                          port=port)
+        super(TcpIpServer, self).__init__()
+
+        self.debug = debug
 
         # Bind to server address
-        print(f"[{self.name}] Binding to IP Address: {ip_address} on PORT: {port} with maximum client count: "
-              f"{max_client_count}")
-        self.sock.bind((ip_address, port))
+        self.sock.bind((self.ip_address, self.port))
+        self.port = self.sock.getsockname()[1]
+        self.message(f"[{self.name}] Binding to IP '{self.ip_address}' on PORT '{self.port}'")
         self.sock.listen(max_client_count)
         self.sock.setblocking(False)
 
@@ -56,9 +54,10 @@ class TcpIpServer(TcpIpObject):
         # Reference to EnvironmentManager
         self.environment_manager: Optional[Any] = manager
 
-        # Connect the Server to the Database
-        self.database_handler = DatabaseHandler(on_partitions_handler=self.__database_handler_partitions)
-        self.environment_manager.data_manager.connect_handler(self.database_handler)
+    def message(self, txt: str):
+
+        if self.debug:
+            print(txt)
 
     ##########################################################################################
     ##########################################################################################
@@ -66,24 +65,24 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def get_database_handler(self) -> DatabaseHandler:
-        """
-        Get the DatabaseHandler of the TcpIpServer.
-        """
+    # def get_database_handler(self) -> DatabaseHandler:
+    #     """
+    #     Get the DatabaseHandler of the TcpIpServer.
+    #     """
+    #
+    #     return self.database_handler
 
-        return self.database_handler
-
-    def __database_handler_partitions(self) -> None:
-        """
-        Partition update event of the DatabaseHandler.
-        """
-
-        # Send the new partition to every Client
-        for _, client in self.clients:
-            self.sync_send_command_change_db(receiver=client)
-            new_partition = self.database_handler.get_partitions()[-1]
-            self.sync_send_data(data_to_send=f'{new_partition.get_path()[0]}///{new_partition.get_path()[1]}',
-                                receiver=client)
+    # def __database_handler_partitions(self) -> None:
+    #     """
+    #     Partition update event of the DatabaseHandler.
+    #     """
+    #
+    #     # Send the new partition to every Client
+    #     for _, client in self.clients:
+    #         self.sync_send_command_change_db(receiver=client)
+    #         new_partition = self.database_handler.get_partitions()[-1]
+    #         self.sync_send_data(data_to_send=f'{new_partition.get_path()[0]}///{new_partition.get_path()[1]}',
+    #                             receiver=client)
 
     ##########################################################################################
     ##########################################################################################
@@ -96,7 +95,7 @@ class TcpIpServer(TcpIpObject):
         Accept connections from clients.
         """
 
-        print(f"[{self.name}] Waiting for clients...")
+        self.message(f"[{self.name}] Waiting for clients...")
         async_run(self.__connect())
 
     async def __connect(self) -> None:
@@ -160,20 +159,20 @@ class TcpIpServer(TcpIpObject):
             await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)
 
             # Send partitions
-            partitions = self.database_handler.get_partitions()
-            if len(partitions) == 0:
-                partitions_list = 'None'
-            else:
-                partitions_list = partitions[0].get_path()[0]
-                for partition in partitions:
-                    partitions_list += f'///{partition.get_path()[1]}'
-            partitions_list += '%%%'
-            exchange = self.database_handler.get_exchange()
-            if exchange is None:
-                partitions += 'None'
-            else:
-                partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
-            await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
+            # partitions = self.database_handler.get_partitions()
+            # if len(partitions) == 0:
+            #     partitions_list = 'None'
+            # else:
+            #     partitions_list = partitions[0].get_path()[0]
+            #     for partition in partitions:
+            #         partitions_list += f'///{partition.get_path()[1]}'
+            # partitions_list += '%%%'
+            # exchange = self.database_handler.get_exchange()
+            # if exchange is None:
+            #     partitions += 'None'
+            # else:
+            #     partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
+            # await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
 
             # Send visualization Database
             visualization = 'None' if visualization_db is None else f'{visualization_db[0]}///{visualization_db[1]}'
@@ -184,8 +183,26 @@ class TcpIpServer(TcpIpObject):
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
         # Synchronize Clients
+        # for client_id, client in self.clients:
+        #     await self.send_data(data_to_send='sync', loop=loop, receiver=client)
+
+    def connect_to_database(self,
+                            database: Tuple[str, str],
+                            exchange_db: Tuple[str, str]):
+
+        async_run(self.__connect_to_database(database, exchange_db))
+
+    async def __connect_to_database(self,
+                                    database: Tuple[str, str],
+                                    exchange_db: Tuple[str, str]):
+
+        loop = get_event_loop()
         for client_id, client in self.clients:
-            await self.send_data(data_to_send='sync', loop=loop, receiver=client)
+            await self.send_data(data_to_send=database[0], loop=loop, receiver=client)
+            await self.send_data(data_to_send=database[1], loop=loop, receiver=client)
+            await self.send_data(data_to_send=exchange_db[0], loop=loop, receiver=client)
+            await self.send_data(data_to_send=exchange_db[1], loop=loop, receiver=client)
+            await self.receive_data(loop=loop, sender=client)
 
     def connect_visualization(self) -> None:
         """

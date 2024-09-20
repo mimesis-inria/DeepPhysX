@@ -39,7 +39,6 @@ class DataManager:
 
         # Create a DatabaseManager
         self.database_manager = DatabaseManager(database_config=database_config,
-                                                data_manager=self,
                                                 pipeline=pipeline.type,
                                                 session=session,
                                                 new_session=new_session,

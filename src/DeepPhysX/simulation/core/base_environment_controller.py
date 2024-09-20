@@ -28,14 +28,12 @@ class BaseEnvironmentController(AbstractController):
         # Create the Database Handler
         self.__use_database: bool = use_database
         self.__database_handler: DatabaseHandler = DatabaseHandler()
-        if self.__use_database:
-            self.__database_handler.set_init_handler(self.__database_handler.load)
+        # if self.__use_database:
+        #     self.__database_handler.set_init_handler(self.__database_handler.load)
 
         # Produced data variables
-        self.__data_training: Dict[str, ndarray] = {}
-        self.__data_additional: Dict[str, ndarray] = {}
-        self.__sample_training: Dict[str, ndarray] = {}
-        self.__sample_additional: Dict[str, ndarray] = {}
+        self.__data: Dict[str, ndarray] = {}
+        self.__sample: Dict[str, ndarray] = {}
 
         # Training data variables
         self.compute_training_data: bool = True
@@ -73,6 +71,12 @@ class BaseEnvironmentController(AbstractController):
 
         self.__environment.create()
         self.__environment.init()
+
+    def connect_to_database(self,
+                            database: Tuple[str, str],
+                            exchange_db: Tuple[str, str]):
+
+        self.database_handler.init(database=database, exchange_db=exchange_db)
         self.__environment.init_database()
 
     def save_parameters(self, **kwargs) -> None:
@@ -107,15 +111,15 @@ class BaseEnvironmentController(AbstractController):
             return database.get_line(table_name=f'Environment_{self.__environment_id}')
         return {}
 
-    def define_database_fields(self, table_name: str, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+    def define_database_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
         """
         Specify the data fields names and types.
 
-        :param table_name: Name of the Table of the Database to edit.
         :param fields: Field or list of fields to tag as training data.
         """
 
-        self.__database_handler.create_fields(table_name=table_name, fields=fields)
+        if self.__environment_id == 1:
+            self.__database_handler.create_fields(fields=fields)
 
     def create_visualization(self,
                              visualization_db: Union[Database, Tuple[str, str]],
@@ -142,17 +146,16 @@ class BaseEnvironmentController(AbstractController):
 
         self.__visualization_factory.connect_visualizer()
 
-    def set_training_data(self, **kwargs) -> None:
+    def set_data(self, **kwargs) -> None:
         """
-        Set the training data to send to the TcpIpServer or the EnvironmentManager.
+        Set the data to send to the TcpIpServer or the EnvironmentManager.
         """
 
         # 1. Check kwargs
         default_fields = {'id', 'env_id'}
         if len(self.__required_fields) == 0:
             self.__database_handler.load()
-            self.__required_fields = list(set(self.__database_handler.get_fields(table_name='Training')) -
-                                          default_fields)
+            self.__required_fields = list(set(self.__database_handler.get_fields()) - default_fields)
 
         # 1.1. Check that default fields are not set by user
         user_fields = set(kwargs.keys())
@@ -178,18 +181,8 @@ class BaseEnvironmentController(AbstractController):
 
         # 2. Set the training data
         if self.compute_training_data:
-            self.__data_training = kwargs
-            self.__data_training['env_id'] = self.__environment_id
-
-    def set_additional_data(self, **kwargs) -> None:
-        """
-        Set the additional data to send to the TcpIpServer or the EnvironmentManager.
-        """
-
-        # Set the Additional data
-        if self.compute_training_data:
-            self.__data_additional = kwargs
-            self.__data_additional['env_id'] = self.__environment_id
+            self.__data = kwargs
+            self.__data['env_id'] = self.__environment_id
 
     def get_training_data(self) -> Dict[str, ndarray]:
         return self.__sample_training
@@ -280,19 +273,15 @@ class BaseEnvironmentController(AbstractController):
         Add the training data and the additional data in their respective Databases.
         """
 
-        line_id = self.__database_handler.add_data(table_name='Training', data=self.__data_training)
-        self.__database_handler.add_data(table_name='Additional', data=self.__data_additional)
-        return line_id
+        return self.__database_handler.add_data(data=self.__data)
 
     def trigger_update_data(self, line_id: List[int]) -> None:
         """
         Update the training data and the additional data in their respective Databases.
         """
 
-        if len(self.__data_training) > 0:
-            self.__database_handler.update(table_name='Training', data=self.__data_training, line_id=line_id)
-        if len(self.__data_additional) > 0:
-            self.__database_handler.update(table_name='Additional', data=self.__data_additional, line_id=line_id)
+        if len(self.__data) > 0:
+            self.__database_handler.update(data=self.__data, line_id=line_id)
 
     def trigger_get_data(self, line_id: List[int]) -> None:
         """
