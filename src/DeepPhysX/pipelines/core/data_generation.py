@@ -2,15 +2,15 @@ from os.path import join, sep, exists
 from vedo import ProgressBar
 
 from DeepPhysX.pipelines.core.base_pipeline import BasePipeline
-from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig, DatabaseHandler
-from DeepPhysX.simulation.core.environment_manager import EnvironmentManager, BaseEnvironmentConfig
+from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
+from DeepPhysX.simulation.core.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir
 
 
 class DataGeneration(BasePipeline):
 
     def __init__(self,
-                 environment_config: BaseEnvironmentConfig,
+                 environment_config: SimulationConfig,
                  database_config: DatabaseConfig,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
@@ -50,11 +50,11 @@ class DataGeneration(BasePipeline):
                                                 session=join(self.session_dir, self.session_name),
                                                 new_session=self.new_session,
                                                 produce_data=True)
-        self.environment_manager = EnvironmentManager(environment_config=environment_config,
-                                                      pipeline=self.type,
-                                                      session=join(self.session_dir, self.session_name),
-                                                      produce_data=True,
-                                                      batch_size=batch_size)
+        self.environment_manager = SimulationManager(config=environment_config,
+                                                     pipeline=self.type,
+                                                     session=join(self.session_dir, self.session_name),
+                                                     produce_data=True,
+                                                     batch_size=batch_size)
         self.environment_manager.connect_to_database(**self.database_manager.get_database_paths())
 
         # Data generation variables

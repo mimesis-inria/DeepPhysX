@@ -1,15 +1,13 @@
-from typing import Any, Optional, List, Tuple
+from typing import Optional, List, Tuple
 from asyncio import run as async_run
-from os.path import join
 
-from DeepPhysX.simulation.core.base_environment_config import TcpIpServer, BaseEnvironmentConfig, BaseEnvironmentController
-from SSD.Core.Rendering.visualizer import Visualizer, Database
+from DeepPhysX.simulation.core.simulation_config import TcpIpServer, SimulationConfig, SimulationController
 
 
-class EnvironmentManager:
+class SimulationManager:
 
     def __init__(self,
-                 environment_config: BaseEnvironmentConfig,
+                 config: SimulationConfig,
                  pipeline: str = '',
                  session: str = 'sessions/default',
                  produce_data: bool = True,
@@ -17,7 +15,7 @@ class EnvironmentManager:
         """
         EnvironmentManager handle the communication with Environment(s).
 
-        :param environment_config: Configuration object with the parameters of the Environment.
+        :param config: Configuration object with the parameters of the Environment.
         :param pipeline: Type of the pipeline.
         :param session: Path to the session repository.
         :param produce_data: If True, this session will store data in the Database.
@@ -28,57 +26,34 @@ class EnvironmentManager:
 
         # Data production variables
         self.batch_size: int = batch_size
-        self.only_first_epoch: bool = environment_config.only_first_epoch
-        self.load_samples: bool = environment_config.load_samples
-        self.always_produce: bool = environment_config.always_produce
-        self.simulations_per_step: int = environment_config.simulations_per_step
-        self.max_wrong_samples_per_step: int = environment_config.max_wrong_samples_per_step
+        self.only_first_epoch: bool = config.only_first_epoch
+        self.load_samples: bool = config.load_samples
+        self.always_produce: bool = config.always_produce
+        self.simulations_per_step: int = config.simulations_per_step
+        self.max_wrong_samples_per_step: int = config.max_wrong_samples_per_step
         self.allow_prediction_requests: bool = pipeline != 'data_generation'
         self.dataset_batch: Optional[List[List[int]]] = None
 
-        # Create a Visualizer to provide the visualization Database
-        force_local = pipeline == 'prediction'
-        visualizer_db: Optional[Database] = None
-        if environment_config.visualizer is not None:
-            visualizer_db = Database(database_dir=join(session, 'dataset'),
-                                     database_name='Visualization').new()
-
         # Create a single Environment or a TcpIpServer
-        self.nb_parallel_env: int = 1 if force_local else environment_config.nb_parallel_env
+        force_local = pipeline == 'prediction'
+        self.nb_parallel_env: int = 1 if force_local else config.nb_parallel_env
         self.server: Optional[TcpIpServer] = None
-        self.environment_controller: Optional[BaseEnvironmentController] = None
+        self.environment_controller: Optional[SimulationController] = None
 
         # Create Server
         if self.nb_parallel_env > 1 and not force_local:
-            if visualizer_db is not None:
-                visualizer_db.create_table(table_name='Temp')
-            self.server = environment_config.create_server(environment_manager=self,
-                                                           batch_size=batch_size,
-                                                           visualization_db=None if visualizer_db is None else
-                                                           visualizer_db.get_path())
-            if visualizer_db is not None:
-                visualizer_db.remove_table(table_name='Temp')
-                Visualizer.launch(backend=environment_config.visualizer,
-                                  database_dir=join(session, 'dataset'),
-                                  database_name=visualizer_db.get_path()[1],
-                                  nb_clients=environment_config.nb_parallel_env)
-                self.server.connect_visualization()
+            self.server = config.create_server(environment_manager=self,
+                                               batch_size=batch_size)
 
         # Create Environment
         else:
-            self.environment_controller = environment_config.create_environment()
+            self.environment_controller = config.create_environment()
             self.environment_controller.environment_manager = self
             self.environment_controller.create_environment()
-            if visualizer_db is not None:
-                self.environment_controller.create_visualization(visualization_db=visualizer_db,
-                                                                 produce_data=produce_data)
-                Visualizer.launch(backend=environment_config.visualizer,
-                                  database_dir=join(session, 'dataset'),
-                                  database_name=visualizer_db.get_path()[1])
-                self.environment_controller.connect_visualization()
+            if config.use_viewer:
+                self.environment_controller.launch_visualization()
 
         # Define whether methods are used for environment or server
-        # self.get_database_handler = self.__get_server_db_handler if self.server else self.__get_environment_db_handler
         self.get_data = self.__get_data_from_server if self.server else self.__get_data_from_environment
         self.dispatch_batch = self.__dispatch_batch_to_server if self.server else self.__dispatch_batch_to_environment
 
@@ -96,20 +71,6 @@ class EnvironmentManager:
             self.environment_controller.connect_to_database(database=database, exchange_db=exchange_db)
         elif self.server is not None:
             self.server.connect_to_database(database=database, exchange_db=exchange_db)
-
-    # def __get_server_db_handler(self) -> DatabaseHandler:
-    #     """
-    #     Get the DatabaseHandler of the TcpIpServer.
-    #     """
-    #
-    #     return self.server.get_database_handler()
-
-    # def __get_environment_db_handler(self) -> DatabaseHandler:
-    #     """
-    #     Get the DatabaseHandler of the Environment.
-    #     """
-    #
-    #     return self.environment_controller.database_handler
 
     ##########################################################################################
     ##########################################################################################
@@ -231,9 +192,7 @@ class EnvironmentManager:
 
         # Environment case
         if self.environment_controller is not None:
-            if self.environment_controller.visualization_factory is not None:
-                self.environment_controller.visualization_factory.close()
-            self.environment_controller.environment.close()
+            self.environment_controller.close()
 
     def __str__(self) -> str:
 

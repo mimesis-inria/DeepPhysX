@@ -1,22 +1,20 @@
 from typing import Type, Tuple, Dict, Any, Union, List, Optional
 from numpy import ndarray
-from SSD.Core.Rendering.user_api import UserAPI
 
 from DeepPhysX.database.database_handler import DatabaseHandler, Database
+from SimRender.core import Viewer
 
 
 class AbstractController:
 
     compute_training_data: bool
+    viewer: Viewer
 
     @property
     def environment_ids(self) -> Tuple[int, int]: raise NotImplementedError
 
     @property
     def database_handler(self) -> DatabaseHandler: raise NotImplementedError
-
-    @property
-    def visualization_factory(self) -> Optional[UserAPI]: raise NotImplementedError
 
     def create_environment(self) -> None: ...
 
@@ -26,9 +24,7 @@ class AbstractController:
 
     def define_database_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None: ...
 
-    def create_visualization(self, visualization_db: Union[Database, Tuple[str, str]], produce_data: bool = True) -> None: ...
-
-    def connect_visualization(self) -> None: ...
+    def launch_visualization(self, viewer_key: Optional[int] = None): ...
 
     def set_data(self, **kwargs) -> None: ...
 

@@ -5,17 +5,15 @@ from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
 from numpy import ndarray
 
-from SSD.Core.Storage.database import Database
-
 from DeepPhysX.simulation.utils.tcpip_object import TcpIpObject
-from DeepPhysX.simulation.core.base_environment import BaseEnvironment
-from DeepPhysX.simulation.core.base_environment_controller import BaseEnvironmentController
+from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
+from DeepPhysX.simulation.core.simulation_controller import SimulationController
 
 
 class TcpIpClient(TcpIpObject):
 
     def __init__(self,
-                 environment: Type[BaseEnvironment],
+                 environment: Type[DPXSimulation],
                  ip_address: str = 'localhost',
                  port: int = 10000,
                  instance_id: int = 0,
@@ -35,7 +33,7 @@ class TcpIpClient(TcpIpObject):
         # Environment instance
         self.environment_class = environment
         self.environment_instance = (instance_id, instance_nb)
-        self.environment_controller: BaseEnvironmentController
+        self.environment_controller: SimulationController
 
         # Bind to client address and send ID
         self.sock.connect((ip_address, port))
@@ -68,9 +66,9 @@ class TcpIpClient(TcpIpObject):
         await self.receive_dict(recv_to=env_kwargs, loop=loop, sender=self.sock)
         env_kwargs = env_kwargs['env_kwargs'] if 'env_kwargs' in env_kwargs else {}
 
-        self.environment_controller = BaseEnvironmentController(environment_class=self.environment_class,
-                                                                environment_kwargs=env_kwargs,
-                                                                environment_ids=self.environment_instance)
+        self.environment_controller = SimulationController(environment_class=self.environment_class,
+                                                           environment_kwargs=env_kwargs,
+                                                           environment_ids=self.environment_instance)
         self.environment_controller.tcp_ip_client = self
 
         # Receive prediction requests authorization
@@ -79,25 +77,14 @@ class TcpIpClient(TcpIpObject):
         # Receive number of sub-steps
         self.simulations_per_step = await self.receive_data(loop=loop, sender=self.sock)
 
-        # Receive partitions
-        # partitions_list = await self.receive_data(loop=loop, sender=self.sock)
-        # partitions_list, exchange = partitions_list.split('%%%')
-        # partitions = [[partitions_list.split('///')[0], partition_name]
-        #               for partition_name in partitions_list.split('///')[1:]]
-        # exchange = [exchange.split('///')[0], exchange.split('///')[1]]
-        # self.environment_controller.database_handler.init_remote(storing_partitions=partitions,
-        #                                                          exchange_db=exchange)
-
         # Receive visualization database
-        visualization_db = await self.receive_data(loop=loop, sender=self.sock)
-        visualization_db = None if visualization_db == 'None' else visualization_db.split('///')
+        viewer_key = await self.receive_data(loop=loop, sender=self.sock)
+        viewer_key = None if viewer_key == 'None' else int(viewer_key)
 
         # Initialize the environment
         self.environment_controller.create_environment()
-        if visualization_db is not None:
-            db = Database(database_dir=visualization_db[0],
-                          database_name=visualization_db[1]).load()
-            self.environment_controller.create_visualization(visualization_db=db)
+        if viewer_key is not None:
+            self.environment_controller.launch_visualization(viewer_key=viewer_key)
 
         # Initialization done
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
@@ -109,10 +96,6 @@ class TcpIpClient(TcpIpObject):
                     await self.receive_data(loop=loop, sender=self.sock))
         self.environment_controller.connect_to_database(database=database, exchange_db=exchange)
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
-
-        # Connect to Visualizer
-        if visualization_db is not None:
-            self.environment_controller.connect_visualization()
 
     ##########################################################################################
     ##########################################################################################
@@ -160,12 +143,8 @@ class TcpIpClient(TcpIpObject):
         """
 
         # Close environment
-        try:
-            self.environment_controller.environment.close()
-        except NotImplementedError:
-            pass
-        if self.environment_controller.visualization_factory is not None:
-            self.environment_controller.visualization_factory.close()
+        self.environment_controller.close()
+
         # Confirm exit command to the server
         loop = get_event_loop()
         await self.send_command_exit(loop=loop, receiver=self.sock)

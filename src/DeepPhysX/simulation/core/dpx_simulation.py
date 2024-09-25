@@ -1,11 +1,11 @@
 from typing import Any, Optional, Dict, Union, Tuple, List, Type
 from numpy import ndarray
 
-from SSD.Core.Rendering.user_api import UserAPI
 from DeepPhysX.simulation.core.abstract_controller import AbstractController
+from SimRender.core import Viewer
 
 
-class BaseEnvironment:
+class DPXSimulation:
 
     def __init__(self, **kwargs):
         """
@@ -24,8 +24,8 @@ class BaseEnvironment:
         return self.__controller.environment_ids[1]
 
     @property
-    def visual(self) -> Optional[UserAPI]:
-        return self.__controller.visualization_factory
+    def viewer(self) -> Optional[Viewer]:
+        return self.__controller.viewer
 
     @property
     def compute_training_data(self) -> bool:
@@ -171,8 +171,8 @@ class BaseEnvironment:
         Triggers the Visualizer update.
         """
 
-        if self.visual is not None:
-            self.visual.render()
+        if self.viewer is not None:
+            self.viewer.render()
 
     def __str__(self):
 

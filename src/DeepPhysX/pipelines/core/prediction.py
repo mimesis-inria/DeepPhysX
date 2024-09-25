@@ -6,14 +6,14 @@ from DeepPhysX.pipelines.core.data_manager import DataManager
 from DeepPhysX.networks.core.network_manager import NetworkManager
 from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 
 
 class BasePrediction(BasePipeline):
 
     def __init__(self,
                  network_config: BaseNetworkConfig,
-                 environment_config: BaseEnvironmentConfig,
+                 environment_config: SimulationConfig,
                  database_config: Optional[DatabaseConfig] = None,
                  session_dir: str = 'session',
                  session_name: str = 'training',

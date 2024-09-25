@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, Dict, Tuple
+from typing import Any, Optional, Type, Dict
 from os import cpu_count
 from os.path import join, dirname
 from threading import Thread
@@ -6,20 +6,20 @@ from subprocess import run
 from sys import modules, executable
 
 from DeepPhysX.simulation.utils.tcpip_server import TcpIpServer
-from DeepPhysX.simulation.core.base_environment_controller import BaseEnvironmentController, BaseEnvironment
+from DeepPhysX.simulation.core.simulation_controller import SimulationController, DPXSimulation
 
 
-class BaseEnvironmentConfig:
+class SimulationConfig:
 
     def __init__(self,
-                 environment_class: Type[BaseEnvironment],
+                 environment_class: Type[DPXSimulation],
                  nb_parallel_env: int = 1,
                  simulations_per_step: int = 1,
                  max_wrong_samples_per_step: int = 10,
                  load_samples: bool = False,
                  only_first_epoch: bool = True,
                  always_produce: bool = False,
-                 visualizer: Optional[str] = None,
+                 use_viewer: bool = False,
                  record_wrong_samples: bool = False,
                  env_kwargs: Optional[Dict[str, Any]] = None):
         """
@@ -34,7 +34,7 @@ class BaseEnvironmentConfig:
         :param only_first_epoch: If True, data will always be created from environment. If False, data will be created
                                  from the environment during the first epoch and then re-used from the Dataset.
         :param always_produce: If True, data will always be produced in Environment(s).
-        :param visualizer: Backend of the Visualizer to use.
+        :param use_viewer: Backend of the Visualizer to use.
         :param record_wrong_samples: If True, wrong samples are recorded through Visualizer.
         :param env_kwargs: Additional arguments to pass to the Environment.
         """
@@ -61,7 +61,7 @@ class BaseEnvironmentConfig:
             raise ValueError(f"[{self.name}] The nb_parallel_env number must be a positive integer.")
 
         # TcpIpClients variables
-        self.environment_class: Type[BaseEnvironment] = environment_class
+        self.environment_class: Type[DPXSimulation] = environment_class
         self.environment_file: str = modules[self.environment_class.__module__].__file__
 
         # TcpIpServer variables
@@ -77,27 +77,26 @@ class BaseEnvironmentConfig:
         self.environment_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
 
         # Visualizer variables
-        self.visualizer: Optional[str] = visualizer
+        self.use_viewer: bool = use_viewer
         self.record_wrong_samples: bool = record_wrong_samples
 
     def create_server(self,
                       environment_manager: Optional[Any] = None,
-                      batch_size: int = 1,
-                      visualization_db: Optional[Tuple[str, str]] = None) -> TcpIpServer:
+                      batch_size: int = 1) -> TcpIpServer:
         """
         Create a TcpIpServer and launch TcpIpClients in subprocesses.
 
         :param environment_manager: EnvironmentManager.
         :param batch_size: Number of sample in a batch.
-        :param visualization_db: Path to the visualization Database to connect to.
         :return: TcpIpServer object.
         """
 
         # Create server
         server = TcpIpServer(nb_client=self.nb_parallel_env,
                              batch_size=batch_size,
-                             manager=environment_manager)
-        server_thread = Thread(target=self.start_server, args=(server, visualization_db))
+                             manager=environment_manager,
+                             use_viewer=self.use_viewer)
+        server_thread = Thread(target=self.start_server, args=(server,))
         server_thread.start()
 
         # Create clients
@@ -113,24 +112,20 @@ class BaseEnvironmentConfig:
             pass
         return server
 
-    def start_server(self,
-                     server: TcpIpServer,
-                     visualization_db: Optional[Tuple[str, str]] = None) -> None:
+    def start_server(self, server: TcpIpServer) -> None:
         """
         Start TcpIpServer.
 
         :param server: TcpIpServer.
-        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         server.connect()
-        server.initialize(visualization_db=visualization_db,
-                          env_kwargs=self.environment_kwargs)
+        server.initialize(env_kwargs=self.environment_kwargs)
         self.server_is_ready = True
 
     def start_client(self,
                      server: TcpIpServer,
-                     idx: int = 1) -> None:
+                     idx: int) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
@@ -138,19 +133,19 @@ class BaseEnvironmentConfig:
         :param idx: Index of client.
         """
 
-        script = join(dirname(modules[BaseEnvironment.__module__].__file__), 'launcher_base_environment.py')
+        script = join(dirname(modules[DPXSimulation.__module__].__file__), 'launcher.py')
         run([executable, script, self.environment_file, self.environment_class.__name__,
              server.ip_address, str(server.port), str(idx), str(self.nb_parallel_env)])
 
-    def create_environment(self) -> BaseEnvironmentController:
+    def create_environment(self) -> SimulationController:
         """
         Create an Environment that will not be a TcpIpObject.
 
         :return: Environment object.
         """
 
-        return BaseEnvironmentController(environment_class=self.environment_class,
-                                         environment_kwargs=self.environment_kwargs)
+        return SimulationController(environment_class=self.environment_class,
+                                    environment_kwargs=self.environment_kwargs)
 
     def __str__(self):
 

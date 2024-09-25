@@ -6,7 +6,7 @@ from socket import socket
 from queue import SimpleQueue
 
 from DeepPhysX.simulation.utils.tcpip_object import TcpIpObject
-from DeepPhysX.database.database_handler import DatabaseHandler
+from SimRender.core import ViewerBatch
 
 
 class TcpIpServer(TcpIpObject):
@@ -16,7 +16,8 @@ class TcpIpServer(TcpIpObject):
                  max_client_count: int = 10,
                  batch_size: int = 5,
                  manager: Optional[Any] = None,
-                 debug: bool = True):
+                 debug: bool = True,
+                 use_viewer: bool = False):
         """
         TcpIpServer is used to communicate with clients associated with Environment to produce batches for the
         EnvironmentManager.
@@ -53,6 +54,11 @@ class TcpIpServer(TcpIpObject):
 
         # Reference to EnvironmentManager
         self.environment_manager: Optional[Any] = manager
+
+        # Create ViewerBatch
+        self.viewer_batch: Optional[ViewerBatch] = None
+        if use_viewer:
+            self.viewer_batch = ViewerBatch()
 
     def message(self, txt: str):
 
@@ -119,30 +125,27 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def initialize(self,
-                   env_kwargs: Dict[str, Any],
-                   visualization_db: Optional[Tuple[str, str]] = None) -> None:
+    def initialize(self, env_kwargs: Dict[str, Any]) -> None:
         """
         Send parameters to the clients to create their environments.
 
         :param env_kwargs: Additional arguments to pass to the Environment.
-        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         print(f"[{self.name}] Initializing clients...")
-        async_run(self.__initialize(env_kwargs, visualization_db))
+        async_run(self.__initialize(env_kwargs))
 
-    async def __initialize(self,
-                           env_kwargs: Dict[str, Any],
-                           visualization_db: Optional[Tuple[str, str]] = None) -> None:
+    async def __initialize(self, env_kwargs: Dict[str, Any]) -> None:
         """
         Send parameters to the clients to create their environments.
 
         :param env_kwargs: Additional arguments to pass to the Environment.
-        :param visualization_db: Path to the visualization Database to connect to.
         """
 
         loop = get_event_loop()
+
+        # Init ViewerBatch
+        viewer_keys = None if self.viewer_batch is None else self.viewer_batch.start(nb_view=self.nb_client)
 
         # Initialisation process for each client
         for client_id, client in self.clients:
@@ -158,24 +161,8 @@ class TcpIpServer(TcpIpObject):
             nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
             await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)
 
-            # Send partitions
-            # partitions = self.database_handler.get_partitions()
-            # if len(partitions) == 0:
-            #     partitions_list = 'None'
-            # else:
-            #     partitions_list = partitions[0].get_path()[0]
-            #     for partition in partitions:
-            #         partitions_list += f'///{partition.get_path()[1]}'
-            # partitions_list += '%%%'
-            # exchange = self.database_handler.get_exchange()
-            # if exchange is None:
-            #     partitions += 'None'
-            # else:
-            #     partitions_list += f'{exchange.get_path()[0]}///{exchange.get_path()[1]}'
-            # await self.send_data(data_to_send=partitions_list, loop=loop, receiver=client)
-
             # Send visualization Database
-            visualization = 'None' if visualization_db is None else f'{visualization_db[0]}///{visualization_db[1]}'
+            visualization = 'None' if viewer_keys is None else f'{viewer_keys[client_id - 1]}'
             await self.send_data(data_to_send=visualization, loop=loop, receiver=client)
 
             # Wait Client init
@@ -325,6 +312,9 @@ class TcpIpServer(TcpIpObject):
         await gather(*[self.__shutdown(client=client, idx=client_id) for client_id, client in self.clients])
         # Close socket
         self.sock.close()
+
+        if self.viewer_batch is not None:
+            self.viewer_batch.stop()
 
     async def __shutdown(self,
                          client: socket, idx: int) -> None:

@@ -2,14 +2,14 @@ from typing import Type, Tuple, Dict, Any, Union, List, Optional
 from os.path import isfile, join
 from numpy import ndarray
 
-from DeepPhysX.simulation.core.base_environment import BaseEnvironment, AbstractController, UserAPI
+from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation, AbstractController, Viewer
 from DeepPhysX.database.database_handler import DatabaseHandler, Database
 
 
-class BaseEnvironmentController(AbstractController):
+class SimulationController(AbstractController):
 
     def __init__(self,
-                 environment_class: Type[BaseEnvironment],
+                 environment_class: Type[DPXSimulation],
                  environment_kwargs: Dict[str, Any],
                  environment_ids: Tuple[int, int] = (1, 1),
                  use_database: bool = True):
@@ -19,8 +19,8 @@ class BaseEnvironmentController(AbstractController):
         self.tcp_ip_client: Any = None
 
         # Create the Environment instance
-        self.__environment: Optional[BaseEnvironment] = None
-        self.__environment_class: Type[BaseEnvironment] = environment_class
+        self.__environment: Optional[DPXSimulation] = None
+        self.__environment_class: Type[DPXSimulation] = environment_class
         self.__environment_kwargs: Dict[str, Any] = environment_kwargs
         self.__environment_id: int = environment_ids[0]
         self.__environment_nb: int = environment_ids[1]
@@ -28,8 +28,6 @@ class BaseEnvironmentController(AbstractController):
         # Create the Database Handler
         self.__use_database: bool = use_database
         self.__database_handler: DatabaseHandler = DatabaseHandler()
-        # if self.__use_database:
-        #     self.__database_handler.set_init_handler(self.__database_handler.load)
 
         # Produced data variables
         self.__data: Dict[str, ndarray] = {}
@@ -46,10 +44,10 @@ class BaseEnvironmentController(AbstractController):
         self.update_line: Optional[List[int]] = None
 
         # Visualization data
-        self.__visualization_factory: Optional[UserAPI] = None
+        self.viewer: Optional[Viewer] = None
 
     @property
-    def environment(self) -> BaseEnvironment:
+    def environment(self) -> DPXSimulation:
         return self.__environment
 
     @property
@@ -60,14 +58,10 @@ class BaseEnvironmentController(AbstractController):
     def database_handler(self) -> DatabaseHandler:
         return self.__database_handler
 
-    @property
-    def visualization_factory(self) -> Optional[UserAPI]:
-        return self.__visualization_factory
-
     def create_environment(self) -> None:
 
-        self.__environment: BaseEnvironment = self.__environment_class(**self.__environment_kwargs,
-                                                                       environment_controller=self)
+        self.__environment: DPXSimulation = self.__environment_class(**self.__environment_kwargs,
+                                                                     environment_controller=self)
 
         self.__environment.create()
         self.__environment.init()
@@ -121,30 +115,11 @@ class BaseEnvironmentController(AbstractController):
         if self.__environment_id == 1:
             self.__database_handler.create_fields(fields=fields)
 
-    def create_visualization(self,
-                             visualization_db: Union[Database, Tuple[str, str]],
-                             produce_data: bool = True) -> None:
-        """
-        Create a Factory for the Environment.
-        """
+    def launch_visualization(self, viewer_key: Optional[int] = None):
 
-        if type(visualization_db) == list:
-            self.__visualization_factory = UserAPI(database_dir=visualization_db[0],
-                                                   database_name=visualization_db[1],
-                                                   idx_instance=self.__environment_id - 1,
-                                                   non_storing=not produce_data)
-        else:
-            self.__visualization_factory = UserAPI(database=visualization_db,
-                                                   idx_instance=self.__environment_id - 1,
-                                                   non_storing=not produce_data)
+        self.viewer = Viewer(sync=False)
         self.__environment.init_visualization()
-
-    def connect_visualization(self) -> None:
-        """
-        Connect the Factory to the Visualizer.
-        """
-
-        self.__visualization_factory.connect_visualizer()
+        self.viewer.launch(batch_key=viewer_key)
 
     def set_data(self, **kwargs) -> None:
         """
@@ -309,3 +284,9 @@ class BaseEnvironmentController(AbstractController):
         self.__sample_training = None
         self.__sample_additional = None
         self.update_line = None
+
+    def close(self):
+
+        if self.viewer is not None:
+            self.viewer.shutdown()
+        self.__environment.close()

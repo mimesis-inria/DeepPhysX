@@ -9,7 +9,7 @@ from DeepPhysX.networks.core.network_manager import NetworkManager
 from DeepPhysX.networks.core.stats_manager import StatsManager
 from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 from DeepPhysX.utils.path import create_dir
 
 
@@ -18,7 +18,7 @@ class BaseTraining(BasePipeline):
     def __init__(self,
                  network_config: BaseNetworkConfig,
                  database_config: DatabaseConfig,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 environment_config: Optional[SimulationConfig] = None,
                  session_dir: str = 'sessions',
                  session_name: str = 'training',
                  new_session: bool = True,

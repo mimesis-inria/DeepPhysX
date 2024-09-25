@@ -2,12 +2,12 @@ from typing import Optional, Any, List, Union
 
 from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 from DeepPhysX.pipelines.core.data_manager import DataManager
 from DeepPhysX.networks.core.stats_manager import StatsManager
 from DeepPhysX.networks.core.network_manager import NetworkManager
 from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.simulation.core.environment_manager import EnvironmentManager
+from DeepPhysX.simulation.core.simulation_manager import SimulationManager
 from DeepPhysX.utils.path import get_session_dir
 
 
@@ -16,7 +16,7 @@ class BasePipeline:
     def __init__(self,
                  network_config: Optional[DPXNetworkConfig] = None,
                  database_config: Optional[DatabaseConfig] = None,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 environment_config: Optional[SimulationConfig] = None,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'default',
@@ -40,7 +40,7 @@ class BasePipeline:
             raise TypeError(f"[{self.name}] The networks configuration must be a BaseNetworkConfig object.")
         if database_config is not None and not isinstance(database_config, DatabaseConfig):
             raise TypeError(f"[{self.name}] The Dataset configuration must be a BaseDatabaseConfig object.")
-        if environment_config is not None and not isinstance(environment_config, BaseEnvironmentConfig):
+        if environment_config is not None and not isinstance(environment_config, SimulationConfig):
             raise TypeError(f"[{self.name}] The Environment configuration must be a BaseEnvironmentConfig object.")
 
         # Check the session path variables
@@ -56,7 +56,7 @@ class BasePipeline:
         # Configuration variables
         self.database_config: DatabaseConfig = database_config
         self.network_config: BaseNetworkConfig = network_config
-        self.environment_config: BaseEnvironmentConfig = environment_config
+        self.environment_config: SimulationConfig = environment_config
 
         # Session variables
         self.session_dir = get_session_dir(session_dir, new_session)
@@ -129,7 +129,7 @@ class BasePipeline:
 
         return self.__get_any_manager(manager_names=['data_manager', 'database_manager'])
 
-    def get_environment_manager(self) -> Optional[EnvironmentManager]:
+    def get_environment_manager(self) -> Optional[SimulationManager]:
         """
         Return the EnvironmentManager associated with the Pipeline if it exists.
 
