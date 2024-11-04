@@ -34,7 +34,7 @@ class SpringScenario:
         # Create the Vedo objects (cube, spring, floor and wall)
         self.mesh_cube = Cube(pos=self.X_rest, side=self.cube_size, c='tomato')
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X_rest,
-                                  coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
+                                  coils=int(15 * self.spring_length), r1=0.05, thickness=0.01).triangulate()
         self.mesh_floor = Box(pos=[-0.02, 1.75 * self.spring_length + 0.5 * self.cube_size,
                                    -0.01, 0., -self.cube_size, self.cube_size], c='grey')
         self.mesh_wall = Box(pos=[-0.02, 0.02, 0., 2 * self.cube_size, -self.cube_size, self.cube_size], c='green')
@@ -74,7 +74,7 @@ class SpringScenario:
         self.curve_t = [0.]
         self.curve_x = [self.X[0]]
         self.curve = plot(self.curve_t, self.curve_x, c='r5', xlim=(0, 10), ylim=(0, 2), grid=False)
-        self.curve.scale(0.075).shift(1., 0.2425, -self.cube_size)
+        self.curve.scale(0.075).shift(1., 0.25, -self.cube_size)
         self.plt.add(self.curve)
 
         # Add a timer callback to loop on time steps

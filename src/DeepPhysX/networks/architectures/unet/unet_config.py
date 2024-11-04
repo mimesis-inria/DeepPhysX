@@ -1,16 +1,16 @@
 from typing import Any, List, Optional, Type
 
 from DeepPhysX.utils.configs import make_config
-from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
-from DeepPhysX.networks.core.dpx_optimization import DPXOptimization
+from DeepPhysX.networks.core.network_config import NetworkConfig
+from DeepPhysX.networks.core.network_optimization import NetworkOptimization
 from DeepPhysX.networks.architectures.unet.unet_transformation import UNetTransformation
 from DeepPhysX.networks.architectures.unet.unet_layers import UNet
 
 
-class UNetConfig(DPXNetworkConfig):
+class UNetConfig(NetworkConfig):
 
     def __init__(self,
-                 optimization_class: Type[DPXOptimization] = DPXOptimization,
+                 optimization_class: Type[NetworkOptimization] = NetworkOptimization,
                  network_dir: Optional[str] = None,
                  network_name: str = "UNetNetwork",
                  which_network: int = 0,

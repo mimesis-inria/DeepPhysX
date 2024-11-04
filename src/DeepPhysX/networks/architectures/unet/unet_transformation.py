@@ -4,10 +4,10 @@ from torch import reshape, Tensor
 from numpy import asarray
 from collections import namedtuple
 
-from DeepPhysX.networks.core.dpx_transformation import DPXTransformation
+from DeepPhysX.networks.core.network_transformation import NetworkTransformation
 
 
-class UNetTransformation(DPXTransformation):
+class UNetTransformation(NetworkTransformation):
 
     def __init__(self, config: namedtuple):
         """
@@ -34,7 +34,7 @@ class UNetTransformation(DPXTransformation):
         self.reverse_down_step = lambda x: (x + border) * 2
         self.reverse_up_step = lambda x: (x + border - 1) // 2 + 1
 
-    @DPXTransformation.check_type
+    @NetworkTransformation.check_type
     def transform_before_prediction(self, data_net: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
         Apply data operations before networks's prediction.
@@ -57,7 +57,7 @@ class UNetTransformation(DPXTransformation):
         data_in = pad(data_in, self.pad_widths, mode='constant')
         return {'input': data_in}
 
-    @DPXTransformation.check_type
+    @NetworkTransformation.check_type
     def transform_before_loss(self,
                               data_pred: Dict[str, Tensor],
                               data_opt: Dict[str, Optional[Tensor]] = None) -> Tuple[Dict[str, Tensor], Optional[Dict[str, Tensor]]]:
@@ -88,7 +88,7 @@ class UNetTransformation(DPXTransformation):
 
         return {'prediction': data_out}, data_opt
 
-    @DPXTransformation.check_type
+    @NetworkTransformation.check_type
     def transform_before_apply(self,
                                data_pred: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """

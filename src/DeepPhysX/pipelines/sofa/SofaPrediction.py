@@ -2,7 +2,7 @@ from typing import Optional
 import Sofa
 
 from DeepPhysX.pipelines.core.prediction import BasePrediction
-from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
+from DeepPhysX.networks.core.network_config import BaseNetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.sofa.sofa_environment_config import SofaEnvironmentConfig
 

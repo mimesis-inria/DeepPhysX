@@ -4,9 +4,9 @@ from os import listdir, symlink, sep, remove, rename, makedirs
 from json import dump as json_dump
 from json import load as json_load
 from numpy import arange, ndarray, array, abs, mean, sqrt, empty, concatenate
-from numpy.random import shuffle
+from numpy.random import shuffle, normal
 
-from SSD.Core.Storage.database import Database
+from SSD.core import Database
 
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.utils.path import copy_dir
@@ -80,10 +80,10 @@ class DatabaseManager:
                 # Complete a Database in a new session --> copy and load the existing directory
                 else:
                     copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
-                    self.load_directory(rename_partitions=True)
+                    self.load()
             # Complete a Database in the same session --> load the directory
             else:
-                self.load_directory()
+                self.load()
 
         # Training case
         elif self.pipeline == 'training':
@@ -99,10 +99,10 @@ class DatabaseManager:
                     # Complete a Database in a new session --> copy and load the existing directory
                     else:
                         copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
-                        self.load_directory()
+                        self.load()
                 # Complete a Database in the same directory --> load the directory
                 else:
-                    self.load_directory()
+                    self.load()
 
             # Load data
             else:
@@ -110,14 +110,14 @@ class DatabaseManager:
                 if new_session:
                     symlink(src=join(database_config.existing_dir, 'dataset'),
                             dst=join(session, 'dataset'))
-                    self.load_directory()
+                    self.load()
                 # Load data in the same session  --> load the directory
                 else:
-                    self.load_directory()
+                    self.load()
 
         # Prediction case
         else:
-            self.load_directory()
+            self.load()
 
         # Finally create an exchange database
         self.exchange = Database(database_dir=self.database_dir,
@@ -144,18 +144,16 @@ class DatabaseManager:
         self.json_content['nb_samples'][self.mode] = self.DB.nb_lines(table_name=self.mode)
         self.update_json()
 
-    def load_directory(self,
-                       rename_partitions: bool = False) -> None:
+    def load(self) -> None:
         """
         Get the Database information from the json file (partitions, samples, etc).
         Load all the partitions or create one if necessary.
-
-        :param rename_partitions: If True, the existing partitions should be renamed to match the session name.
         """
 
         # 1. Check the directory existence to prevent bugs
         if not isdir(self.database_dir):
             raise Warning(f"[{self.__name}] Impossible to load Dataset from {self.database_dir}.")
+        self.DB.load()
 
         # 2. Get the .json description file
         json_found = False
@@ -166,36 +164,21 @@ class DatabaseManager:
 
         # 3. Update json file if not found
         if not json_found or self.json_content == self.json_default:
-            self.search_partitions_info()
+            # Get the number of samples
+            for table in ['train', 'test', 'run']:
+                self.json_content['nb_samples'][table] = self.DB.nb_lines(table_name=table)
+            # Get the fields architecture
+            self.json_content['fields'] = self.get_database_architecture()
             self.update_json()
-
-        # 4. Load partitions for each mode
-        self.partition_names = self.json_content['partitions']
-        self.partition_index = {mode: len(self.partition_names[mode]) for mode in self.modes}
-        if rename_partitions:
-            for mode in self.modes:
-                current_name = self.partition_template[mode].split(f'_{mode}_')[0]
-                for i, name in enumerate(self.partition_names[mode]):
-                    if name.split(f'_{mode}_')[0] != current_name:
-                        self.partition_names[mode][i] = current_name + f'_{mode}_{i}'
-                        rename(src=join(self.database_dir, f'{name}.db'),
-                               dst=join(self.database_dir, f'{self.partition_names[mode][i]}.db'))
-
-        # 5. Load the partitions
-        for mode in self.modes:
-            for name in self.partition_names[mode]:
-                db = Database(database_dir=self.database_dir,
-                              database_name=name).load()
-                self.partitions[mode].append(db)
 
         # 6. Index partitions
         self.index_samples()
 
         # 7. Check normalization
-        if self.recompute_normalization or (
-                self.normalize and self.json_content['normalization'] == self.json_default['normalization']):
-            self.json_content['normalization'] = self.compute_normalization()
-            self.update_json()
+        for field_name in self.json_content['fields'].keys():
+            if (self.normalize and self.json_content['fields'][field_name]['normalize'] == [0., 1.]) or self.recompute_normalization:
+                self.json_content['fields'][field_name]['normalize'] = self.compute_normalization(field_name=field_name)
+                self.update_json()
 
     # def get_partition_objects(self) -> List[Database]:
     #     """
@@ -226,32 +209,6 @@ class DatabaseManager:
     #                                 JSON Information file                                  #
     ##########################################################################################
     ##########################################################################################
-
-    def search_partitions_info(self) -> None:
-        """
-        Get the information about the Database manually if the json file is not found.
-        """
-
-        # 1. Get all the partitions
-        raw_partitions = {mode: [f for f in listdir(self.database_dir) if isfile(join(self.database_dir, f))
-                                 and f.endswith('.db') and f.__contains__(mode)] for mode in self.modes}
-        raw_partitions = {mode: [f.split('.')[0] for f in raw_partitions[mode]] for mode in self.modes}
-        self.json_content['partitions'] = {mode: sorted(raw_partitions[mode]) for mode in self.modes}
-
-        # 2. Get the number of samples
-        for mode in self.modes:
-            for name in self.json_content['partitions'][mode]:
-                db = Database(database_dir=self.database_dir,
-                              database_name=name).load()
-                self.json_content['nb_samples'][mode].append(db.nb_lines(table_name='Training'))
-                db.close()
-
-        # 3. Get the Database architecture
-        self.json_content['architecture'] = self.get_database_architecture()
-        self.first_add = False
-
-        # 4. Get the data shapes
-        self.json_content['data_shape'] = self.get_data_shapes()
 
     def get_database_architecture(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -308,11 +265,8 @@ class DatabaseManager:
         """
 
         # Create the indices for each sample such as [partition_id, line_id]
-        for i, nb_sample in enumerate(self.json_content['nb_samples'][self.mode]):
-            partition_indices = empty((nb_sample, 2), dtype=int)
-            partition_indices[:, 0] = i
-            partition_indices[:, 1] = arange(1, nb_sample + 1)
-            self.sample_indices = concatenate((self.sample_indices, partition_indices))
+        nb_sample = self.json_content['nb_samples'][self.mode]
+        self.sample_indices = arange(1, nb_sample + 1)
         # Init current sample position
         self.sample_id = 0
         # Shuffle the indices if required
@@ -377,22 +331,22 @@ class DatabaseManager:
         Get the normalization coefficients.
         """
 
-        if self.json_content['normalization'] == {} or not self.normalize:
+        if not self.normalize:
             return None
-        return self.json_content['normalization']
+        normalize = {}
+        for field_name in self.json_content['fields']:
+            normalize[field_name] = self.json_content['fields'][field_name]['normalize']
+        return normalize
 
-    def compute_normalization(self) -> None:
+    def compute_normalization(self, field_name: str) -> List[float]:
         """
         Compute the mean and the standard deviation of all the training samples for each data field.
         """
 
-        for field in self.json_content['fields'].keys():
-            data_to_normalize = array(self.DB.get_lines(table_name='train',
-                                                        fields=field,
-                                                        batched=True)[field])
-            self.json_content['fields'][field]['normalize'] = [data_to_normalize.mean(), data_to_normalize.std()]
-
-        self.update_json()
+        data_to_normalize = array(self.DB.get_lines(table_name='train',
+                                                    fields=field_name,
+                                                    batched=True)[field_name])
+        return [data_to_normalize.mean(), data_to_normalize.std()]
 
     def update_normalization(self,
                              data_lines: List[int]) -> Dict[str, List[float]]:

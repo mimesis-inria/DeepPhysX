@@ -9,7 +9,7 @@ from gc import collect as gc_collect
 from collections import namedtuple
 
 
-class DPXNetwork(Module):
+class Network(Module):
 
     def __init__(self, config: namedtuple):
         """
@@ -18,7 +18,7 @@ class DPXNetwork(Module):
         :param config: Set of DPXNetwork parameters.
         """
 
-        super().__init__(self)
+        Module.__init__(self)
 
         # Config
         self.device = None

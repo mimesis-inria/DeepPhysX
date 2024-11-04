@@ -1,15 +1,15 @@
 from typing import Any, Optional, Type, Union, List
 
-from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig, DPXOptimization, DPXTransformation
+from DeepPhysX.networks.core.network_config import NetworkConfig, NetworkOptimization, NetworkTransformation
 from DeepPhysX.utils.configs import make_config
 from DeepPhysX.networks.architectures.mlp.mlp_layers import MLP
 
 
-class MLPConfig(DPXNetworkConfig):
+class MLPConfig(NetworkConfig):
 
     def __init__(self,
-                 optimization_class: Type[DPXOptimization] = DPXOptimization,
-                 data_transformation_class: Type[DPXTransformation] = DPXTransformation,
+                 optimization_class: Type[NetworkOptimization] = NetworkOptimization,
+                 data_transformation_class: Type[NetworkTransformation] = NetworkTransformation,
                  network_dir: Optional[str] = None,
                  network_name: str = "FCNetwork",
                  which_network: int = 0,
@@ -28,11 +28,10 @@ class MLPConfig(DPXNetworkConfig):
 
         :param optimization_class: TorchOptimization class from which an instance will be created.
         :param data_transformation_class: DataTransformation class from which an instance will be created.
-        :param network_dir: Path to an existing networks repository.
+        :param network_dir: Path to an existing network repository.
         :param network_name: Name of the networks
-        :param  which_network: If several networks in network_dir, load the specified one.
-        :param save_each_epoch: If True, networks state will be saved at each epoch end; if False, networks state
-                                will be saved at the end of the training
+        :param which_network: If several networks in network_dir, load the specified one.
+        :param save_intermediate_state_every: Save the current state of the networks periodically.
         :param data_type: Type of the training data.
         :param lr: Learning rate.
         :param require_training_stuff: If specified, loss and optimizer class can be not necessary for training.
@@ -44,20 +43,20 @@ class MLPConfig(DPXNetworkConfig):
                        a list to detail each layer.
         """
 
-        DPXNetworkConfig.__init__(self,
-                                  network_class=MLP,
-                                  optimization_class=optimization_class,
-                                  data_transformation_class=data_transformation_class,
-                                  network_dir=network_dir,
-                                  network_name=network_name,
-                                  network_type='mlp',
-                                  which_network=which_network,
-                                  save_intermediate_state_every=save_intermediate_state_every,
-                                  data_type=data_type,
-                                  require_training_stuff=require_training_stuff,
-                                  lr=lr,
-                                  loss=loss,
-                                  optimizer=optimizer)
+        NetworkConfig.__init__(self,
+                               network_class=MLP,
+                               optimization_class=optimization_class,
+                               data_transformation_class=data_transformation_class,
+                               network_dir=network_dir,
+                               network_name=network_name,
+                               network_type='mlp',
+                               which_network=which_network,
+                               save_intermediate_state_every=save_intermediate_state_every,
+                               data_type=data_type,
+                               require_training_stuff=require_training_stuff,
+                               lr=lr,
+                               loss=loss,
+                               optimizer=optimizer)
 
         # Check mlp variables
         if dim_output is not None and type(dim_output) != int:

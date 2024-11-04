@@ -3,7 +3,7 @@ from collections import namedtuple
 from torch import Tensor
 
 
-class DPXTransformation:
+class NetworkTransformation:
 
     def __init__(self, config: namedtuple):
         """

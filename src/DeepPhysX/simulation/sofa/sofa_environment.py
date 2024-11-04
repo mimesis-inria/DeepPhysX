@@ -3,13 +3,13 @@ from numpy import ndarray
 
 from SSD.SOFA.Rendering.user_api import UserAPI, Database
 
-from DeepPhysX.simulation.core.base_environment import BaseEnvironment
+from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
 
 import Sofa
 import Sofa.Simulation
 
 
-class SofaEnvironment(Sofa.Core.Controller, BaseEnvironment):
+class SofaEnvironment(Sofa.Core.Controller, DPXSimulation):
 
     def __init__(self,
                  as_tcp_ip_client: bool = True,
@@ -28,11 +28,11 @@ class SofaEnvironment(Sofa.Core.Controller, BaseEnvironment):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         # Warning: Define root node before init Environment
         self.root = Sofa.Core.Node('root')
-        BaseEnvironment.__init__(self,
-                                 as_tcp_ip_client=as_tcp_ip_client,
-                                 instance_id=instance_id,
-                                 instance_nb=instance_nb,
-                                 **kwargs)
+        DPXSimulation.__init__(self,
+                               as_tcp_ip_client=as_tcp_ip_client,
+                               instance_id=instance_id,
+                               instance_nb=instance_nb,
+                               **kwargs)
         self.root.addObject(self)
 
     ##########################################################################################
@@ -78,14 +78,14 @@ class SofaEnvironment(Sofa.Core.Controller, BaseEnvironment):
         Save a set of parameters in the Database.
         """
 
-        BaseEnvironment.save_parameters(self, **kwargs)
+        DPXSimulation.save_parameters(self, **kwargs)
 
     def load_parameters(self) -> Dict[str, Any]:
         """
         Load a set of parameters from the Database.
         """
 
-        return BaseEnvironment.load_parameters(self)
+        return DPXSimulation.load_parameters(self)
 
     ##########################################################################################
     ##########################################################################################
@@ -151,7 +151,7 @@ class SofaEnvironment(Sofa.Core.Controller, BaseEnvironment):
         :return: Network prediction.
         """
 
-        return BaseEnvironment.get_prediction(self, **kwargs)
+        return DPXSimulation.get_prediction(self, **kwargs)
 
     def update_visualisation(self) -> None:
         """
@@ -166,7 +166,7 @@ class SofaEnvironment(Sofa.Core.Controller, BaseEnvironment):
         :return: String containing information about the BaseEnvironmentConfig object
         """
 
-        description = BaseEnvironment.__str__(self)
+        description = DPXSimulation.__str__(self)
         return description
 
     def _create_visualization(self,

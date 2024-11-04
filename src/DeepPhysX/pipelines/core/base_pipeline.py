@@ -1,6 +1,6 @@
 from typing import Optional, Any, List, Union
 
-from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
+from DeepPhysX.networks.core.network_config import NetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 from DeepPhysX.pipelines.core.data_manager import DataManager
@@ -14,7 +14,7 @@ from DeepPhysX.utils.path import get_session_dir
 class BasePipeline:
 
     def __init__(self,
-                 network_config: Optional[DPXNetworkConfig] = None,
+                 network_config: Optional[NetworkConfig] = None,
                  database_config: Optional[DatabaseConfig] = None,
                  environment_config: Optional[SimulationConfig] = None,
                  new_session: bool = True,
@@ -36,7 +36,7 @@ class BasePipeline:
         self.name: str = self.__class__.__name__
 
         # Check the configurations
-        if network_config is not None and not isinstance(network_config, BaseNetworkConfig):
+        if network_config is not None and not isinstance(network_config, NetworkConfig):
             raise TypeError(f"[{self.name}] The networks configuration must be a BaseNetworkConfig object.")
         if database_config is not None and not isinstance(database_config, DatabaseConfig):
             raise TypeError(f"[{self.name}] The Dataset configuration must be a BaseDatabaseConfig object.")
@@ -55,8 +55,13 @@ class BasePipeline:
 
         # Configuration variables
         self.database_config: DatabaseConfig = database_config
-        self.network_config: BaseNetworkConfig = network_config
+        self.network_config: NetworkConfig = network_config
         self.environment_config: SimulationConfig = environment_config
+
+        # Manager variables
+        self.database_manager: Optional[DatabaseManager] = None
+        self.network_manager: Optional[NetworkManager] = None
+        self.simulation_manager: Optional[SimulationManager] = None
 
         # Session variables
         self.session_dir = get_session_dir(session_dir, new_session)

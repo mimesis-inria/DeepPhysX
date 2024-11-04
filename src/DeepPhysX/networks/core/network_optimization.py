@@ -1,10 +1,10 @@
 from typing import Dict, Any
 from collections import namedtuple
 
-from DeepPhysX.networks.core.dpx_network import DPXNetwork
+from DeepPhysX.networks.core.network import Network
 
 
-class DPXOptimization:
+class NetworkOptimization:
 
     def __init__(self, config: namedtuple):
         """
@@ -60,7 +60,7 @@ class DPXOptimization:
         return {'loss': self.loss_value.item()}
 
     def set_optimizer(self,
-                      net: DPXNetwork) -> None:
+                      net: Network) -> None:
         """
         Define an optimization process.
 

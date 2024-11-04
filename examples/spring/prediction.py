@@ -13,7 +13,7 @@ from DeepPhysX.Core.Database.BaseDatabaseConfig import BaseDatabaseConfig
 from DeepPhysX.Torch.FC.FCConfig import FCConfig
 
 # Session imports
-from environment import SpringEnvironment
+from simulation import SpringEnvironment
 
 
 if __name__ == '__main__':

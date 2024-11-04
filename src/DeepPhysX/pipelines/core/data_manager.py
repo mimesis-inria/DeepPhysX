@@ -1,8 +1,8 @@
 from typing import Any, Optional, Dict, List
 
 from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.simulation.core.environment_manager import EnvironmentManager
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.simulation.core.simulation_manager import SimulationManager
+from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.database.database_handler import DatabaseHandler
 
@@ -12,7 +12,7 @@ class DataManager:
     def __init__(self,
                  pipeline: Any,
                  database_config: Optional[DatabaseConfig] = None,
-                 environment_config: Optional[BaseEnvironmentConfig] = None,
+                 environment_config: Optional[SimulationConfig] = None,
                  new_session: bool = True,
                  session: str = 'sessions/default',
                  produce_data: bool = True,
@@ -35,7 +35,7 @@ class DataManager:
         # Session variables
         self.pipeline: Optional[Any] = pipeline
         self.database_manager: Optional[DatabaseManager] = None
-        self.environment_manager: Optional[EnvironmentManager] = None
+        self.environment_manager: Optional[SimulationManager] = None
 
         # Create a DatabaseManager
         self.database_manager = DatabaseManager(database_config=database_config,
@@ -46,12 +46,12 @@ class DataManager:
 
         # Create an EnvironmentManager if required
         if environment_config is not None:
-            self.environment_manager = EnvironmentManager(environment_config=environment_config,
-                                                          data_manager=self,
-                                                          pipeline=pipeline.type,
-                                                          session=session,
-                                                          produce_data=produce_data,
-                                                          batch_size=batch_size)
+            self.environment_manager = SimulationManager(config=environment_config,
+                                                         data_manager=self,
+                                                         pipeline=pipeline.type,
+                                                         session=session,
+                                                         produce_data=produce_data,
+                                                         batch_size=batch_size)
 
         # DataManager variables
         self.produce_data = produce_data

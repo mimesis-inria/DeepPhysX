@@ -2,14 +2,14 @@ from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
 
-from DeepPhysX.Core.Environment.BaseEnvironment import BaseEnvironment
+from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
 
 
-class SpringEnvironment(BaseEnvironment):
+class SpringEnvironment(DPXSimulation):
 
     def __init__(self, **kwargs):
 
-        BaseEnvironment.__init__(self, **kwargs)
+        DPXSimulation.__init__(self, **kwargs)
 
         # Spring parameters
         self.spring_length: float = 1.
@@ -23,7 +23,7 @@ class SpringEnvironment(BaseEnvironment):
         # Simulation parameters
         self.t: float = 0.
         self.dt: float = 0.1
-        self.T: float = 50.
+        self.T: float = 20.
 
         # State vectors of the tip of the spring
         self.A: ndarray = zeros(3)
@@ -32,9 +32,9 @@ class SpringEnvironment(BaseEnvironment):
         self.X_rest: ndarray = self.X.copy()
 
         # Meshes of the cube, spring, floor and wall
-        self.mesh_cube = Cube(pos=self.X_rest, side=self.cube_size, c='tomato')
+        self.mesh_cube = Cube(pos=self.X_rest, side=self.cube_size, c='tomato').clean()
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X_rest,
-                                  coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
+                                  coils=int(15 * self.spring_length), r1=0.05, thickness=0.01).triangulate()
         self.mesh_floor = Box(pos=[-0.02, 1.75 * self.spring_length + 0.5 * self.cube_size,
                                    -0.01, 0., -self.cube_size, self.cube_size], c='grey')
         self.mesh_wall = Box(pos=[-0.02, 0.02, 0., 2 * self.cube_size, -self.cube_size, self.cube_size], c='green')
@@ -53,19 +53,15 @@ class SpringEnvironment(BaseEnvironment):
 
     def init_database(self):
 
-        self.define_training_fields(fields=[('input', ndarray), ('ground_truth', ndarray)])
+        self.define_fields(fields=[('input', ndarray), ('ground_truth', ndarray)])
 
     def init_visualization(self):
 
         # Add the meshes to the rendering window
-        self.visual.add_mesh(positions=self.mesh_cube.vertices, cells=self.mesh_cube.cells,
-                             at=self.environment_id, c='tomato')
-        self.visual.add_mesh(positions=self.mesh_spring.vertices, cells=self.mesh_spring.cells,
-                             at=self.environment_id, c='grey5')
-        self.visual.add_mesh(positions=self.mesh_floor.vertices, cells=self.mesh_floor.cells,
-                             at=self.environment_id, c='grey')
-        self.visual.add_mesh(positions=self.mesh_wall.vertices, cells=self.mesh_wall.cells,
-                             at=self.environment_id, c='green')
+        self.viewer.objects.add_mesh(positions=self.mesh_cube.vertices, cells=self.mesh_cube.cells, color='tomato')
+        self.viewer.objects.add_mesh(positions=self.mesh_spring.vertices, cells=self.mesh_spring.cells, color='grey5')
+        self.viewer.objects.add_mesh(positions=self.mesh_floor.vertices, cells=self.mesh_floor.cells, color='grey')
+        self.viewer.objects.add_mesh(positions=self.mesh_wall.vertices, cells=self.mesh_wall.cells, color='green')
 
     async def step(self):
 
@@ -86,11 +82,14 @@ class SpringEnvironment(BaseEnvironment):
 
         # Set the training data
         if self.compute_training_data:
-            self.set_training_data(input=net_input, ground_truth=net_output)
+            self.set_data(input=net_input, ground_truth=net_output)
 
-        if self.visual is not None:
-            self.visual.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
-            self.visual.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
+        if self.viewer is not None:
+            self.mesh_cube.pos(self.X)
+            self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X,
+                                      coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
+            self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
+            self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
             self.update_visualisation()
 
     def apply_prediction(self, prediction):
@@ -99,7 +98,7 @@ class SpringEnvironment(BaseEnvironment):
         self.mesh_cube.pos([X, 0.5 * self.cube_size, 0])
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=[X, 0.5 * self.cube_size, 0.],
                                   coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
-        if self.visual is not None:
-            self.visual.update_mesh(object_id=0, positions=self.mesh_spring.vertices)
-            self.visual.update_mesh(object_id=1, positions=self.mesh_cube.vertices)
+        if self.viewer is not None:
+            self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_spring.vertices)
+            self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_cube.vertices)
             self.update_visualisation()

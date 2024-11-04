@@ -1,39 +1,20 @@
-from typing import Union, List, Dict, Any, Callable, Optional, Type, Tuple
-from numpy import array, where
-from itertools import chain
+from typing import Union, List, Dict, Any, Optional, Type, Tuple
+from numpy import array
 
-from SSD.Core.Storage.database import Database
+from SSD.core import Database
 
 
 class DatabaseHandler:
 
-    def __init__(self,
-                 on_init_handler: Optional[Callable] = None,
-                 on_partitions_handler: Optional[Callable] = None):
+    def __init__(self):
         """
         DatabaseHandler allows components to be synchronized with the Database partitions and to read / write data.
-
-        :param on_init_handler: Event to trigger when the DatabaseHandler is initialized.
-        :param on_partitions_handler: Event to trigger when the list of partitions is updated.
         """
 
         # Databases variables
         self.__db: Optional[Database] = None
         self.__current_table: str = 'train'
         self.__exchange_db: Optional[Database] = None
-
-        # Event handlers
-        # self.__on_init_handler = self.default_handler if on_init_handler is None else on_init_handler
-        # self.__on_partitions_handler = self.default_handler if on_partitions_handler is None else on_partitions_handler
-
-    # def default_handler(self):
-    #     pass
-    #
-    # def set_init_handler(self, on_init_handler: Callable):
-    #     self.__on_init_handler = on_init_handler
-    #
-    # def set_partitions_handler(self, on_partitions_handler: Callable):
-    #     self.__on_partitions_handler = on_partitions_handler
 
     ##########################################################################################
     ##########################################################################################
@@ -71,30 +52,6 @@ class DatabaseHandler:
                              database_name=database[1]).load()
         self.__exchange_db = Database(database_dir=exchange_db[0],
                                       database_name=exchange_db[1]).load()
-        # self.__on_init_handler()
-
-    # def update_list_partitions(self,
-    #                            partition: Database) -> None:
-    #     """
-    #     Add a new storing partition to the list.
-    #
-    #     :param partition: New storing partition to add.
-    #     """
-    #
-    #     self.__storing_partitions.append(partition)
-    #     self.__on_partitions_handler()
-
-    # def update_list_partitions_remote(self,
-    #                                   partition: List[str]) -> None:
-    #     """
-    #     Add a new storing partition to the list in remote DatabaseHandler.
-    #
-    #     :param partition: Path to the new storing partition.
-    #     """
-    #
-    #     self.__storing_partitions.append(Database(database_dir=partition[0],
-    #                                               database_name=partition[1]).load())
-    #     self.__on_partitions_handler()
 
     def load(self) -> None:
         """
@@ -131,23 +88,28 @@ class DatabaseHandler:
     ##########################################################################################
     ##########################################################################################
 
-    def create_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
+    def create_fields(self,
+                      fields: Union[List[Tuple[str, Type]], Tuple[str, Type]],
+                      exchange: bool = False) -> None:
         """
         Create new Fields in a Table from one of the Databases.
 
         :param fields: Field or list of Fields names and types.
+        :param exchange: If True, add data to the exchange Table.
         """
 
         # Create the Field(s) in the exchange Database
-        self.__exchange_db.load()
-        self.__exchange_db.create_fields(table_name='data',
-                                         fields=fields)
+        if exchange:
+            self.__exchange_db.load()
+            self.__exchange_db.create_fields(table_name='data',
+                                             fields=fields)
 
         # Create the Field(s) in the storing Database
-        self.__db.load()
-        for mode in ['train', 'test', 'run']:
-            self.__db.create_fields(table_name=mode,
-                                    fields=fields)
+        else:
+            self.__db.load()
+            for mode in ['train', 'test', 'run']:
+                self.__db.create_fields(table_name=mode,
+                                        fields=fields)
 
     def get_fields(self) -> List[str]:
         """
@@ -163,16 +125,18 @@ class DatabaseHandler:
     ##########################################################################################
 
     def add_data(self,
-                 data: Dict[str, Any]) -> Union[int, List[int]]:
+                 data: Dict[str, Any],
+                 exchange: bool = False) -> Union[int, List[int]]:
         """
         Add a new line of data in a Database.
 
         :param data: New line of the Table.
+        :param exchange: If True, add data to the exchange Table.
         """
 
         # Add data in the exchange Database
-        # if table_name == 'Exchange':
-        #     return self.__exchange_db.add_data(table_name=table_name, data=data)
+        if exchange:
+            return self.__exchange_db.add_data(table_name='data', data=data)
 
         # Add data in the storing Database
         return self.__db.add_data(table_name=self.__current_table, data=data)
@@ -222,39 +186,20 @@ class DatabaseHandler:
                                  line_id=line_id,
                                  fields=fields)
 
-    # def get_lines(self,
-    #               lines_id: List[List[int]],
-    #               fields: Optional[Union[str, List[str]]] = None) -> Dict[str, Any]:
-    #     """
-    #     Get lines of data from a Database.
-    #
-    #     :param lines_id: Indices of the lines to get.
-    #     :param fields: Data fields to extract.
-    #     """
-    #
-    #     # Transform list of lines to batch of lines per partition
-    #     batch_indices = array(lines_id)
-    #     partition_batch_indices = []
-    #     for i in range(len(self.__storing_partitions)):
-    #         partition_indices = where(batch_indices[:, 0] == i)[0]
-    #         if len(partition_indices) > 0:
-    #             partition_batch_indices.append([i, batch_indices[partition_indices, 1].tolist()])
-    #
-    #     # Get lines of data
-    #     partition_batches = []
-    #     for partition_indices in partition_batch_indices:
-    #         data = self.__storing_partitions[partition_indices[0]].get_lines(table_name=table_name,
-    #                                                                          lines_id=partition_indices[1],
-    #                                                                          fields=fields,
-    #                                                                          batched=True)
-    #         del data['id']
-    #         partition_batches.append(data)
-    #
-    #     # Merge batches
-    #     if len(partition_batches) == 1:
-    #         return partition_batches[0]
-    #     else:
-    #         return dict(zip(partition_batches[0].keys(),
-    #                         [list(chain.from_iterable([partition_batches[i][key]
-    #                                                    for i in range(len(partition_batches))]))
-    #                          for key in partition_batches[0].keys()]))
+    def get_lines(self,
+                  lines_id: List[int],
+                  fields: Optional[Union[str, List[str]]] = None) -> Dict[str, Any]:
+        """
+        Get lines of data from a Database.
+
+        :param lines_id: Indices of the lines to get.
+        :param fields: Data fields to extract.
+        """
+
+        # Get lines of data
+        data = self.__db.get_lines(table_name='train',
+                                   lines_id=lines_id,
+                                   fields=fields,
+                                   batched=True)
+        del data['id']
+        return data

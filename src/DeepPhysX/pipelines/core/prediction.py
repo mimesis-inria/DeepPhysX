@@ -4,7 +4,7 @@ from os.path import join, exists
 from DeepPhysX.pipelines.core.base_pipeline import BasePipeline
 from DeepPhysX.pipelines.core.data_manager import DataManager
 from DeepPhysX.networks.core.network_manager import NetworkManager
-from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
+from DeepPhysX.networks.core.network_config import NetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 
@@ -12,7 +12,7 @@ from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 class BasePrediction(BasePipeline):
 
     def __init__(self,
-                 network_config: BaseNetworkConfig,
+                 network_config: NetworkConfig,
                  environment_config: SimulationConfig,
                  database_config: Optional[DatabaseConfig] = None,
                  session_dir: str = 'session',

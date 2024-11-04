@@ -1,17 +1,17 @@
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Tuple
 from os import listdir, remove
 from os.path import join, isdir, isfile, sep
 from numpy import ndarray, array
 
 from DeepPhysX.database.database_handler import DatabaseHandler
-from DeepPhysX.networks.core.dpx_network_config import DPXNetworkConfig
+from DeepPhysX.networks.core.network_config import NetworkConfig
 from DeepPhysX.utils.path import copy_dir, create_dir
 
 
 class NetworkManager:
 
     def __init__(self,
-                 network_config: DPXNetworkConfig,
+                 network_config: NetworkConfig,
                  pipeline: str = '',
                  session: str = 'sessions/default',
                  new_session: bool = True):
@@ -77,6 +77,12 @@ class NetworkManager:
     ##########################################################################################
     ##########################################################################################
 
+    def connect_to_database(self,
+                            database: Tuple[str, str],
+                            exchange_db: Tuple[str, str]):
+
+        self.database_handler.init(database=database, exchange_db=exchange_db)
+
     def get_database_handler(self) -> DatabaseHandler:
         """
         Get the DatabaseHandler of the NetworkManager.
@@ -95,10 +101,10 @@ class NetworkManager:
         if nb_clients is not None:
             # Create the networks fields in the Exchange Database
             fields = [(field_name, ndarray) for field_name in self.network.net_fields + self.network.pred_fields]
-            self.database_handler.create_fields(table_name='Exchange', fields=fields)
+            self.database_handler.create_fields(fields=fields, exchange=True)
             # Add an empty line for each Client
             for _ in range(nb_clients):
-                self.database_handler.add_data(table_name='Exchange', data={})
+                self.database_handler.add_data(exchange=True, data={})
 
     ##########################################################################################
     ##########################################################################################
@@ -178,7 +184,7 @@ class NetworkManager:
 
     def compute_prediction_and_loss(self,
                                     optimize: bool,
-                                    data_lines: List[List[int]],
+                                    data_lines: List[int],
                                     normalization: Optional[Dict[str, List[float]]] = None) -> Dict[str, float]:
         """
         Make a prediction with the data passed as argument, optimize or not the networks
@@ -194,8 +200,7 @@ class NetworkManager:
         normalization = {} if normalization is None else normalization
         for side, fields in zip(['net', 'opt'], [self.network.net_fields, self.network.opt_fields]):
             # Get the batch from the Database
-            batch = self.database_handler.get_lines(table_name='Training',
-                                                    fields=fields,
+            batch = self.database_handler.get_lines(fields=fields,
                                                     lines_id=data_lines)
             # Apply normalization and convert to tensor
             for field in batch.keys():

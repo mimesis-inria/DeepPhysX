@@ -2,10 +2,10 @@ from torch import Tensor
 from torch.nn import Sequential, PReLU, Linear
 from collections import namedtuple
 
-from DeepPhysX.networks.core.dpx_network_config import DPXNetwork
+from DeepPhysX.networks.core.network_config import Network
 
 
-class MLP(DPXNetwork):
+class MLP(Network):
 
     def __init__(self, config: namedtuple):
         """
@@ -14,7 +14,7 @@ class MLP(DPXNetwork):
         :param config: Set of mlp parameters.
         """
 
-        DPXNetwork.__init__(self, config)
+        Network.__init__(self, config)
 
         # Data fields
         self.net_fields = ['input']
@@ -53,7 +53,7 @@ class MLP(DPXNetwork):
 
     def __str__(self):
 
-        description = DPXNetwork.__str__(self)
+        description = Network.__str__(self)
         description += self.linear.__str__() + "\n"
         description += f"    Layers dimensions: {self.config.dim_layers}\n"
         description += f"    Output dimension: {self.config.dim_output}\n"

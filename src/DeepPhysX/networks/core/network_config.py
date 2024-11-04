@@ -2,18 +2,18 @@ from typing import Any, Optional, Type
 from os.path import isdir
 from numpy import sctypeDict
 
-from DeepPhysX.networks.core.dpx_network import DPXNetwork
-from DeepPhysX.networks.core.dpx_optimization import DPXOptimization
-from DeepPhysX.networks.core.dpx_transformation import DPXTransformation
+from DeepPhysX.networks.core.network import Network
+from DeepPhysX.networks.core.network_optimization import NetworkOptimization
+from DeepPhysX.networks.core.network_transformation import NetworkTransformation
 from DeepPhysX.utils.configs import make_config, namedtuple
 
 
-class DPXNetworkConfig:
+class NetworkConfig:
 
     def __init__(self,
-                 network_class: Type[DPXNetwork] = DPXNetwork,
-                 optimization_class: Type[DPXOptimization] = DPXOptimization,
-                 data_transformation_class: Type[DPXTransformation] = DPXTransformation,
+                 network_class: Type[Network] = Network,
+                 optimization_class: Type[NetworkOptimization] = NetworkOptimization,
+                 data_transformation_class: Type[NetworkTransformation] = NetworkTransformation,
                  network_dir: Optional[str] = None,
                  network_name: str = 'networks',
                  network_type: str = 'DPXNetwork',
@@ -40,42 +40,18 @@ class DPXNetworkConfig:
         :param lr: Learning rate.
         :param require_training_stuff: If specified, loss and optimizer class can be not necessary for training.
         :param loss: Loss class.
-        :param optimizer: networks's parameters optimizer class.
+        :param optimizer: Network's parameters optimizer class.
         """
 
         self.name = self.__class__.__name__
 
         # Check network_dir type and existence
         if network_dir is not None:
-            if type(network_dir) != str:
-                raise TypeError(
-                    f"[{self.__class__.__name__}] Wrong 'network_dir' type: str required, get {type(network_dir)}")
             if not isdir(network_dir):
                 raise ValueError(f"[{self.__class__.__name__}] Given 'network_dir' does not exists: {network_dir}")
-        # Check network_name type
-        if type(network_name) != str:
-            raise TypeError(
-                f"[{self.__class__.__name__}] Wrong 'network_name' type: str required, get {type(network_name)}")
-        # Check network_tpe type
-        if type(network_type) != str:
-            raise TypeError(
-                f"[{self.__class__.__name__}] Wrong 'network_type' type: str required, get {type(network_type)}")
-        # Check which_network type and value
-        if type(which_network) != int:
-            raise TypeError(
-                f"[{self.__class__.__name__}] Wrong 'which_network' type: int required, get {type(which_network)}")
-        # Check save_intermediate_states type and value
-        if type(save_intermediate_state_every) != int:
-            raise TypeError(
-                f"[{self.__class__.__name__}] Wrong 'save_intermediate_state_every' type: int required, get "
-                f"{type(save_intermediate_state_every)}")
-        # Check data type
-        if data_type not in sctypeDict:
-            raise ValueError(
-                f"[{self.__class__.__name__}] The following data type is not a numpy type: {data_type}")
 
         # DPXNetwork parameterization
-        self.network_class: Type[DPXNetwork] = network_class
+        self.network_class: Type[Network] = network_class
         self.network_config: namedtuple = make_config(configuration_object=self,
                                                       configuration_name='network_config',
                                                       network_name=network_name,
@@ -83,7 +59,7 @@ class DPXNetworkConfig:
                                                       data_type=data_type)
 
         # DPXOptimization parameterization
-        self.optimization_class: Type[DPXOptimization] = optimization_class
+        self.optimization_class: Type[NetworkOptimization] = optimization_class
         self.optimization_config: namedtuple = make_config(configuration_object=self,
                                                            configuration_name='optimization_config',
                                                            loss=loss,
@@ -92,7 +68,7 @@ class DPXNetworkConfig:
         self.training_stuff: bool = (loss is not None) and (optimizer is not None) or (not require_training_stuff)
 
         # NetworkManager parameterization
-        self.data_transformation_class: Type[DPXTransformation] = data_transformation_class
+        self.data_transformation_class: Type[NetworkTransformation] = data_transformation_class
         self.data_transformation_config: namedtuple = make_config(configuration_object=self,
                                                                   configuration_name='data_transformation_config')
 
@@ -101,7 +77,7 @@ class DPXNetworkConfig:
         self.which_network: int = which_network
         self.save_every_epoch: int = save_intermediate_state_every and self.training_stuff
 
-    def create_network(self) -> DPXNetwork:
+    def create_network(self) -> Network:
         """
         Create an instance of network_class with given parameters.
 
@@ -110,11 +86,11 @@ class DPXNetworkConfig:
 
         # Create instance
         network = self.network_class(config=self.network_config)
-        if not isinstance(network, DPXNetwork):
+        if not isinstance(network, Network):
             raise TypeError(f"[{self.name}] The given 'network_class'={self.network_class} must be a DPXNetwork.")
         return network
 
-    def create_optimization(self) -> DPXOptimization:
+    def create_optimization(self) -> NetworkOptimization:
         """
         Create an instance of optimization_class with given parameters.
 
@@ -123,12 +99,12 @@ class DPXNetworkConfig:
 
         # Create instance
         optimization = self.optimization_class(config=self.optimization_config)
-        if not isinstance(optimization, DPXOptimization):
+        if not isinstance(optimization, NetworkOptimization):
             raise TypeError(f"[{self.name}] The given 'optimization_class'={self.optimization_class} must be a "
                             f"DPXOptimization.")
         return optimization
 
-    def create_data_transformation(self) -> DPXTransformation:
+    def create_data_transformation(self) -> NetworkTransformation:
         """
         Create an instance of data_transformation_class with given parameters.
 
@@ -137,7 +113,7 @@ class DPXNetworkConfig:
 
         # Create instance
         data_transformation = self.data_transformation_class(config=self.data_transformation_config)
-        if not isinstance(data_transformation, DPXTransformation):
+        if not isinstance(data_transformation, NetworkTransformation):
             raise TypeError(f"[{self.name}] The given 'data_transformation_class'={self.data_transformation_class} "
                             f"must be a DPXTransformation.")
         return data_transformation

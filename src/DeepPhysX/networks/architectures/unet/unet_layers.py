@@ -4,7 +4,7 @@ from torch.nn import Module, Conv2d, Conv3d, BatchNorm2d, BatchNorm3d, ReLU, Seq
     ConvTranspose2d, ConvTranspose3d
 from collections import namedtuple
 
-from DeepPhysX.networks.core.dpx_network import DPXNetwork
+from DeepPhysX.networks.core.network import Network
 from DeepPhysX.networks.architectures.unet.utils import crop_and_merge
 
 
@@ -104,7 +104,7 @@ class EncoderDecoder:
         return Sequential(*[*self.encoder, *self.decoder])
 
 
-class UNet(DPXNetwork):
+class UNet(Network):
 
     def __init__(self,
                  config: namedtuple):
@@ -180,7 +180,7 @@ class UNet(DPXNetwork):
 
     def __str__(self) -> str:
 
-        description = DPXNetwork.__str__(self)
+        description = Network.__str__(self)
         description += f"    Number of dimensions: {self.config.nb_dims}\n"
         description += f"    Number of input channels: {self.config.nb_input_channels}\n"
         description += f"    Number of first layer channels: {self.config.nb_first_layer_channels}\n"

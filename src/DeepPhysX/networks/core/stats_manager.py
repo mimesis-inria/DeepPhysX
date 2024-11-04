@@ -37,7 +37,7 @@ class StatsManager:
 
         # Open Tensorboard
         tb = program.TensorBoard()
-        tb.configure(argv=[None, '--logdir', self.log_dir])
+        tb.configure(argv=[None, '--logdir', self.log_dir, '--load_fast=false'])
         url = tb.launch()
         w_open(url)
 

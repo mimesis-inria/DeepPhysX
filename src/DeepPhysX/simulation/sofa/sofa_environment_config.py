@@ -3,11 +3,11 @@ from os.path import join, dirname
 from sys import modules, executable
 from subprocess import run
 
-from DeepPhysX.simulation.core.base_environment_config import BaseEnvironmentConfig
+from DeepPhysX.simulation.core.simulation_config import SimulationConfig
 from DeepPhysX.simulation.sofa.sofa_environment import SofaEnvironment
 
 
-class SofaEnvironmentConfig(BaseEnvironmentConfig):
+class SofaEnvironmentConfig(SimulationConfig):
 
     def __init__(self,
                  environment_class: Type[SofaEnvironment],
@@ -43,20 +43,20 @@ class SofaEnvironmentConfig(BaseEnvironmentConfig):
         :param env_kwargs: Additional arguments to pass to the Environment.
         """
 
-        BaseEnvironmentConfig.__init__(self,
-                                       environment_class=environment_class,
-                                       as_tcp_ip_client=as_tcp_ip_client,
-                                       number_of_thread=number_of_thread,
-                                       ip_address=ip_address,
-                                       port=port,
-                                       simulations_per_step=simulations_per_step,
-                                       max_wrong_samples_per_step=max_wrong_samples_per_step,
-                                       load_samples=load_samples,
-                                       only_first_epoch=only_first_epoch,
-                                       always_produce=always_produce,
-                                       visualizer=visualizer,
-                                       record_wrong_samples=record_wrong_samples,
-                                       env_kwargs=env_kwargs)
+        SimulationConfig.__init__(self,
+                                  environment_class=environment_class,
+                                  as_tcp_ip_client=as_tcp_ip_client,
+                                  number_of_thread=number_of_thread,
+                                  ip_address=ip_address,
+                                  port=port,
+                                  simulations_per_step=simulations_per_step,
+                                  max_wrong_samples_per_step=max_wrong_samples_per_step,
+                                  load_samples=load_samples,
+                                  only_first_epoch=only_first_epoch,
+                                  always_produce=always_produce,
+                                  visualizer=visualizer,
+                                  record_wrong_samples=record_wrong_samples,
+                                  env_kwargs=env_kwargs)
 
         self.environment_class: Type[SofaEnvironment] = environment_class
 

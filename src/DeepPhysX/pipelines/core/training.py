@@ -4,24 +4,23 @@ from datetime import datetime
 from vedo import ProgressBar
 
 from DeepPhysX.pipelines.core.base_pipeline import BasePipeline
-from DeepPhysX.pipelines.core.data_manager import DataManager
+from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
 from DeepPhysX.networks.core.network_manager import NetworkManager
 from DeepPhysX.networks.core.stats_manager import StatsManager
-from DeepPhysX.networks.core.dpx_network_config import BaseNetworkConfig
-from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.simulation.core.simulation_config import SimulationConfig
+from DeepPhysX.networks.core.network_config import NetworkConfig
+from DeepPhysX.simulation.core.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir
 
 
-class BaseTraining(BasePipeline):
+class Training(BasePipeline):
 
     def __init__(self,
-                 network_config: BaseNetworkConfig,
+                 network_config: NetworkConfig,
                  database_config: DatabaseConfig,
                  environment_config: Optional[SimulationConfig] = None,
+                 new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'training',
-                 new_session: bool = True,
                  epoch_nb: int = 0,
                  batch_nb: int = 0,
                  batch_size: int = 0,
@@ -62,25 +61,40 @@ class BaseTraining(BasePipeline):
         # Configure 'produce_data' flag
         if environment_config is None and database_config.existing_dir is None:
             raise ValueError(f"[{self.name}] No data source provided.")
-        produce_data = database_config.existing_dir is None
+        self.produce_data = database_config.existing_dir is None
 
         # Create a DataManager
-        self.data_manager = DataManager(pipeline=self,
-                                        database_config=database_config,
-                                        environment_config=environment_config,
-                                        session=join(self.session_dir, self.session_name),
-                                        new_session=new_session,
-                                        produce_data=produce_data,
-                                        batch_size=batch_size)
-        self.batch_size = batch_size
+        # self.data_manager = DataManager(pipeline=self,
+        #                                 database_config=database_config,
+        #                                 environment_config=environment_config,
+        #                                 session=join(self.session_dir, self.session_name),
+        #                                 new_session=new_session,
+        #                                 produce_data=produce_data,
+        #                                 batch_size=batch_size)
+        self.database_manager = DatabaseManager(database_config=database_config,
+                                                pipeline=self.type,
+                                                session=join(self.session_dir, self.session_name),
+                                                new_session=new_session,
+                                                produce_data=self.produce_data)
+
+        if environment_config is not None:
+            self.simulation_manager = SimulationManager(config=environment_config,
+                                                        pipeline=self.type,
+                                                        session=join(self.session_dir, self.session_name),
+                                                        produce_data=self.produce_data,
+                                                        batch_size=batch_size)
+            self.simulation_manager.connect_to_database(**self.database_manager.get_database_paths())
 
         # Create a NetworkManager
         self.network_manager = NetworkManager(network_config=network_config,
                                               pipeline=self.type,
                                               session=join(self.session_dir, self.session_name),
                                               new_session=new_session)
-        self.data_manager.connect_handler(self.network_manager.get_database_handler())
-        self.network_manager.link_clients(self.data_manager.nb_environment)
+        self.network_manager.connect_to_database(**self.database_manager.get_database_paths())
+
+        if self.simulation_manager is not None:
+            self.network_manager.link_clients(1 if self.simulation_manager.server is None
+                                              else self.simulation_manager.nb_parallel_env)
 
         # Create a StatsManager
         self.stats_manager = StatsManager(session=join(self.session_dir, self.session_name)) if not debug else None
@@ -167,11 +181,29 @@ class BaseTraining(BasePipeline):
         Pulls data, run a prediction and an optimizer step.
         """
 
-        self.data_manager.get_data(epoch=self.epoch_id,
-                                   animate=True)
+        # Get data from Environment(s) if used and if the data should be created at this epoch
+        if self.simulation_manager is not None and self.produce_data and \
+                (self.epoch_id == 0 or self.simulation_manager.always_produce):
+            self.data_lines = self.simulation_manager.get_data(animate=True)
+            self.database_manager.add_data(self.data_lines)
+
+        # Get data from Dataset
+        else:
+            self.data_lines = self.database_manager.get_data(batch_size=self.batch_size)
+            # Dispatch a batch to clients
+            if self.simulation_manager is not None:
+                if self.simulation_manager.load_samples and \
+                        (self.epoch_id == 0 or not self.simulation_manager.only_first_epoch):
+                    self.simulation_manager.dispatch_batch(data_lines=self.data_lines,
+                                                           animate=True)
+                # # Environment is no longer used
+                # else:
+                #     self.simulation_manager.close()
+                #     self.simulation_manager = None
+
         self.loss_dict = self.network_manager.compute_prediction_and_loss(
-            data_lines=self.data_manager.data_lines,
-            normalization=self.data_manager.normalization,
+            data_lines=self.data_lines,
+            normalization=self.database_manager.normalization,
             optimize=True)
 
     def batch_count(self) -> None:
@@ -216,10 +248,9 @@ class BaseTraining(BasePipeline):
         Called once at the end of the training Pipeline.
         """
 
-        self.data_manager.close()
-        self.network_manager.close()
-        if self.stats_manager is not None:
-            self.stats_manager.close()
+        for manager in (self.database_manager, self.network_manager, self.stats_manager, self.simulation_manager):
+            if manager is not None:
+                manager.close()
 
     def save_info_file(self) -> None:
         """
@@ -238,7 +269,12 @@ class BaseTraining(BasePipeline):
             f.write("## List of Components Parameters ##\n")
             f.write(str(self))
             f.write(str(self.network_manager))
-            f.write(str(self.data_manager))
+
+            if self.simulation_manager is not None:
+                f.write(str(self.simulation_manager))
+            if self.database_manager is not None:
+                f.write(str(self.database_manager))
+
             if self.stats_manager is not None:
                 f.write(str(self.stats_manager))
             f.close()
