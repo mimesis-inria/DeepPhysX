@@ -111,12 +111,14 @@ class DatabaseHandler:
                 self.__db.create_fields(table_name=mode,
                                         fields=fields)
 
-    def get_fields(self) -> List[str]:
+    def get_fields(self, exchange: bool = False) -> List[str]:
         """
         Get the list of Fields in a Table.
         """
 
-        return self.__db.get_fields(table_name=self.__current_table)
+        if not exchange:
+            return self.__db.get_fields(table_name=self.__current_table)
+        return self.__exchange_db.get_fields(table_name='data')
 
     ##########################################################################################
     ##########################################################################################
@@ -156,7 +158,8 @@ class DatabaseHandler:
 
     def update(self,
                data: Dict[str, Any],
-               line_id: Union[int, List[int]]) -> None:
+               line_id: Union[int, List[int]],
+               exchange: bool = False) -> None:
         """
         Update a line in a Database.
 
@@ -166,11 +169,15 @@ class DatabaseHandler:
 
         # database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[line_id[0]]
         line_id = line_id[1] if type(line_id) == list else line_id
-        self.__db.update(table_name='train', data=data, line_id=line_id)
+        if not exchange:
+            self.__db.update(table_name='train', data=data, line_id=line_id)
+        else:
+            self.__exchange_db.update(table_name='data', data=data, line_id=line_id)
 
     def get_line(self,
                  line_id: Union[int, List[int]],
-                 fields: Optional[Union[str, List[str]]] = None) -> Dict[str, Any]:
+                 fields: Optional[Union[str, List[str]]] = None,
+                 exchange: bool = False) -> Dict[str, Any]:
         """
         Get a line of data from a Database.
 
@@ -178,13 +185,18 @@ class DatabaseHandler:
         :param fields: Data fields to extract.
         """
 
-        # database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[line_id[0]]
         line_id = line_id[1] if type(line_id) == list else line_id
-        if self.__db.nb_lines(table_name='train') == 0:
+        if not exchange:
+            if self.__db.nb_lines(table_name='train') == 0:
+                return {}
+            return self.__db.get_line(table_name='train',
+                                     line_id=line_id,
+                                     fields=fields)
+        if self.__exchange_db.nb_lines(table_name='data') == 0:
             return {}
-        return self.__db.get_line(table_name='train',
-                                 line_id=line_id,
-                                 fields=fields)
+        return self.__exchange_db.get_line(table_name='data',
+                                  line_id=line_id,
+                                  fields=fields)
 
     def get_lines(self,
                   lines_id: List[int],

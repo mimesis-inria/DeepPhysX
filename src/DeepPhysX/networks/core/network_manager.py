@@ -239,7 +239,7 @@ class NetworkManager:
 
         # Get networks data
         normalization = {} if normalization is None else normalization
-        sample = self.database_handler.get_line(table_name='Exchange',
+        sample = self.database_handler.get_line(exchange=True,
                                                 fields=self.network.net_fields,
                                                 line_id=instance_id)
         del sample['id']
@@ -266,7 +266,7 @@ class NetworkManager:
                                                        normalization=normalization[self.network.pred_norm_fields[field]],
                                                        reverse=True)
             data_pred[field].reshape(-1)
-        self.database_handler.update(table_name='Exchange',
+        self.database_handler.update(exchange=True,
                                      data=data_pred,
                                      line_id=instance_id)
 

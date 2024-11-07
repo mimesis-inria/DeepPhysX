@@ -99,6 +99,6 @@ class SpringEnvironment(DPXSimulation):
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=[X, 0.5 * self.cube_size, 0.],
                                   coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
         if self.viewer is not None:
-            self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_spring.vertices)
-            self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_cube.vertices)
+            self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
+            self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
             self.update_visualisation()

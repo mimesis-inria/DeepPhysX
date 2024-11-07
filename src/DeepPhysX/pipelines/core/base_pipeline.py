@@ -107,15 +107,6 @@ class BasePipeline:
 
         return self.__get_any_manager(manager_names='network_manager')
 
-    def get_data_manager(self) -> Optional[DataManager]:
-        """
-        Return the DataManager associated with the Pipeline if it exists.
-
-        :return: The DataManager associated with the Pipeline.
-        """
-
-        return self.__get_any_manager(manager_names='data_manager')
-
     def get_stats_manager(self) -> Optional[StatsManager]:
         """
         Return the StatsManager associated with the Pipeline if it exists.

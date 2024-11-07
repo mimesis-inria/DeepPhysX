@@ -2,6 +2,8 @@ from typing import Optional, List, Tuple
 from asyncio import run as async_run
 
 from DeepPhysX.simulation.core.simulation_config import TcpIpServer, SimulationConfig, SimulationController
+from DeepPhysX.networks.core.network_manager import NetworkManager
+from DeepPhysX.database.database_manager import DatabaseManager
 
 
 class SimulationManager:
@@ -57,6 +59,9 @@ class SimulationManager:
         self.get_data = self.__get_data_from_server if self.server else self.__get_data_from_environment
         self.dispatch_batch = self.__dispatch_batch_to_server if self.server else self.__dispatch_batch_to_environment
 
+        self.__network_manager: Optional[NetworkManager] = None
+        self.__database_manager: Optional[DatabaseManager] = None
+
     ##########################################################################################
     ##########################################################################################
     #                              DatabaseHandler management                                #
@@ -71,6 +76,12 @@ class SimulationManager:
             self.environment_controller.connect_to_database(database=database, exchange_db=exchange_db)
         elif self.server is not None:
             self.server.connect_to_database(database=database, exchange_db=exchange_db)
+
+    def connect_to_network_manager(self, network_manager):
+        self.__network_manager = network_manager
+
+    def connect_to_database_manager(self, database_manager):
+        self.__database_manager = database_manager
 
     ##########################################################################################
     ##########################################################################################
@@ -174,6 +185,11 @@ class SimulationManager:
         self.__get_data_from_environment(animate=animate,
                                          save_data=save_data,
                                          request_prediction=request_prediction)
+
+    def get_prediction(self, instance_id: int):
+
+        self.__network_manager.compute_online_prediction(instance_id=instance_id,
+                                                         normalization=self.__database_manager.normalization)
 
     ##########################################################################################
     ##########################################################################################

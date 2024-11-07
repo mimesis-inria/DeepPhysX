@@ -183,7 +183,7 @@ class SimulationController(AbstractController):
         default_fields = {'id', 'env_id'}
         if len(self.__prediction_fields) == 0:
             self.__database_handler.load()
-            self.__prediction_fields = list(set(self.__database_handler.get_fields(table_name='Exchange')) -
+            self.__prediction_fields = list(set(self.__database_handler.get_fields(exchange=True)) -
                                             default_fields)
 
         # 2.1. Check that default fields are not set by user
@@ -210,16 +210,16 @@ class SimulationController(AbstractController):
 
         # 3. Get the prediction from the networks
         # 3.1. Define the training data in the Database
-        self.__database_handler.update(table_name='Exchange', data=kwargs, line_id=self.__environment_id)
+        self.__database_handler.update(exchange=True, data=kwargs, line_id=self.__environment_id)
         # 3.2. Send a prediction request
         if self.tcp_ip_client is not None:
             self.tcp_ip_client.get_prediction()
         elif self.environment_manager is not None:
-            self.environment_manager.data_manager.get_prediction(self.__environment_id)
+            self.environment_manager.get_prediction(self.__environment_id)
         else:
             raise ValueError(f"[{self.__environment.name}] The Environment has no Manager to request a prediction.")
         # 3.3. Receive the prediction data
-        data_prediction = self.__database_handler.get_line(table_name='Exchange', line_id=self.__environment_id)
+        data_prediction = self.__database_handler.get_line(exchange=True, line_id=self.__environment_id)
         data_prediction.pop('id')
         return data_prediction
 
@@ -232,10 +232,10 @@ class SimulationController(AbstractController):
         default_fields = {'id', 'env_id'}
         if len(self.__prediction_fields) == 0:
             self.__database_handler.load()
-            self.__prediction_fields = list(set(self.__database_handler.get_fields(table_name='Exchange')) -
+            self.__prediction_fields = list(set(self.__database_handler.get_fields(exchange=True)) -
                                             default_fields)
         data_training = {}
-        for field, value in self.__data_training.items():
+        for field, value in self.__data.items():
             if field not in default_fields and field in self.__prediction_fields:
                 data_training[field] = value
 
@@ -279,10 +279,8 @@ class SimulationController(AbstractController):
         Reset the training data and the additional data variables.
         """
 
-        self.__data_training = {}
-        self.__data_additional = {}
-        self.__sample_training = None
-        self.__sample_additional = None
+        self.__data = {}
+        self.__sample = None
         self.update_line = None
 
     def close(self):
