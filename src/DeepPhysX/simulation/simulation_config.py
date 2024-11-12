@@ -5,7 +5,7 @@ from threading import Thread
 from subprocess import run
 from sys import modules, executable
 
-from DeepPhysX.simulation.utils.tcpip_server import TcpIpServer
+from DeepPhysX.simulation.multiprocess.tcpip_server import TcpIpServer
 from DeepPhysX.simulation.simulation_controller import SimulationController, DPXSimulation
 
 
@@ -133,7 +133,7 @@ class SimulationConfig:
         :param idx: Index of client.
         """
 
-        script = join(dirname(modules[DPXSimulation.__module__].__file__), 'launcher.py')
+        script = join(dirname(modules[DPXSimulation.__module__].__file__), 'multiprocess', 'launcher.py')
         run([executable, script, self.environment_file, self.environment_class.__name__,
              server.ip_address, str(server.port), str(idx), str(self.nb_parallel_env)])
 

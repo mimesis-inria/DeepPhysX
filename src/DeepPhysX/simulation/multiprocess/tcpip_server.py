@@ -5,7 +5,7 @@ from asyncio import run as async_run
 from socket import socket
 from queue import SimpleQueue
 
-from DeepPhysX.simulation.utils.tcpip_object import TcpIpObject
+from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
 from SimRender.core import ViewerBatch
 
 
@@ -174,21 +174,20 @@ class TcpIpServer(TcpIpObject):
         #     await self.send_data(data_to_send='sync', loop=loop, receiver=client)
 
     def connect_to_database(self,
-                            database: Tuple[str, str],
-                            exchange_db: Tuple[str, str]):
+                            database_path: Tuple[str, str],
+                            normalize_data: bool):
 
-        async_run(self.__connect_to_database(database, exchange_db))
+        async_run(self.__connect_to_database(database_path, normalize_data))
 
     async def __connect_to_database(self,
-                                    database: Tuple[str, str],
-                                    exchange_db: Tuple[str, str]):
+                                    database_path: Tuple[str, str],
+                                    normalize_data: bool):
 
         loop = get_event_loop()
         for client_id, client in self.clients:
-            await self.send_data(data_to_send=database[0], loop=loop, receiver=client)
-            await self.send_data(data_to_send=database[1], loop=loop, receiver=client)
-            await self.send_data(data_to_send=exchange_db[0], loop=loop, receiver=client)
-            await self.send_data(data_to_send=exchange_db[1], loop=loop, receiver=client)
+            await self.send_data(data_to_send=database_path[0], loop=loop, receiver=client)
+            await self.send_data(data_to_send=database_path[1], loop=loop, receiver=client)
+            await self.send_data(data_to_send=normalize_data, loop=loop, receiver=client)
             await self.receive_data(loop=loop, sender=client)
 
     def connect_visualization(self) -> None:

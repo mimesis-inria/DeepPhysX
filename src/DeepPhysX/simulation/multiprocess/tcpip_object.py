@@ -4,7 +4,7 @@ from asyncio import get_event_loop
 from asyncio import AbstractEventLoop as EventLoop
 from numpy import ndarray
 
-from DeepPhysX.simulation.utils.bytes_converter import BytesConverter
+from DeepPhysX.simulation.multiprocess.bytes_converter import BytesConverter
 
 import sys
 if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):

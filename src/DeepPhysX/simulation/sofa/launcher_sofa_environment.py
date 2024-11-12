@@ -3,7 +3,7 @@ from os.path import dirname
 from sys import argv, path
 
 from DeepPhysX.simulation.sofa.sofa_environment import SofaEnvironment as Environment
-from DeepPhysX.simulation.utils.tcpip_client import TcpIpClient
+from DeepPhysX.simulation.multiprocess.tcpip_client import TcpIpClient
 
 if __name__ == '__main__':
 

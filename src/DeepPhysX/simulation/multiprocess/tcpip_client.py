@@ -5,9 +5,9 @@ from asyncio import AbstractEventLoop as EventLoop
 from asyncio import run as async_run
 from numpy import ndarray
 
-from DeepPhysX.simulation.utils.tcpip_object import TcpIpObject
-from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
-from DeepPhysX.simulation.core.simulation_controller import SimulationController
+from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation
+from DeepPhysX.simulation.simulation_controller import SimulationController
 
 
 class TcpIpClient(TcpIpObject):
@@ -90,11 +90,10 @@ class TcpIpClient(TcpIpObject):
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
         # Synchronize Database
-        database = (await self.receive_data(loop=loop, sender=self.sock),
-                    await self.receive_data(loop=loop, sender=self.sock))
-        exchange = (await self.receive_data(loop=loop, sender=self.sock),
-                    await self.receive_data(loop=loop, sender=self.sock))
-        self.environment_controller.connect_to_database(database=database, exchange_db=exchange)
+        database_path = (await self.receive_data(loop=loop, sender=self.sock),
+                         await self.receive_data(loop=loop, sender=self.sock))
+        normalize_data = await self.receive_data(loop=loop, sender=self.sock)
+        self.environment_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
         await self.send_data(data_to_send='done', loop=loop, receiver=self.sock)
 
     ##########################################################################################
