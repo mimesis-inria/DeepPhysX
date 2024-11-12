@@ -2,7 +2,7 @@ from torch import Tensor
 from torch.nn import Sequential, PReLU, Linear
 from collections import namedtuple
 
-from DeepPhysX.networks.core.network_config import Network
+from DeepPhysX.networks.network_config import Network
 
 
 class MLP(Network):

@@ -4,9 +4,9 @@ from datetime import datetime
 from vedo import ProgressBar
 
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
-from DeepPhysX.networks.core.network_manager import NetworkManager
-from DeepPhysX.networks.core.stats_manager import StatsManager
-from DeepPhysX.networks.core.network_config import NetworkConfig
+from DeepPhysX.networks.network_manager import NetworkManager
+from DeepPhysX.networks.stats_manager import StatsManager
+from DeepPhysX.networks.network_config import NetworkConfig
 from DeepPhysX.simulation.core.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir, get_session_dir
 

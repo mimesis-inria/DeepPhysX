@@ -1,6 +1,6 @@
 from typing import Any, Optional, Type, Union, List
 
-from DeepPhysX.networks.core.network_config import NetworkConfig, NetworkOptimization, NetworkTransformation
+from DeepPhysX.networks.network_config import NetworkConfig, NetworkOptimization, NetworkTransformation
 from DeepPhysX.utils.configs import make_config
 from DeepPhysX.networks.architectures.mlp.mlp_layers import MLP
 

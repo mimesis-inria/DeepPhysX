@@ -4,7 +4,7 @@ from os.path import join, isdir, isfile, sep
 from numpy import ndarray, array
 
 from DeepPhysX.database.database_handler import DatabaseHandler
-from DeepPhysX.networks.core.network_config import NetworkConfig
+from DeepPhysX.networks.network_config import NetworkConfig
 from DeepPhysX.utils.path import copy_dir, create_dir
 
 
@@ -78,10 +78,10 @@ class NetworkManager:
     ##########################################################################################
 
     def connect_to_database(self,
-                            database: Tuple[str, str],
-                            exchange_db: Tuple[str, str]):
+                            database_path: Tuple[str, str],
+                            normalize_data: bool):
 
-        self.database_handler.init(database=database, exchange_db=exchange_db)
+        self.database_handler.init(database_path=database_path, normalize_data=normalize_data)
 
     def get_database_handler(self) -> DatabaseHandler:
         """
@@ -184,23 +184,21 @@ class NetworkManager:
 
     def compute_prediction_and_loss(self,
                                     optimize: bool,
-                                    data_lines: List[int],
-                                    normalization: Optional[Dict[str, List[float]]] = None) -> Dict[str, float]:
+                                    data_lines: List[int]) -> Dict[str, float]:
         """
         Make a prediction with the data passed as argument, optimize or not the networks
 
         :param optimize: If true, run a backward propagation.
         :param data_lines: Batch of indices of samples in the Database.
-        :param normalization: Normalization coefficients.
         :return: The prediction and the associated loss value
         """
 
         # 1. Define networks and Optimization batches
         batches = {}
-        normalization = {} if normalization is None else normalization
+        normalization = self.database_handler.normalization
         for side, fields in zip(['net', 'opt'], [self.network.net_fields, self.network.opt_fields]):
             # Get the batch from the Database
-            batch = self.database_handler.get_lines(fields=fields,
+            batch = self.database_handler.get_batch(fields=fields,
                                                     lines_id=data_lines)
             # Apply normalization and convert to tensor
             for field in batch.keys():
@@ -227,19 +225,16 @@ class NetworkManager:
 
         return data_loss
 
-    def compute_online_prediction(self,
-                                  instance_id: int,
-                                  normalization: Optional[Dict[str, List[float]]] = None) -> None:
+    def compute_online_prediction(self, instance_id: int) -> None:
         """
         Make a prediction with the data passed as argument.
 
         :param instance_id: Index of the Environment instance to provide a prediction.
-        :param normalization: Normalization coefficients.
         """
 
         # Get networks data
-        normalization = {} if normalization is None else normalization
-        sample = self.database_handler.get_line(exchange=True,
+        normalization = self.database_handler.normalization
+        sample = self.database_handler.get_data(exchange=True,
                                                 fields=self.network.net_fields,
                                                 line_id=instance_id)
         del sample['id']
@@ -259,12 +254,13 @@ class NetworkManager:
         data_pred = self.data_transformation.transform_before_apply(data_pred)
 
         # Return the prediction
+        data = {}
         for field in data_pred.keys():
-            data_pred[field] = self.network.tensor_to_numpy(data=data_pred[field][0])
+            data[field] = self.network.tensor_to_numpy(data=data_pred[field][0])
             if self.network.pred_norm_fields[field] in normalization.keys():
-                data_pred[field] = self.normalize_data(data=data_pred[field],
-                                                       normalization=normalization[self.network.pred_norm_fields[field]],
-                                                       reverse=True)
+                data[field] = self.normalize_data(data=data[field],
+                                                  normalization=normalization[self.network.pred_norm_fields[field]],
+                                                  reverse=True)
             data_pred[field].reshape(-1)
         self.database_handler.update(exchange=True,
                                      data=data_pred,

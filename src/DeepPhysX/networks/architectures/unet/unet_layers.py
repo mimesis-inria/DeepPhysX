@@ -4,7 +4,7 @@ from torch.nn import Module, Conv2d, Conv3d, BatchNorm2d, BatchNorm3d, ReLU, Seq
     ConvTranspose2d, ConvTranspose3d
 from collections import namedtuple
 
-from DeepPhysX.networks.core.network import Network
+from DeepPhysX.networks.network import Network
 from DeepPhysX.networks.architectures.unet.utils import crop_and_merge
 
 

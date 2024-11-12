@@ -1,10 +1,9 @@
 from typing import Any, Optional, Type
 from os.path import isdir
-from numpy import sctypeDict
 
-from DeepPhysX.networks.core.network import Network
-from DeepPhysX.networks.core.network_optimization import NetworkOptimization
-from DeepPhysX.networks.core.network_transformation import NetworkTransformation
+from DeepPhysX.networks.network import Network
+from DeepPhysX.networks.network_optimization import NetworkOptimization
+from DeepPhysX.networks.network_transformation import NetworkTransformation
 from DeepPhysX.utils.configs import make_config, namedtuple
 
 

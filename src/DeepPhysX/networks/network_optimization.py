@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from collections import namedtuple
 
-from DeepPhysX.networks.core.network import Network
+from DeepPhysX.networks.network import Network
 
 
 class NetworkOptimization:

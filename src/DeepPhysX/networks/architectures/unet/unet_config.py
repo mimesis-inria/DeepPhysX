@@ -1,8 +1,8 @@
 from typing import Any, List, Optional, Type
 
 from DeepPhysX.utils.configs import make_config
-from DeepPhysX.networks.core.network_config import NetworkConfig
-from DeepPhysX.networks.core.network_optimization import NetworkOptimization
+from DeepPhysX.networks.network_config import NetworkConfig
+from DeepPhysX.networks.network_optimization import NetworkOptimization
 from DeepPhysX.networks.architectures.unet.unet_transformation import UNetTransformation
 from DeepPhysX.networks.architectures.unet.unet_layers import UNet
 
