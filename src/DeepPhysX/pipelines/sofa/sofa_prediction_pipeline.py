@@ -1,16 +1,16 @@
 from typing import Optional
 import Sofa
 
-from DeepPhysX.pipelines.core.prediction import BasePrediction
-from DeepPhysX.networks.core.network_config import BaseNetworkConfig
+from DeepPhysX.pipelines.prediction_pipeline import PredictionPipeline as _PredictionPipeline
+from DeepPhysX.networks.core.network_config import NetworkConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.simulation.sofa.sofa_environment_config import SofaEnvironmentConfig
 
 
-class SofaPrediction(Sofa.Core.Controller, BasePrediction):
+class PredictionPipeline(Sofa.Core.Controller, _PredictionPipeline):
 
     def __init__(self,
-                 network_config: BaseNetworkConfig,
+                 network_config: NetworkConfig,
                  environment_config: SofaEnvironmentConfig,
                  database_config: Optional[DatabaseConfig] = None,
                  session_dir: str = 'session',
@@ -32,7 +32,7 @@ class SofaPrediction(Sofa.Core.Controller, BasePrediction):
         """
 
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
-        BasePrediction.__init__(self,
+        _PredictionPipeline.__init__(self,
                                 network_config=network_config,
                                 database_config=database_config,
                                 environment_config=environment_config,
