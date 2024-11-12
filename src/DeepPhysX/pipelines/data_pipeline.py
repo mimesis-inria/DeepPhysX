@@ -2,7 +2,7 @@ from os.path import join, sep, exists
 from vedo import ProgressBar
 
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
-from DeepPhysX.simulation.core.simulation_manager import SimulationManager, SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir, get_session_dir
 
 

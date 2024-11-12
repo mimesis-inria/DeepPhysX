@@ -3,7 +3,7 @@ from numpy import ndarray
 
 from SSD.SOFA.Rendering.user_api import UserAPI, Database
 
-from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation
 
 import Sofa
 import Sofa.Simulation

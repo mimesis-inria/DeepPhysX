@@ -1,8 +1,8 @@
 from typing import Optional, List, Tuple
 from asyncio import run as async_run
 
-from DeepPhysX.simulation.core.simulation_config import TcpIpServer, SimulationConfig, SimulationController
-from DeepPhysX.networks.core.network_manager import NetworkManager
+from DeepPhysX.simulation.simulation_config import TcpIpServer, SimulationConfig, SimulationController
+from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.database.database_manager import DatabaseManager
 
 
@@ -69,13 +69,13 @@ class SimulationManager:
     ##########################################################################################
 
     def connect_to_database(self,
-                            database: Tuple[str, str],
-                            exchange_db: Tuple[str, str]):
+                            database_path: Tuple[str, str],
+                            normalize_data: bool):
 
         if self.environment_controller is not None:
-            self.environment_controller.connect_to_database(database=database, exchange_db=exchange_db)
+            self.environment_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
         elif self.server is not None:
-            self.server.connect_to_database(database=database, exchange_db=exchange_db)
+            self.server.connect_to_database(database_path=database_path, normalize_data=normalize_data)
 
     def connect_to_network_manager(self, network_manager):
         self.__network_manager = network_manager

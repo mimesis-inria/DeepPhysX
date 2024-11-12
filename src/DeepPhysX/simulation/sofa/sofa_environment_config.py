@@ -3,7 +3,7 @@ from os.path import join, dirname
 from sys import modules, executable
 from subprocess import run
 
-from DeepPhysX.simulation.core.simulation_config import SimulationConfig
+from DeepPhysX.simulation.simulation_config import SimulationConfig
 from DeepPhysX.simulation.sofa.sofa_environment import SofaEnvironment
 
 

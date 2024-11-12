@@ -2,7 +2,7 @@ from typing import Type, Tuple, Dict, Any, Union, List, Optional
 from os.path import isfile, join
 from numpy import ndarray
 
-from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation, AbstractController, Viewer
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation, AbstractController, Viewer
 from DeepPhysX.database.database_handler import DatabaseHandler, Database
 
 
@@ -67,10 +67,10 @@ class SimulationController(AbstractController):
         self.__environment.init()
 
     def connect_to_database(self,
-                            database: Tuple[str, str],
-                            exchange_db: Tuple[str, str]):
+                            database_path: Tuple[str, str],
+                            normalize_data: bool):
 
-        self.database_handler.init(database=database, exchange_db=exchange_db)
+        self.database_handler.init(database_path=database_path, normalize_data=normalize_data)
         self.__environment.init_database()
 
     def save_parameters(self, **kwargs) -> None:

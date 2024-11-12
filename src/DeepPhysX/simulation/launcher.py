@@ -2,7 +2,7 @@ from os import sep
 from os.path import dirname
 from sys import argv, path
 
-from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation as Environment
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation as Environment
 from DeepPhysX.simulation.utils.tcpip_client import TcpIpClient
 
 if __name__ == '__main__':

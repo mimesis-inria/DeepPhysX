@@ -6,7 +6,7 @@ from subprocess import run
 from sys import modules, executable
 
 from DeepPhysX.simulation.utils.tcpip_server import TcpIpServer
-from DeepPhysX.simulation.core.simulation_controller import SimulationController, DPXSimulation
+from DeepPhysX.simulation.simulation_controller import SimulationController, DPXSimulation
 
 
 class SimulationConfig:

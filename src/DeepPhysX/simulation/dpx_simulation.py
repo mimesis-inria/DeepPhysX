@@ -1,7 +1,7 @@
 from typing import Any, Optional, Dict, Union, Tuple, List, Type
 from numpy import ndarray
 
-from DeepPhysX.simulation.core.abstract_controller import AbstractController
+from DeepPhysX.simulation.abstract_controller import AbstractController
 from SimRender.core import Viewer
 
 

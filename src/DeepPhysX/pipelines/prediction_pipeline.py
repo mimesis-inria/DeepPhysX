@@ -1,7 +1,7 @@
 from typing import Optional
 from os.path import join, exists
 
-from DeepPhysX.simulation.core.simulation_manager import SimulationManager, SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
 from DeepPhysX.networks.network_manager import NetworkManager, NetworkConfig
 from DeepPhysX.utils.path import get_session_dir
