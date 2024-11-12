@@ -1,12 +1,13 @@
 from typing import Union, List, Dict, Any, Optional, Type, Tuple
-from numpy import array
+from os.path import join
+import json
 
 from SSD.core import Database
 
 
 class DatabaseHandler:
 
-    def __init__(self):
+    def __init__(self, ):
         """
         DatabaseHandler allows components to be synchronized with the Database partitions and to read / write data.
         """
@@ -16,77 +17,54 @@ class DatabaseHandler:
         self.__current_table: str = 'train'
         self.__exchange_db: Optional[Database] = None
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                 Partitions management                                  #
-    ##########################################################################################
-    ##########################################################################################
+        self.__normalize: bool = False
+        self.__json_file: str = ''
+
+    #######################
+    # Database management #
+    #######################
 
     def init(self,
-             database: Tuple[str, str],
-             exchange_db: Tuple[str, str]) -> None:
+             database_path: Tuple[str, str],
+             normalize_data: bool) -> None:
         """
-        Initialize the list of the partitions.
+        Initialize the Database access.
 
-        :param database: Storing Database.
-        :param exchange_db: Exchange Database.
-        """
-
-        self.__db = Database(database_dir=database[0],
-                             database_name=database[1]).load()
-        self.__exchange_db = Database(database_dir=exchange_db[0],
-                                      database_name=exchange_db[1]).load()
-        # self.__on_init_handler()
-
-    def init_remote(self,
-                    database: List[str],
-                    exchange_db: List[str]) -> None:
-        """
-        Initialize the list of partitions in remote DatabaseHandlers.
-
-        :param database: List of paths to the storing Database partitions.
-        :param exchange_db: Path to the exchange Database.
+        :param database_path: Storing Database path.
         """
 
-        self.__db = Database(database_dir=database[0],
-                             database_name=database[1]).load()
-        self.__exchange_db = Database(database_dir=exchange_db[0],
-                                      database_name=exchange_db[1]).load()
+        self.__db = Database(database_dir=database_path[0], database_name=database_path[1]).load()
+        self.__exchange_db = Database(database_dir=database_path[0], database_name='temp').load()
+
+        self.__json_file = join(database_path[0], 'dataset.json')
+        with open(self.__json_file) as json_file:
+            fields = json.load(json_file)['fields']
+
+        if normalize_data:
+            self.__normalize = {field: fields[field]['normalize'] for field in fields}
+        else:
+            self.__normalize = {field: [0, 1] for field in fields}
+
+    def reload_normalization(self) -> None:
+        """
+        Load the normalization coefficients from the database json file.
+        """
+
+        with open(self.__json_file) as json_file:
+            fields = json.load(json_file)['fields']
+            self.__normalize = {field: fields[field]['normalize'] for field in fields}
 
     def load(self) -> None:
         """
-        Load the Database partitions stored by the component.
+        Load the Database.
         """
 
         self.__db.load()
         self.__exchange_db.load()
 
-    def get_database_dir(self) -> str:
-        """
-        Get the database repository of the session.
-        """
-
-        return self.__db.get_path()[0]
-
-    def get_database(self) -> Database:
-        """
-        Get the storing Database partitions.
-        """
-
-        return self.__db
-
-    def get_exchange(self) -> Database:
-        """
-        Get the exchange Database.
-        """
-
-        return self.__exchange_db
-
-    ##########################################################################################
-    ##########################################################################################
-    #                                 Databases architecture                                 #
-    ##########################################################################################
-    ##########################################################################################
+    ##########################
+    # Databases architecture #
+    ##########################
 
     def create_fields(self,
                       fields: Union[List[Tuple[str, Type]], Tuple[str, Type]],
@@ -120,11 +98,14 @@ class DatabaseHandler:
             return self.__db.get_fields(table_name=self.__current_table)
         return self.__exchange_db.get_fields(table_name='data')
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                    Databases editing                                   #
-    ##########################################################################################
-    ##########################################################################################
+    @property
+    def normalization(self):
+
+        return self.__normalize
+
+    #####################
+    # Databases editing #
+    #####################
 
     def add_data(self,
                  data: Dict[str, Any],
@@ -143,17 +124,13 @@ class DatabaseHandler:
         # Add data in the storing Database
         return self.__db.add_data(table_name=self.__current_table, data=data)
 
-    def add_batch(self,
-                  batch: Dict[str, List[Any]]) -> None:
+    def add_batch(self, batch: Dict[str, List[Any]]) -> None:
         """
         Add a batch of data in a Database.
 
         :param batch: New lines of the Table.
         """
 
-        # Only available in the storing Database
-        # if table_name == 'Exchange':
-        #     raise ValueError(f"Cannot add a batch in the Exchange Database.")
         self.__db.add_batch(table_name='train', batch=batch)
 
     def update(self,
@@ -165,16 +142,16 @@ class DatabaseHandler:
 
         :param data: Updated line of the Table.
         :param line_id: Index of the line to edit.
+        :param exchange: If True, add data to the exchange Table.
         """
 
-        # database = self.__exchange_db if table_name == 'Exchange' else self.__storing_partitions[line_id[0]]
         line_id = line_id[1] if type(line_id) == list else line_id
         if not exchange:
             self.__db.update(table_name='train', data=data, line_id=line_id)
         else:
             self.__exchange_db.update(table_name='data', data=data, line_id=line_id)
 
-    def get_line(self,
+    def get_data(self,
                  line_id: Union[int, List[int]],
                  fields: Optional[Union[str, List[str]]] = None,
                  exchange: bool = False) -> Dict[str, Any]:
@@ -183,6 +160,7 @@ class DatabaseHandler:
 
         :param line_id: Index of the line to get.
         :param fields: Data fields to extract.
+        :param exchange: If True, add data to the exchange Table.
         """
 
         line_id = line_id[1] if type(line_id) == list else line_id
@@ -198,7 +176,7 @@ class DatabaseHandler:
                                   line_id=line_id,
                                   fields=fields)
 
-    def get_lines(self,
+    def get_batch(self,
                   lines_id: List[int],
                   fields: Optional[Union[str, List[str]]] = None) -> Dict[str, Any]:
         """

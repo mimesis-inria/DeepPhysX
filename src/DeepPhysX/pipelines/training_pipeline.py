@@ -188,6 +188,7 @@ class TrainingPipeline:
             if self.simulation_manager is not None and self.produce_data and \
                     (self.epoch_id == 0 or self.simulation_manager.always_produce):
                 self.database_manager.compute_normalization()
+                self.network_manager.database_handler.reload_normalization()
             if self.stats_manager is not None:
                 self.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
             self.network_manager.save_network()
