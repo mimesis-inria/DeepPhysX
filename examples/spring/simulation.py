@@ -2,7 +2,7 @@ from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
 
-from DeepPhysX.simulation.core.dpx_simulation import DPXSimulation
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation
 
 
 class SpringEnvironment(DPXSimulation):

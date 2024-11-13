@@ -4,8 +4,8 @@ from torch.nn import MSELoss
 from torch.optim import Adam
 
 # DeepPhysX related imports
-from DeepPhysX.pipelines.core import Training
-from DeepPhysX.simulation.core.simulation_config import SimulationConfig
+from DeepPhysX.pipelines import TrainingPipeline
+from DeepPhysX.simulation.simulation_config import SimulationConfig
 from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.networks.architectures.mlp.mlp_config import MLPConfig
 
@@ -15,8 +15,8 @@ from simulation import SpringEnvironment
 
 if __name__ == '__main__':
 
-    environment_config = SimulationConfig(environment_class=SpringEnvironment,
-                                          use_viewer=True,
+    simulation_config = SimulationConfig(environment_class=SpringEnvironment,
+                                          use_viewer=False,
                                           nb_parallel_env=1,
                                           simulations_per_step=5)
 
@@ -37,14 +37,14 @@ if __name__ == '__main__':
     database_config = DatabaseConfig()
 
     # Create DataGenerator
-    trainer = Training(network_config=network_config,
-                       database_config=database_config,
-                       environment_config=environment_config,
-                       session_dir='sessions',
-                       session_name='online_training',
-                       epoch_nb=50,
-                       batch_nb=10,
-                       batch_size=32)
+    trainer = TrainingPipeline(network_config=network_config,
+                               database_config=database_config,
+                               simulation_config=simulation_config,
+                               session_dir='sessions',
+                               session_name='online_training',
+                               epoch_nb=30,
+                               batch_nb=1000,
+                               batch_size=32)
 
     # Launch the training session
     trainer.execute()

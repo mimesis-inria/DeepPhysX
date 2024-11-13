@@ -162,7 +162,7 @@ class SpringEnvironment(BaseEnvironment):
 if __name__ == '__main__':
 
     if not exists('sessions/training'):
-        quit(print("Trained networks required, 'sessions/training' not found. Run training.py script first."))
+        quit(print("Trained networks required, 'sessions/training' not found. Run training_pipeline.py script first."))
 
     environment_config = BaseEnvironmentConfig(environment_class=SpringEnvironment,
                                                env_kwargs={'spring_length': round(uniform(0.5, 2.), 2),
