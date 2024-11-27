@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Install &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE - Using a Pipeline" href="../component/pipelines.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../component/pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Install</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/presentation/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="install">
+<h1>Install<a class="headerlink" href="#install" title="Link to this heading"></a></h1>
+<p>It is recommended to read the <a class="reference internal" href="overview.html#overview-packages"><span class="std std-ref">Packages</span></a> section first to understand the packages organisation.</p>
+<div class="line-block">
+<div class="line">The <span class="core">CORE</span> package <span class="guilabel">DeepPhysX.Core</span> is always installed by default.</div>
+<div class="line">Using a <span class="simu">SIMULATION</span> package is recommended but not required.</div>
+<div class="line">At least one <span class="ai">AI</span> package is mandatory (default one is <span class="guilabel">DeepPhysX.Torch</span>).</div>
+</div>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<p><strong>DeepPhysX</strong> packages have the following dependencies :</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 12.5%" />
+<col style="width: 37.5%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Package</strong></p></th>
+<th class="head"><p><strong>Dependency</strong></p></th>
+<th class="head"><p><strong>Type</strong></p></th>
+<th class="head"><p><strong>Install</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td rowspan="4"><p><span class="guilabel">DeepPhysX_Core</span></p></td>
+<td><p><a class="extlink-Numpy reference external" href="https://numpy.org/">Numpy</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">numpy</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="extlink-Vedo reference external" href="https://vedo.embl.es/">Vedo</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">vedo</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="extlink-Tensorboard reference external" href="https://www.tensorflow.org/tensorboard/">Tensorboard</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">tensorboard</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="extlink-SSD reference external" href="https://github.com/RobinEnjalbert/SimulationSimpleDatabase/">SSD</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">SimulationSimpleDatabase</span></code></p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><p><span class="guilabel">DeepPhysX_Sofa</span></p></td>
+<td><p><a class="extlink-SOFA reference external" href="https://www.sofa-framework.org/">SOFA Framework</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><a class="extlink-SOFAI reference external" href="https://www.sofa-framework.org/community/doc/getting-started/build/linux/">Follow instructions</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="extlink-SP3 reference external" href="https://sofapython3.readthedocs.io/en/latest/">SofaPython3</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><a class="extlink-SP3I reference external" href="https://sofapython3.readthedocs.io/en/latest/menu/Compilation.html/">Follow instructions</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="extlink-Caribou reference external" href="https://caribou.readthedocs.io/">Caribou</a></p></td>
+<td><p>Optional</p></td>
+<td><p><a class="extlink-CaribouI reference external" href="https://caribou.readthedocs.io/en/latest/Building.html#/">Follow instructions</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="guilabel">DeepPhysX_Torch</span></p></td>
+<td><p><a class="extlink-PyTorch reference external" href="https://pytorch.org/">PyTorch</a></p></td>
+<td><p><strong>Required</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">torch</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><span class="guilabel">DeepPhysX.Sofa</span> has a dependency to <a class="extlink-Caribou reference external" href="https://caribou.readthedocs.io/">Caribou</a> to run the demo scripts from
+<code class="docutils literal notranslate"><span class="pre">Examples/SOFA/Demo</span></code> since implemented simulations involve some of its components.</p>
+</div>
+</section>
+<section id="id1">
+<h2>Install<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<section id="install-with-pip">
+<h3>Install with pip<a class="headerlink" href="#install-with-pip" title="Link to this heading"></a></h3>
+<p><strong>DeepPhysX</strong> packages are all registered on <a class="reference external" href="https://pypi.org/project/DeepPhysX">PyPi</a>.
+They can easily be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>DeepPhysX
+$<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>DeepPhysX.Sofa
+$<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>DeepPhysX.Torch
+</pre></div>
+</div>
+<p>Then, you should be able to run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX
+$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX.Sofa
+$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX.Torch
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">DeepPhysX.Core</span>
+<span class="kn">import</span> <span class="nn">DeepPhysX.Sofa</span>
+<span class="kn">import</span> <span class="nn">DeepPhysX.Torch</span>
+</pre></div>
+</div>
+</section>
+<section id="install-from-sources">
+<h3>Install from sources<a class="headerlink" href="#install-from-sources" title="Link to this heading"></a></h3>
+<p><strong>DeepPhysX</strong> packages must have the following architecture.
+These detailed instructions will build such an installation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>DeepPhysX
+ ├── Core
+ ├── Sofa
+ └── Torch
+</pre></div>
+</div>
+<p>Start by cloning the <strong>DeepPhysX</strong> source code from its Github repository in a directory named <code class="docutils literal notranslate"><span class="pre">DeepPhysX/Core</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>mkdir<span class="w"> </span>DeepPhysX
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>DeepPhysX
+$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mimesis-inria/DeepPhysX.git<span class="w"> </span>Core
+</pre></div>
+</div>
+<p>Then, you can add compatibility layers to your <strong>DeepPhysX</strong> environment and install packages:</p>
+<ul>
+<li><p><strong>Option 1 (recommended):</strong> run one of the <code class="docutils literal notranslate"><span class="pre">setup_.py</span></code> scripts that handle the installation of all packages</p>
+<blockquote>
+<div><ul>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">setup_user.py</span></code> to install and manage packages with <code class="docutils literal notranslate"><span class="pre">pip</span></code> as non-editable.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python3<span class="w"> </span>setup_user.py
+</pre></div>
+</div>
+</li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">setup_dev.py</span></code> to link packages in the site-packages.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python3<span class="w"> </span>setup_dev.py<span class="w"> </span><span class="nb">set</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Both scripts will asks the packages to install and will <strong>automatically clone</strong> missing packages.</p>
+</div>
+</li>
+<li><p><strong>Option 2:</strong> clone the corresponding Github repositories in the created <code class="docutils literal notranslate"><span class="pre">DeepPhysX</span></code> directory, then install
+packages manually.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone compatibility layers</span>
+$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mimesis-inria/DeepPhysX.Sofa.git<span class="w"> </span>Sofa
+$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mimesis-inria/DeepPhysX.Torch.git<span class="w"> </span>Torch
+
+<span class="c1"># Install packages manually</span>
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>Core<span class="w"> </span><span class="p">;</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>.
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../Sofa<span class="w"> </span><span class="p">;</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>.
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>../Torch<span class="w"> </span><span class="p">;</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Finally, you should be able to run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># If installed with pip</span>
+$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX
+$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX.Sofa
+$<span class="w"> </span>pip3<span class="w"> </span>show<span class="w"> </span>DeepPhysX.Torch
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In both cases</span>
+<span class="kn">import</span> <span class="nn">DeepPhysX.Core</span>
+<span class="kn">import</span> <span class="nn">DeepPhysX.Sofa</span>
+<span class="kn">import</span> <span class="nn">DeepPhysX.Torch</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../component/pipelines.html" class="btn btn-neutral float-right" title="CORE - Using a Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

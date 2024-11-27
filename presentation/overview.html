@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Install" href="install.html" />
+    <link rel="prev" title="About" href="about.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../component/pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../component/stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../component/stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../component/stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/presentation/overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
+<section id="packages">
+<span id="overview-packages"></span><h2>Packages<a class="headerlink" href="#packages" title="Link to this heading"></a></h2>
+<p>The <strong>DeepPhysX</strong> project is divided into several <strong>Python packages</strong>: a <span class="core">CORE</span> package which is able to
+communicate with a <span class="simu">SIMULATION</span> package and an <span class="ai">AI</span> package.
+This way, the <span class="core">CORE</span> has no dependencies neither to a <span class="simu">SIMULATION</span> framework nor an <span class="ai">AI</span> framework,
+and any of those frameworks can be compatible with <strong>DeepPhysX</strong>.</p>
+<figure class="align-center" id="id1">
+<img alt="overview_packages.png" src="../_images/overview_packages.png" />
+<figcaption>
+<p><span class="caption-text">Package organization</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<section id="core">
+<h3>Core<a class="headerlink" href="#core" title="Link to this heading"></a></h3>
+<p>This package rules the <strong>data flow</strong> and the <strong>communication</strong> between the AI components and the simulation components.
+Data flow also involves the <strong>storage</strong> and <strong>loading</strong> of datasets and neural networks, the <strong>management</strong> of the
+visualization tool and the <strong>analysis</strong> of the training sessions.
+This package is named <span class="guilabel">DeepPhysX.Core</span>.</p>
+<div class="admonition-dependencies admonition">
+<p class="admonition-title">Dependencies</p>
+<p>NumPy, Tensorboard, Vedo, SimulationSimpleDatabase</p>
+</div>
+</section>
+<section id="simulation">
+<h3>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h3>
+<p>A <strong>simulation package</strong> provides a <strong>DeepPhysX</strong> compatible API for a <strong>specific simulation framework</strong>.
+For <strong>DeepPhysX</strong>, each simulation package dedicated to a specific simulation framework (written in python or providing
+python bindings).
+Thus, each package will be named according to the framework with a common prefix, for instance
+<span class="guilabel">DeepPhysX.Simulation</span>.</p>
+<div class="admonition-available-simulation-packages admonition">
+<p class="admonition-title">Available simulation packages</p>
+<p><span class="guilabel">DeepPhysX.Sofa</span> designed for <a class="extlink-SOFA reference external" href="https://www.sofa-framework.org/">SOFA</a></p>
+</div>
+</section>
+<section id="ai">
+<h3>AI<a class="headerlink" href="#ai" title="Link to this heading"></a></h3>
+<p>An <strong>AI package</strong> provides a <strong>DeepPhysX</strong> compatible API for a <strong>specific AI framework</strong>.
+In the same way, each learning package is dedicated to a specific AI Python framework.
+Thus, each package will be named according to the framework with the same common prefix, for instance
+<span class="guilabel">DeepPhysX.AI</span>.</p>
+<div class="admonition-available-learning-packages admonition">
+<p class="admonition-title">Available learning packages</p>
+<p><span class="guilabel">DeepPhysX.Torch</span> designed for <a class="extlink-PyTorch reference external" href="https://pytorch.org/">PyTorch</a></p>
+</div>
+</section>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
+<p>This section describes both the links between the components of <span class="core">CORE</span> package and the links to <span class="ai">AI</span> and
+<span class="simu">SIMULATION</span> packages.</p>
+<p>Users might use one of the provided <em>Pipelines</em> for their <strong>data generation</strong>, their <strong>training session</strong> or their
+<strong>prediction session</strong>.
+These <em>Pipelines</em> trigger a <strong>loop</strong> which defines the number of samples to produce, the number of epochs to perform
+during a training session or the number of steps of prediction.</p>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="../_images/overview_components.png"><img alt="overview_architecture.png" src="../_images/overview_components.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Components architecture</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The <em>Pipeline</em> will involve several components (data producers and data consumers), but the <em>Pipeline</em> will always
+communicate with their <em>Manager</em> first.
+A main <em>Manager</em> will provide the <em>Pipeline</em> an intermediary with all the existing <em>Managers</em>:</p>
+<dl class="field-list">
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">DatabaseManager</span></code><span class="colon">:</span></dt>
+<dd class="field-odd"><p>It will manage the <em>Database</em> component to create <strong>storage</strong> partitions, to fill these partitions
+with the synthetic training data produced by the <em>Environment</em> and to <strong>reload</strong> an existing <em>Database</em> for training or
+prediction sessions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If training and data generation are done simultaneously (by default for the training <em>Pipeline</em>), the <em>Database</em>
+can be built only during the first epoch and then reloaded for the remaining epochs.</p>
+</div>
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">EnvironmentManager</span></code><span class="colon">:</span></dt>
+<dd class="field-even"><p>It will manage the <em>Environment</em> (the numerical simulation) component to <strong>create</strong> it, to
+trigger <strong>steps</strong> of simulations, to <strong>produce</strong> synthetic training data, to provide <strong>predictions</strong> of the network
+if required, and to finally <strong>shutdown</strong> the <em>Environment</em>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This <em>Manager</em> can communicate directly with a single <em>Environment</em> or with a <em>Server</em> which shares information
+with several <em>Environments</em> in multiprocessing launched as <em>Clients</em> through a custom TCP-IP protocol (see
+<a class="reference internal" href="../component/environment.html#environment-tcpip"><span class="std std-ref">dedicated section</span></a>).</p>
+</div>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The two above <em>Managers</em> are managed by the <code class="docutils literal notranslate"><span class="pre">DataManager</span></code> since both the <em>Environment</em> and the <em>Database</em>
+components provide training data to the <em>Network</em>.
+This <code class="docutils literal notranslate"><span class="pre">DataManager</span></code> is the one who decides if data should be requested from the <em>Environment</em> or from the
+<em>Database</em> depending on the current state of the <em>Pipeline</em> and on the components configurations.</p>
+</div>
+<dl class="field-list">
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">NetworkManager</span></code><span class="colon">:</span></dt>
+<dd class="field-odd"><p>It will manage several objects to <strong>train</strong> or <strong>exploit</strong> your <em>Network</em>:</p>
+<ul class="simple">
+<li><p>The <em>Network</em> to produce a <strong>prediction</strong> from an input, to <strong>save</strong> a set of parameters or to <strong>reload</strong> one.</p></li>
+<li><p>The <em>Optimizer</em> to compute the <strong>loss</strong> value and to <strong>optimize</strong> the parameters of the <em>Network</em>.
+This component uses existing loss functions and optimizers in the chosen AI framework.</p></li>
+<li><p>The <em>DataTransformation</em> to <strong>convert</strong> the type of training data sent from <em>Environment</em> to a compatible type for
+the AI framework you use and vice versa, to <strong>transform</strong> training data before a prediction, before the loss
+computation and before sending the prediction to the <em>Environment</em>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The above components are designed to be easily inherited and upgradable if the content of AI packages is not enough.
+Users are thus free to define their own <em>Network</em> architecture, to create a custom loss or optimizer to feed the
+<em>Optimizer</em> and to compute the required tensor transformations in the <em>DataTransformation</em>.</p>
+</div>
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">StatsManager</span></code><span class="colon">:</span></dt>
+<dd class="field-even"><p>It will manage the <strong>analysis</strong> of the <strong>evolution</strong> of a training session.
+These analytical data will be saved in an <strong>event log file</strong> interpreted by <a class="extlink-Tensorboard reference external" href="https://www.tensorflow.org/tensorboard/">Tensorboard</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Usual curves will be automatically provided in the board (such as the evolution of the loss value, the smoothed
+mean and the variance of this loss value per batch and per epoch), but other custom fields can be added and filled
+as well.</p>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>It is not possible to use the default <em>Network</em> and <em>Environment</em> provided in the <span class="core">CORE</span> package, since they
+are not implemented at all.
+The reason is that you need to choose an <span class="ai">AI</span> and a <span class="simu">SIMULATION</span> Python framework to implement them.
+The aim of <strong>DeepPhysX</strong> additional packages is to provide a compatible implementation both for <strong>DeepPhysX</strong>
+and these frameworks.</p>
+<dl>
+<dt>Example</dt><dd><p>If you choose <a class="extlink-PyTorch reference external" href="https://pytorch.org/">PyTorch</a> as your <span class="ai">AI</span> framework, you can use or implement a <em>TorchNetwork</em> which
+inherits from both the <span class="core">CORE</span> <em>Network</em> and <code class="docutils literal notranslate"><span class="pre">Torch.nn.module</span></code> (available in <span class="guilabel">DeepPhysX.Torch</span>).</p>
+<p>If you choose <a class="extlink-SOFA reference external" href="https://www.sofa-framework.org/">SOFA</a> as your <span class="simu">SIMULATION</span> framework, you can implement a <em>SofaEnvironment</em> which
+inherits from both the <span class="core">CORE</span> <em>Environment</em> and <code class="docutils literal notranslate"><span class="pre">Sofa.Core.Controller</span></code> (available in
+<span class="guilabel">DeepPhysX.Sofa</span>).</p>
+</dd>
+</dl>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="about.html" class="btn btn-neutral float-left" title="About" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="install.html" class="btn btn-neutral float-right" title="Install" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

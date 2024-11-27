@@ -1,0 +1,503 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CORE - Using an Environment &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE - Using a Network" href="network.html" />
+    <link rel="prev" title="CORE - Using a Pipeline" href="pipelines.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CORE - Using an Environment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/component/environment.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-using-an-environment">
+<h1>CORE - Using an Environment<a class="headerlink" href="#core-using-an-environment" title="Link to this heading"></a></h1>
+<p>Dedicated code in <span class="guilabel">Core/Environment</span> and <span class="guilabel">Core/AsyncSocket</span> modules.</p>
+<section id="implementation">
+<span id="environment-implementation"></span><h2>Implementation<a class="headerlink" href="#implementation" title="Link to this heading"></a></h2>
+<p>An <em>Environment</em> can be considered either as a <em>TcpIpClient</em> (communication with the <em>EnvironmentManager</em> through a
+<em>TcpIpServer</em>, see <a class="reference internal" href="#environment-tcpip"><span class="std std-ref">dedicated section</span></a> below) or not (direct communication with the
+<em>EnvironmentManager</em>).
+Yet, the user API will be the same if the <em>Environment</em> is a <em>TcpIpClient</em> entity or not, so that the user can
+implement its <em>Environment</em> regardless of this dependence.</p>
+<div class="line-block">
+<div class="line"><strong>Mandatory methods</strong></div>
+<div class="line">The following methods must be implemented.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">create</span></code></p></td>
+<td><p>Create the simulation.</p>
+<p>This method is automatically called when the <em>Environment</em> component is created.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">init_database</span></code></p></td>
+<td><p>Define the fields of the training dataset.</p>
+<p>This method is automatically called when the <em>Environment</em> component is created.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">step</span></code></p></td>
+<td><p>Describe the transitions between simulation states.</p>
+<p>This method is automatically called when the <em>Pipelines</em> require a step in the simulation to produce a
+data sample.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Optional methods</strong></div>
+<div class="line">Additional non mandatory methods can be implemented to describe the simulation behavior.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">init</span></code></p></td>
+<td><p>Initialize the simulation.</p>
+<p>In some cases, the simulation components might need to be initialized in addition to being created.</p>
+<p>This method is automatically called when the <em>Environment</em> component is created, right after the create
+method.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">init_visualization</span></code></p></td>
+<td><p>Define the visualization objects to send to the <em>Visualizer</em>.</p>
+<p>A <em>Factory</em> is available in the <em>Environment</em> to easily design visualization objects.</p>
+<p>This method is automatically called when the <em>Environment</em> component is created, right after the init.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">check_sample</span></code></p></td>
+<td><p>Each step will be followed by a sample checking.</p>
+<p>This check returns True by default but samples can be sorted and then not added to the <em>Dataset</em> if they do not
+meet some criteria.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">apply_prediction</span></code></p></td>
+<td><p>In some use cases, the <em>Network</em> predictions can be sent back to the <em>Environment</em> to be applied in the
+simulation.</p>
+<p>This method describes how the prediction must be used in the simulation.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">close</span></code></p></td>
+<td><p>For some reasons, the simulation might need to perform some tasks before being shut down.</p>
+<p>These tasks can be done in the close method which is automatically called before shut down.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Data producing methods</strong></div>
+<div class="line">The following methods are dedicated to data producing /exchange.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">define_training_data</span></code></p></td>
+<td><p>This method must be used in <code class="docutils literal notranslate"><span class="pre">init_database</span></code> to specify the training data fields names and types.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">define_additional_data</span></code></p></td>
+<td><p>This method must be used in <code class="docutils literal notranslate"><span class="pre">init_database</span></code> to specify the additional data fields names and types.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">set_training_data</span></code></p></td>
+<td><p>This method defines which data will be considered as training data (data sent to the <em>NetworkManager</em> to feed
+the <em>Network</em>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">set_additional_dataset</span></code></p></td>
+<td><p>In addition to the training data, some additional data can be sent directly to the dataset to replay some
+simulation states.</p>
+<p>This method adds a new field to the <em>Dataset</em> and must be then called at each step.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Requests</strong></div>
+<div class="line">The <em>Environment</em> is also able to perform some requests. These requests are sent either directly to the
+<em>EnvironmentManager</em> or through a <em>TcpIpServer</em>.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">save_parameters</span></code></p></td>
+<td><p>Save a set of parameters in the Database.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">load_parameters</span></code></p></td>
+<td><p>Load a set of parameters from the Database.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_prediction</span></code></p></td>
+<td><p>Depending on the application, a prediction of the <em>Network</em> can be useful before the end of a step.</p>
+<p>By default, a <em>Network</em> computes predictions after a simulation step, so the only way to get one during a step
+is by this request.</p>
+<p>The training data must obviously be set before triggering this request.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">update_visualization</span></code></p></td>
+<td><p>If a <em>Visualizer</em> was created, it must be manually updated at each step by sending the updated state of
+the simulation.</p>
+<p>The factory allows to easily create updated visualization data from objects ids with <code class="docutils literal notranslate"><span class="pre">update_obj</span></code> methods.</p>
+<p>User only has to fill the object id (same as initialization order) and the required fields (detailed for each
+object in <a class="reference internal" href="visualizer.html#visualizer-howto"><span class="std std-ref">dedicated section</span></a>).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>Using an <em>Environment</em> in one of the <strong>DeepPhysX</strong> <em>Pipeline</em> always requires an <em>EnvironmentConfig</em>.
+The role of this component is both to bring together all the options for configuring an <em>Environment</em> and to create an
+instance of a single <em>Environment</em> or launch a <em>TcpIpServer</em> with several <em>TcpIpClients</em>.
+In the first case, the single <em>Environment</em> will simply be created within the <code class="docutils literal notranslate"><span class="pre">create_environment</span></code> method, while in
+the other case, the <code class="docutils literal notranslate"><span class="pre">create_server</span></code> method will simply create and launch a <em>TcpIpServer</em> and then start several
+subprocesses, each using the <code class="docutils literal notranslate"><span class="pre">launcherBaseEnvironment.py</span></code> script to create and launch an <em>Environment</em> as a <em>Client</em>.</p>
+<div class="line-block">
+<div class="line"><strong>Simulation parameters</strong></div>
+<div class="line">Here is a description of attributes related to a base <em>Configuration</em>.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">environment_class</span></code></p></td>
+<td><p>The class from which an <em>Environment</em> will be created.</p>
+<p>The attribute requires the class and not an instance, as it will be automatically created as explained above.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">simulations_per_step</span></code></p></td>
+<td><p>The number of iterations to compute in the <em>Environment</em> at each time step.</p>
+<p>An <em>Environment</em> will compute one iteration by default.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">visualizer</span></code></p></td>
+<td><p>A visualization tool is provided, which renders the specified parts of each <em>Environment</em>.</p>
+<p>If no <em>Visualizer</em> is provided, the pipeline will run without any render window.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">env_kwargs</span></code></p></td>
+<td><p><em>Environments</em> can receive additional parameters within this dictionary if they need to be parameterized
+differently.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Data parameters</strong></div>
+<div class="line">Here is a description of attributes related to sample generation.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">always_produce</span></code></p></td>
+<td><p>This flag is useful for the training <em>Pipeline</em>.</p>
+<p>If False (by default), the <em>DataManager</em> requests batches to the <em>Environment</em> during the first epoch and
+reload them next.</p>
+<p>If set to True, the <em>DataManager</em> requests new batches to the <em>Environment</em> during the whole training session.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">load_samples</span></code></p></td>
+<td><p>If True, the dataset will always be used in the environment.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">only_first_epoch</span></code></p></td>
+<td><p>If True, data will always be created from <em>Environment</em>.</p>
+<p>If False, data will be created from the <em>Environment</em> during the first epoch and then re-used from the <em>Dataset</em>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>TcpIP parameters</strong></div>
+<div class="line">Here is a description of attributes related to the <em>Client</em> configuration.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">as_tcp_ip_client</span></code></p></td>
+<td><p>Defines if the <em>Environment</em> will be launched as a <em>Client</em> (True by default) or directly connected to its
+<em>EnvironmentManager</em>.</p>
+<p>Note: In the prediction <em>Pipeline</em>, only one <em>Environment</em> will be used, so the value of this flag is ignored.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ip_address</span></code></p></td>
+<td><p>Name of the IP address to bind <em>TcpIpObjects</em>.</p>
+<p>The default value is “localhost” to host the <em>Server</em> and <em>Clients</em> locally.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">number_of_thread</span></code></p></td>
+<td><p>The number of <em>Environments</em> to launch simultaneously if the flag <code class="docutils literal notranslate"><span class="pre">as_tcp_ip_client</span></code> is True.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">port</span></code></p></td>
+<td><p>TCP port’s number through which <em>TcpIpObjects</em> will communicate (10000 by default).</p></td>
+</tr>
+</tbody>
+</table>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import EnvironmentConfig and Visualizer</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX_Core.Environment.BaseEnvironmentConfig</span> <span class="kn">import</span> <span class="n">BaseEnvironmentConfig</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX_Core.Visualizer.VedoVisualizer</span> <span class="kn">import</span> <span class="n">VedoVisualizer</span>
+
+<span class="c1"># Create the config</span>
+<span class="n">env_config</span> <span class="o">=</span> <span class="n">BaseEnvironmentConfig</span><span class="p">(</span><span class="n">environment_class</span><span class="o">=</span><span class="n">MyEnvironment</span><span class="p">,</span>
+                                   <span class="n">visualizer</span><span class="o">=</span><span class="n">VedoVisualizer</span><span class="p">,</span>
+                                   <span class="n">as_tcp_ip_client</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">number_of_thread</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                   <span class="n">ip_address</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+                                   <span class="n">port</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="client-server-architecture">
+<span id="environment-tcpip"></span><h2>Client-Server Architecture<a class="headerlink" href="#client-server-architecture" title="Link to this heading"></a></h2>
+<p><strong>DeepPhysX</strong> allows users to run several <em>Environments</em> in <strong>multiprocessing</strong> to speed up data generation.
+The <span class="guilabel">Core/AsyncSocket</span> module defines a <strong>Client-Server architecture</strong> where a <em>TcpIpServer</em> communicates
+with several <em>TcpIpClients</em> using a <strong>TcpIp protocol</strong>.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/environment_tcp_ip.png"><img alt="environment_tcpip.png" src="../_images/environment_tcp_ip.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Client-Server Architecture</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>At the beginning of data generation, a <em>TcpIpServer</em> is launched by the <em>EnvironmentConfig</em>.
+This <em>TcpIpServer</em> binds to the socket with the configured IP address on the configured port and then listens for
+<em>TcpIpClients</em>.
+To launch <em>TcpIpClients</em>, the <em>EnvironmentConfig</em> runs sub-processes where a launcher is called.
+This launcher creates a <em>TcpIpClient</em> instance, this <em>TcpIpClient</em> is then bound to the socket with the configured IP
+address on the configured port.
+Once the <em>TcpIpClients</em> are all connected to the <em>TcpIpServer</em>, initialization is performed to create all the
+<em>Environments</em> and initialize the parameters exchanges.
+<em>TcpIpClients</em> are now ready to communicate with the <em>TcpIpServer</em> to handle the data generation.
+Finally, the <em>TcpIpServer</em> triggers the shutdown of each <em>TcpIpClient</em> and closes the socket.</p>
+<p>Both <em>TcpIpServer</em> and <em>TcpIpClient</em> inherit from <em>TcpIpObject</em> to access low levels of sending and receiving data on
+the socket.
+The data is sent as a custom bytes message converted with a <em>BytesConverter</em>, which handles Python common types and
+NumPy arrays.
+On top of these low level data exchange methods are built higher level protocols to send labeled data, labeled
+dictionaries and commands.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pipelines.html" class="btn btn-neutral float-left" title="CORE - Using a Pipeline" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="network.html" class="btn btn-neutral float-right" title="CORE - Using a Network" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

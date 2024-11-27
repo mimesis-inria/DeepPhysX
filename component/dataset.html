@@ -1,0 +1,292 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CORE - Using a Dataset &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE - Using a Visualizer" href="visualizer.html" />
+    <link rel="prev" title="CORE - Using a Network" href="network.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CORE - Using a Dataset</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/component/dataset.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-using-a-dataset">
+<h1>CORE - Using a Dataset<a class="headerlink" href="#core-using-a-dataset" title="Link to this heading"></a></h1>
+<p>Dedicated code in <span class="guilabel">Core/Dataset</span> module.</p>
+<section id="behavior">
+<h2>Behavior<a class="headerlink" href="#behavior" title="Link to this heading"></a></h2>
+<p><strong>DeepPhysX</strong> comes with its own <em>Dataset</em> management system, using the features from the <a class="extlink-SSD reference external" href="https://github.com/RobinEnjalbert/SimulationSimpleDatabase/">SSD</a> library.
+The synthetic data produced in <em>Environments</em> is stored on a <em>Database</em> that is in a dedicated repository named
+<code class="docutils literal notranslate"><span class="pre">dataset</span></code> in the training session.
+Data is stored as partitions: these partitions correspond to the different <em>Dataset</em> modes (training data, test data,
+prediction data) and can be multiple for each data field in order not to exceed the maximum size of the current amount
+of loaded data.
+Each partition will have a unique name: <code class="docutils literal notranslate"><span class="pre">&lt;session_name&gt;_&lt;dataset_mode&gt;_&lt;field&gt;_&lt;index&gt;.npy</span></code>.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/database.png"><img alt="database.png" src="../_images/database.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Dataset repository organisation.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>When adding a batch to the <em>Dataset</em>, a new partition is created for each data field if the current <em>Dataset</em> size
+exceeds the threshold.
+The batch is then appended to the <em>Dataset</em> for each data field.
+Default <em>Dataset</em> fields are inputs and outputs, but users can define any data field from <em>Environment</em>
+(see <a class="reference internal" href="environment.html#environment-implementation"><span class="std std-ref">dedicated section</span></a>).
+Each field must always be filled at each batch.
+A <code class="docutils literal notranslate"><span class="pre">dataset.json</span></code> file gathers information about the produced dataset and normalization coefficients if the
+normalization is applied.</p>
+<p>When loading data from an existing <em>Dataset</em>, the partitions are loaded and can be accessed randomly or not among the
+whole set of partitions.</p>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>A <em>Dataset</em> is almost always used in DeepPhysX pipelines and requires a <em>DatasetConfig</em>.
+This <em>Configuration</em> object role is to bring together all the options to configure the <em>Dataset</em> and to create it with
+<code class="docutils literal notranslate"><span class="pre">create_dataset</span></code> method.</p>
+<p>Here is a description of attributes related to <em>Dataset</em> configuration.</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">existing_dir</span></code></p></td>
+<td><p>Path to an existing <em>Dataset</em> repository if this repository needs to be loaded or completed.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_file_size</span></code></p></td>
+<td><p>Maximum size (in Gb) of the total <em>Dataset</em> object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></td>
+<td><p>Specify the <em>Dataset</em> mode between “Training”, “Validation” and “Running”.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">normalize</span></code></p></td>
+<td><p>If True, normalization parameters are computed from training data and applied to any loaded data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shuffle</span></code></p></td>
+<td><p>Specify if the loading order is random or not (True by default).</p></td>
+</tr>
+</tbody>
+</table>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import DatasetConfig</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX_Core.Database.BaseDatabaseConfig</span> <span class="kn">import</span> <span class="n">BaseDatabaseConfig</span>
+
+<span class="c1"># Create the config</span>
+<span class="n">database_config</span> <span class="o">=</span> <span class="n">BaseDatabaseConfig</span><span class="p">(</span><span class="n">max_file_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                     <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;Training&#39;</span><span class="p">,</span>
+                                     <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="network.html" class="btn btn-neutral float-left" title="CORE - Using a Network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="visualizer.html" class="btn btn-neutral float-right" title="CORE - Using a Visualizer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,493 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CORE - Using a Network &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE - Using a Dataset" href="dataset.html" />
+    <link rel="prev" title="CORE - Using an Environment" href="environment.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CORE - Using a Network</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/component/network.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-using-a-network">
+<h1>CORE - Using a Network<a class="headerlink" href="#core-using-a-network" title="Link to this heading"></a></h1>
+<p>Dedicated code in <span class="guilabel">Core/Network</span> module.</p>
+<section id="network-implementation">
+<h2>Network Implementation<a class="headerlink" href="#network-implementation" title="Link to this heading"></a></h2>
+<p>A <em>Network</em> cannot be directly implemented from <em>BaseNetwork</em> because there is no dependency on any Python AI package.
+Even if a <em>BaseNetwork</em> is not usable, any <strong>DeepPhysX</strong> AI package provides the same API.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Before writing code to create a new <em>Network</em> architecture, please check <strong>DeepPhysX</strong> AI packages if it is not
+already implemented.</p>
+</div>
+<div class="line-block">
+<div class="line"><strong>Specific methods</strong></div>
+<div class="line">The following methods are the only methods requiring a user implementation.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">__init__</span></code></p></td>
+<td><p>Define the <em>Network</em> architecture.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">predict</span></code></p></td>
+<td><p>Define the data fields used to compute a prediction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">forward</span></code></p></td>
+<td><p>Define the forward pass of the <em>Network</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Shared methods</strong></div>
+<div class="line">The following methods share the same implementation within the same AI package, regardless of <em>Network</em> architecture.
+Thus, they should already be implemented.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">set_train</span></code></p></td>
+<td><p>Configure the <em>Network</em> to training mode (chain rule for gradient will be calculated).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">set_eval</span></code></p></td>
+<td><p>Configure the <em>Network</em> to prediction mode (no gradient will be calculated).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">set_device</span></code></p></td>
+<td><p>Define whether tensors computations are done on the CPU or on the GPU.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">load_parameters</span></code></p></td>
+<td><p>Load a set of saved parameters from a file.</p>
+<p>This set of parameters must be compatible with the current <em>Network</em> architecture.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_parameters</span></code></p></td>
+<td><p>Return the current state of <em>Network</em> parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">save_parameters</span></code></p></td>
+<td><p>Save the current set of parameters to a file..</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nb_parameters</span></code></p></td>
+<td><p>Return the number of parameters in the architecture.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">numpy_to_tensor</span></code></p></td>
+<td><p>Convert a Numpy array to a tensor with the compatible type.</p>
+<p>Received data from Core will always be Numpy arrays.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tensor_to_numpy</span></code></p></td>
+<td><p>Convert a tensor to a Numpy array.</p>
+<p>Data provided to Core must be converted to Numpy arrays.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Data fields</strong></div>
+<div class="line">The training data is given to the <em>Network</em> as a dictionary of tensors.
+By default, the data used for inference has a single “input” field, the data produced by the <em>Network</em> has a single
+“prediction” field, the data used for optimization has a single “ground_truth” field.
+If another field should be defined, the <em>Network</em> class should specify them in the corresponding <code class="docutils literal notranslate"><span class="pre">self.net_fields</span></code>,
+<code class="docutils literal notranslate"><span class="pre">self.pred_fields</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">self.opt_fields</span></code> variables.</div>
+</div>
+</section>
+<section id="optimization-implementation">
+<span id="network-optimization"></span><h2>Optimization Implementation<a class="headerlink" href="#optimization-implementation" title="Link to this heading"></a></h2>
+<p>The purpose of the <em>Optimization</em> component is to compute the loss associated with the prediction of the <em>Network</em> and
+to optimize its parameters considering the gradient.
+Same as <em>BaseNetwork</em>, <em>BaseOptimization</em> cannot be used in training sessions as it must depend on a Python AI
+framework.
+However, <em>Optimization</em> components still share the same API in every DeepPhysX package.
+Given a Python AI framework, methods should all be already implemented so that users can use them as it is.</p>
+<div class="line-block">
+<div class="line"><strong>Init methods</strong></div>
+<div class="line">The first methods allow defining the loss function and the optimizer.
+These methods should not be overwritten by users.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">set_loss</span></code></p></td>
+<td><p>Initialize the loss function.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">set_optimizer</span></code></p></td>
+<td><p>Initialize the <em>Optimizer</em> with the parameters of the <em>Network</em>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Optimization methods</strong></div>
+<div class="line">Other methods define the loss computation and the optimization process.
+Users can use the default implementation or customize their own processes.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compute_loss</span></code></p></td>
+<td><p>Compute the loss with the defined loss function from prediction and ground truth.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">transform_loss</span></code></p></td>
+<td><p>Apply a transformation on the loss value using potential additional data.</p>
+<p>Additional loss data can be sent from <em>Environment</em> (see <a class="reference internal" href="environment.html#environment-implementation"><span class="std std-ref">dedicated section</span></a>).</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">optimize</span></code></p></td>
+<td><p>Run an optimization step to adapt the parameters of the <em>Network</em> according to the loss gradient.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="data-transformation-implementation">
+<h2>Data Transformation Implementation<a class="headerlink" href="#data-transformation-implementation" title="Link to this heading"></a></h2>
+<p><em>DataTransformation</em> objects are dedicated to tensor transformations at different levels when streaming data through
+<em>Network</em> and <em>Optimization</em> objects.
+These transformations are automatically called with the pipeline and apply the identity transformation by default.
+Users are then free to define their own tensor transformations with the following methods.</p>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">transform_before_prediction</span></code></p></td>
+<td><p>Apply a tensor transformation to the <em>Network</em> data (before a prediction).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">transform_before_loss</span></code></p></td>
+<td><p>Apply a tensor transformation to the ground truth data and / or the prediction data (after the prediction,
+before the loss computation).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">transform_before_apply</span></code></p></td>
+<td><p>Apply a tensor transformation to the prediction data (before sending it to the <em>Environment</em>).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="configurations">
+<h2>Configurations<a class="headerlink" href="#configurations" title="Link to this heading"></a></h2>
+<p>Using a <em>Network</em>, an <em>Optimizer</em> and a <em>DataTransformation</em> in one of the DeepPhysX <em>Pipeline</em> always requires a
+<em>NetworkConfig</em>.
+This <em>Configuration</em> object role is both to bring together all the options for configuring this set of objects and to
+create them.
+Objects are created within the <code class="docutils literal notranslate"><span class="pre">create_network</span></code>, <code class="docutils literal notranslate"><span class="pre">create_optimization</span></code> and <code class="docutils literal notranslate"><span class="pre">create_data_transformation</span></code> methods
+respectively.</p>
+<div class="line-block">
+<div class="line"><strong>Network parameters</strong></div>
+<div class="line">Here is a description of attributes related to <em>Network</em> configuration.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">network_class</span></code></p></td>
+<td><p><em>Network</em> class from which an instance will be created.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_dir</span></code></p></td>
+<td><p>Path to an existing <em>Network</em> repository with saved parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">network_name</span></code></p></td>
+<td><p>Name of the <em>Network</em> object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">network_type</span></code></p></td>
+<td><p>Type of the <em>Network</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">which_network</span></code></p></td>
+<td><p>If several sets of parameters are saved in <code class="docutils literal notranslate"><span class="pre">network_dir</span></code>, load the specified one.</p>
+<p>By default, the last save is loaded.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">save_each_epoch</span></code></p></td>
+<td><p>If True, <em>Network</em> parameters will be saved at the end of each training epoch.</p>
+<p>Otherwise, they are only saved at the end of the training session.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>Optimization parameters</strong></div>
+<div class="line">Here is a description of attributes related to <em>Optimization</em> configuration.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">optimization_class</span></code></p></td>
+<td><p><em>Optimization</em> class from which an instance will be created.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lr</span></code></p></td>
+<td><p>Learning rate value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">loss</span></code></p></td>
+<td><p>Loss class that will be used to compute loss value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">optimizer</span></code></p></td>
+<td><p><em>Optimizer</em> class that will be used to optimize the <em>Network</em> parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">require_training_stuff</span></code></p></td>
+<td><p>In the case where a loss class and / or an optimizer class (training stuff) are not used for training, users
+must set this option to False.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><strong>DataTransformation parameters</strong></div>
+<div class="line">Here is a description of attributes related to <em>DataTransformation</em> configuration.</div>
+</div>
+<table class="docutils align-default" style="width: 100%">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">data_transformation_class</span></code></p></td>
+<td><p><em>DataTransformation</em> class from which an instance will be created.</p></td>
+</tr>
+</tbody>
+</table>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import NetworkConfig</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX_Core.Dataset.BaseNetworkConfig</span> <span class="kn">import</span> <span class="n">BaseNetworkConfig</span>
+
+<span class="c1"># Choose classes</span>
+<span class="n">MyNetwork</span> <span class="o">=</span> <span class="o">...</span>             <span class="c1"># Define a network architecture or take one from an AI package</span>
+<span class="n">MyOptimizationClass</span> <span class="o">=</span> <span class="o">...</span>   <span class="c1"># Pick the one from an AI package</span>
+<span class="n">MyDataTransformation</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Define tensor transformations or use default one from an AI package</span>
+<span class="n">MyLoss</span> <span class="o">=</span> <span class="o">...</span>                <span class="c1"># Choose one from the AI base framework</span>
+<span class="n">MyOptimizer</span> <span class="o">=</span> <span class="o">...</span>           <span class="c1"># Choose one from the AI base framework</span>
+
+<span class="c1"># Create the config</span>
+<span class="n">network_config</span> <span class="o">=</span> <span class="n">BaseNetworkConfig</span><span class="p">(</span><span class="n">network_class</span><span class="o">=</span><span class="n">MyNetwork</span><span class="p">,</span>
+                                   <span class="n">optimization_class</span><span class="o">=</span><span class="n">MyOptimizationClass</span><span class="p">,</span>
+                                   <span class="n">data_transformation_class</span><span class="o">=</span><span class="n">MyDataTransformation</span><span class="p">,</span>
+                                   <span class="n">lr</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
+                                   <span class="n">loss</span><span class="o">=</span>
+                                   <span class="n">loss</span><span class="o">=</span><span class="n">MyLoss</span><span class="p">,</span>
+                                   <span class="n">optimizer</span><span class="o">=</span><span class="n">MyOptimizer</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="environment.html" class="btn btn-neutral float-left" title="CORE - Using an Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataset.html" class="btn btn-neutral float-right" title="CORE - Using a Dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

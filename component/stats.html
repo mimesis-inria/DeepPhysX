@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CORE - Using the Stats &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE" href="../api/core.html" />
+    <link rel="prev" title="CORE - Using a Visualizer" href="visualizer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pipelines.html">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines.html#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CORE - Using the Stats</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/component/stats.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-using-the-stats">
+<h1>CORE - Using the Stats<a class="headerlink" href="#core-using-the-stats" title="Link to this heading"></a></h1>
+<section id="how-to-use">
+<h2>How to Use<a class="headerlink" href="#how-to-use" title="Link to this heading"></a></h2>
+<p>During the training session, some optimizations analysis are performed and stored as a readable file for
+<a class="extlink-Tensorboard reference external" href="https://www.tensorflow.org/tensorboard/">Tensorboard</a>.
+This file is automatically filled at each <em>Network</em> optimization step in the <code class="docutils literal notranslate"><span class="pre">stats</span></code> repository of the current working
+directory.</p>
+<p>Tensorboard will be automatically launched for the current training session in a web browser.
+To open a previous training session analysis, launch Tensorboard with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>&lt;working_session&gt;/stats
+$<span class="w"> </span>tensorboard<span class="w"> </span>--logdir<span class="w"> </span>.
+&gt;&gt;<span class="w"> </span>Serving<span class="w"> </span>TensorBoard<span class="w"> </span>on<span class="w"> </span>localhost<span class="p">;</span><span class="w"> </span>to<span class="w"> </span>expose<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>network,<span class="w"> </span>use<span class="w"> </span>a<span class="w"> </span>proxy<span class="w"> </span>or<span class="w"> </span>pass<span class="w"> </span>--bind_all
+<span class="w">   </span>TensorBoard<span class="w"> </span>x.x.x<span class="w"> </span>at<span class="w"> </span>http://localhost:6006/<span class="w"> </span><span class="o">(</span>Press<span class="w"> </span>CTRL+C<span class="w"> </span>to<span class="w"> </span>quit<span class="o">)</span>
+</pre></div>
+</div>
+<p>Then copy-paste the provided link into a web browser.</p>
+</section>
+<section id="adding-fields">
+<h2>Adding fields<a class="headerlink" href="#adding-fields" title="Link to this heading"></a></h2>
+<p>By default, six data fields will be stored:</p>
+<ul class="simple">
+<li><p>The <strong>value</strong> of the <strong>loss</strong> function at each batch / epoch</p></li>
+<li><p>The <strong>mean</strong> of the <strong>loss</strong> function at each batch / epoch over the last 50 elements</p></li>
+<li><p>The <strong>variance</strong> of the <strong>loss</strong> function at each batch / epoch</p></li>
+</ul>
+<p>Custom data fields can be set in Tensorboard as well.
+After an optimization step, the <em>Optimization</em> class will by default return a dictionary with a single item named
+<code class="docutils literal notranslate"><span class="pre">loss</span></code> containing the current loss value.
+Then, the <em>Trainer</em> will add every item contained in this dictionary to the <em>StatsManager</em>.
+To fill this dictionary with custom fields, a custom <em>Optimization</em> class must be implemented where the
+<code class="docutils literal notranslate"><span class="pre">transform_loss</span></code> method will fill that dictionary (see <a class="reference internal" href="network.html#network-optimization"><span class="std std-ref">dedicated section</span></a>).
+This new field will have the same name as the item and take each value given in this item at each optimization step.</p>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import BaseOptimization</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX_Core.Network.BaseOptimization</span> <span class="kn">import</span> <span class="n">BaseOptimization</span>
+
+<span class="c1"># Create a new Optimization class</span>
+<span class="k">class</span> <span class="nc">MyOptimization</span><span class="p">(</span><span class="n">BaseOptimization</span><span class="p">):</span>
+
+    <span class="c1"># Override the transform_loss method</span>
+    <span class="k">def</span> <span class="nf">transform_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_value</span>     <span class="c1"># Default loss value</span>
+                <span class="s1">&#39;new_field&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">}</span>           <span class="c1"># Additional field</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="visualizer.html" class="btn btn-neutral float-left" title="CORE - Using a Visualizer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api/core.html" class="btn btn-neutral float-right" title="CORE" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CORE - Using a Pipeline &mdash; DeepPhysX  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=457fe480" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CORE - Using an Environment" href="environment.html" />
+    <link rel="prev" title="Install" href="../presentation/install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DeepPhysX
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">PRESENTATION</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/about.html#working-sessions">Working sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#packages">Packages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#simulation">Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/overview.html#ai">AI</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/overview.html#architecture">Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../presentation/install.html#id1">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-with-pip">Install with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../presentation/install.html#install-from-sources">Install from sources</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">COMPONENTS</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-policy">General Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-data-generation">Pipeline - Data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-training">Pipeline - Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-prediction">Pipeline - Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environment.html">Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html#client-server-architecture">Client-Server Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="network.html">Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="network.html#network-implementation">Network Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#optimization-implementation">Optimization Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#data-transformation-implementation">Data Transformation Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html#configurations">Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#behavior">Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataset.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualizer.html">Visualizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#how-to-use">How to use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualizer.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#how-to-use">How to Use</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stats.html#adding-fields">Adding fields</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/asyncsocket.html">AsyncSocket</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#bytesconverter">BytesConverter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipclient">TcpIpClient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipobject">TcpIpObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/asyncsocket.html#tcpipserver">TcpIpServer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/dataset.html">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#databasehandler">DatabaseHandler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/dataset.html#basedatabaseconfig">BaseDatabaseConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/environment.html">Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironment">BaseEnvironment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/environment.html#baseenvironmentconfig">BaseEnvironmentConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/manager.html">Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#datamanager">DataManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#databasemanager">DatabaseManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#environmentmanager">EnvironmentManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#networkmanager">NetworkManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/manager.html#statsmanager">StatsManager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/network.html">Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetwork">BaseNetwork</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#basenetworkconfig">BaseNetworkConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#baseoptimization">BaseOptimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/network.html#datatransformation">DataTransformation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/pipeline.html">Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basedatageneration">BaseDataGeneration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basepipeline">BasePipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#baseprediction">BasePrediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/pipeline.html#basetrainer">BaseTrainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/core/visualizer.html">Visualizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedofactory">VedoFactory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/core/visualizer.html#vedovisualizer">VedoVisualizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sofa.html">Sofa</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/torch.html">Torch</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DeepPhysX</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CORE - Using a Pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/component/pipelines.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-using-a-pipeline">
+<h1>CORE - Using a Pipeline<a class="headerlink" href="#core-using-a-pipeline" title="Link to this heading"></a></h1>
+<p>Dedicated code in <span class="guilabel">Core/Pipelines</span> module.</p>
+<section id="general-policy">
+<h2>General Policy<a class="headerlink" href="#general-policy" title="Link to this heading"></a></h2>
+<p>Several <em>Pipelines</em> are available with <strong>DeepPhysX</strong>, allowing the user to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Generate</strong> synthetic data from simulations → <code class="docutils literal notranslate"><span class="pre">DataGeneration</span></code></p></li>
+<li><p><strong>Train</strong> artificial neural networks with synthetic data → <code class="docutils literal notranslate"><span class="pre">Training</span></code></p></li>
+<li><p>Use the <strong>predictions</strong> of trained networks inside a simulation → <code class="docutils literal notranslate"><span class="pre">Prediction</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>A <em>Pipeline</em> is always associated with a <a class="reference internal" href="../presentation/about.html#about-working-sessions"><span class="std std-ref">working session</span></a>, whether it already exists or
+whether it is automatically created when the <em>Pipeline</em> is launched.</p>
+<p>The main policy for creating and using a <em>Pipeline</em> is to first define a <em>Configuration</em> for each component involved by
+this <em>Pipeline</em>.
+<em>Configurations</em> can then be mandatory for <em>Dataset</em>, <em>Network</em> and <em>Environment</em> if one wants to create a <em>Pipeline</em>.
+Once these <em>Configurations</em> are defined, the <em>Pipeline</em> can be created and launched.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>More details are provided for each <em>Configuration</em> in dedicated sections.</p>
+</div>
+</section>
+<section id="pipeline-data-generation">
+<h2>Pipeline - Data generation<a class="headerlink" href="#pipeline-data-generation" title="Link to this heading"></a></h2>
+<p>The <em>DataGeneration</em> will only involve an <em>Environment</em> and a <em>Dataset</em>, so this <em>Pipeline</em> requires the corresponding
+<em>Configurations</em>.</p>
+<p>As the purpose of this <em>Pipeline</em> is only to create synthetic data, the working session will always be created at the
+same time.
+The name of the repository to create can be provided as a parameter.</p>
+<p>Furthermore, users have to define which data to save and how much :</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The number of <strong>batches</strong> to produce</p></li>
+<li><p>The number of <strong>samples</strong> in a single batch</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This pipeline does not involve a <em>Network</em>, the <code class="docutils literal notranslate"><span class="pre">get_prediction</span></code> request from Environment is then disabled.
+Trying to launch this request it will lead to an error, so make sure there are no such requests in the data
+production procedure in your <em>Environment</em>.</p>
+</div>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import BaseDataGeneration and Config objects</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX.Core.Pipelines.BaseDataGeneration</span> <span class="kn">import</span> <span class="n">BaseDataGeneration</span>
+<span class="o">...</span>
+
+<span class="c1"># Define configs</span>
+<span class="n">dataset_config</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">environment_config</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="c1"># Create the pipeline</span>
+<span class="n">data_generator</span> <span class="o">=</span> <span class="n">BaseDataGeneration</span><span class="p">(</span><span class="n">session_dir</span><span class="o">=</span><span class="s1">&#39;sessions&#39;</span><span class="p">,</span>
+                                    <span class="n">session_name</span><span class="o">=</span><span class="s1">&#39;my_data_generation&#39;</span><span class="p">,</span>
+                                    <span class="n">dataset_config</span><span class="o">=</span><span class="n">dataset_config</span><span class="p">,</span>
+                                    <span class="n">environment_config</span><span class="o">=</span><span class="n">environment_config</span><span class="p">,</span>
+                                    <span class="n">batch_nb</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                                    <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+
+<span class="c1"># Launch the pipeline</span>
+<span class="n">data_generator</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="pipeline-training">
+<h2>Pipeline - Training<a class="headerlink" href="#pipeline-training" title="Link to this heading"></a></h2>
+<p>The <em>Training</em> can involve an <em>Environment</em>, a <em>Dataset</em> and a <em>Network</em>, so this <em>Pipeline</em> might require the
+corresponding <em>Configurations</em>.
+There are several ways to use this pipeline:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><strong>Training a Network from scratch</strong></dt><dd><p>To train a <em>Network</em> from scratch, the <em>Training</em> requires the whole set of <em>Configurations</em>.
+A new working session will be created, whose name can be set as a parameter.</p>
+</dd>
+<dt><strong>Training a Network with an existing Dataset</strong></dt><dd><p>Training a new <em>Network</em> with an existing <em>Dataset</em> is considered as creating a new working session.
+The path to the <em>Dataset</em> to use has to be provided as a parameter.
+Using an <em>Environment</em> is not mandatory since the training data can already have the right format to feed the
+<em>Network</em>.
+If some data computation must be performed between the <em>Dataset</em> and the <em>Network</em>, an <em>Environment</em> can be
+created with the specific <em>Configuration</em> (see more in the dedicated section).</p>
+</dd>
+<dt><strong>Training a Network from an existing Network state</strong></dt><dd><p>Training from an existing <em>Network</em> state can be done both in an existing session or in a new session.
+If you want to work in the same session, you have to configure the <em>Training</em> to do so, otherwise a new working
+session will be automatically created.
+In the same session, a new set of trained parameters will be added in the <code class="docutils literal notranslate"><span class="pre">network</span></code> repository, either trained
+with data from an external <em>Dataset</em> (whose path must be provided) or with data from the <em>Environment</em> (whose
+<em>Configuration</em> must be provided).</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The last parameters to set in the <em>Trainer</em> are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The number of <strong>epochs</strong> the training loop should complete during the session</p></li>
+<li><p>The number of <strong>batches</strong> used during a single epoch</p></li>
+<li><p>The number of <strong>samples</strong> in a single batch</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, the training data will be produced inside the <em>Environment</em> during the first epoch and then re-used
+from the <em>Dataset</em> for the remaining epochs.
+If you always need to use data from the <em>Environment</em>, you can specify this in its <em>Configuration</em>.</p>
+</div>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import BaseTraining and Config objects</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX.Core.Pipelines.BaseTraining</span> <span class="kn">import</span> <span class="n">BaseTraining</span>
+<span class="o">...</span>
+
+<span class="c1"># Define configs</span>
+<span class="n">dataset_config</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">environment_config</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">network_config</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="c1"># Create the pipeline</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">BaseTraining</span><span class="p">(</span><span class="n">session_dir</span><span class="o">=</span><span class="s1">&#39;sessions&#39;</span><span class="p">,</span>
+                       <span class="n">session_name</span><span class="o">=</span><span class="s1">&#39;my_training&#39;</span><span class="p">,</span>
+                       <span class="n">dataset_config</span><span class="o">=</span><span class="n">dataset_config</span><span class="p">,</span>
+                       <span class="n">environment_config</span><span class="o">=</span><span class="n">env_config</span><span class="p">,</span>
+                       <span class="n">network_config</span><span class="o">=</span><span class="n">net_config</span><span class="p">,</span>
+                       <span class="n">epoch_nb</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                       <span class="n">batch_nb</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                       <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+
+<span class="c1"># Launch the pipeline</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="pipeline-prediction">
+<h2>Pipeline - Prediction<a class="headerlink" href="#pipeline-prediction" title="Link to this heading"></a></h2>
+<p>The <em>Prediction</em> always requires a <em>Network</em> to compute predictions and an <em>Environment</em> to apply them, so this
+<em>Pipeline</em> will always require the corresponding <em>Configurations</em>.</p>
+<p>This <em>Pipeline</em> always works with an existing working session, no new sessions can be created within a <em>Prediction</em>.
+The path to the session is therefore required, assuming that it contains a trained <em>Network</em>.</p>
+<p>The <em>Prediction</em> can either run a specified <strong>number of steps</strong> or run an <strong>infinite loop</strong>.</p>
+<p>A <em>Dataset</em> configuration can be provided.
+In this case, the <em>Prediction</em> can record prediction data.
+Each sample computed during the prediction phase will then be added to the <em>Dataset</em> in dedicated partitions.
+With a <em>Dataset</em>, the <em>Prediction</em> can also load its data to <strong>replay</strong> stored samples.</p>
+<p>See following example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import BasePrediction and Config objects</span>
+<span class="kn">from</span> <span class="nn">DeepPhysX.Core.Pipelines.BasePrediction</span> <span class="kn">import</span> <span class="n">BasePrediction</span>
+<span class="o">...</span>
+
+<span class="c1"># Define configs</span>
+<span class="n">dataset_config</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">environment_config</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">network_config</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="c1"># Create the pipeline</span>
+<span class="n">runner</span> <span class="o">=</span> <span class="n">BasePrediction</span><span class="p">(</span><span class="n">session_dir</span><span class="o">=</span><span class="s1">&#39;sessions&#39;</span><span class="p">,</span>
+                        <span class="n">session_name</span><span class="o">=</span><span class="s1">&#39;my_training&#39;</span><span class="p">,</span>
+                        <span class="n">dataset_config</span><span class="o">=</span><span class="n">dataset_config</span><span class="p">,</span>
+                        <span class="n">environment_config</span><span class="o">=</span><span class="n">env_config</span><span class="p">,</span>
+                        <span class="n">network_config</span><span class="o">=</span><span class="n">net_config</span><span class="p">,</span>
+                        <span class="n">step_nb</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Launch the pipeline</span>
+<span class="n">runner</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../presentation/install.html" class="btn btn-neutral float-left" title="Install" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="environment.html" class="btn btn-neutral float-right" title="CORE - Using an Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mimesis, Inria.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
