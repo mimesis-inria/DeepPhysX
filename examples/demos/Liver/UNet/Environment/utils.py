@@ -28,7 +28,7 @@ def find_center(source_file, scale):
     """
     Find the center of mass of the object.
 
-    :param source_file: Filename of the source object
+    :param source_file: Filename of the src object
     :param scale: Scaling to apply to the objects
     :return: Center of mass of the object
     """

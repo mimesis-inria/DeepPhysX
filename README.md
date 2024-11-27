@@ -1,6 +1,6 @@
 ## DeepPhysX
 
-![logo](docs/source/_static/image/logo.png)
+![logo](docs/src/_static/image/logo.png)
 
 ### Interfacing AI with simulation
 
@@ -20,7 +20,7 @@ Then other packages are compatible with this **Core** and a specific **simulatio
 * Train an artificial neural network with a synthetic dataset;
 * Use the predictions of a trained network in a numerical simulation.
 
-The full list of features is detailed in the [**documentation**](https://deepphysx.readthedocs.io).
+The full list of features is detailed in the [**documentation**](https://mimesis-inria.github.io/DeepPhysX/).
 
 
 ### Quick install
@@ -31,7 +31,7 @@ Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **oth
 The packages corresponding to these frameworks will therefore be used for the default installation.
 
 The easiest way to install is using `pip`, but there are a several way to install and configure a **DeepPhysX**
-environment (refer to the [**documentation**](https://deepphysx.readthedocs.io/en/latest/presentation/install.html) 
+environment (refer to the [**documentation**](https://mimesis-inria.github.io/DeepPhysX/) 
 for further instructions).
 
 ``` bash
@@ -54,7 +54,7 @@ $ DPX --run <demo>      # Run one of the demo scripts
 
 |          **Armadillo**<br>`DPX -r armadillo`          |          **Beam**<br>`DPX -r beam`          |          **Liver**<br>`DPX -r liver`          |
 |:-----------------------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
-| ![armadillo](docs/source/_static/image/armadillo.png) | ![beam](docs/source/_static/image/beam.png) | ![liver](docs/source/_static/image/liver.png) |
+| ![armadillo](docs/src/_static/image/armadillo.png) | ![beam](docs/src/_static/image/beam.png) | ![liver](docs/src/_static/image/liver.png) |
 
 
 ### References

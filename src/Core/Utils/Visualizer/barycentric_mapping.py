@@ -8,7 +8,7 @@ class BarycentricMapping:
 
     def __init__(self, source: Mesh, target: Mesh):
         """
-        Python implementation of a barycentric mapping between a source mesh and a target mesh.
+        Python implementation of a barycentric mapping between a src mesh and a target mesh.
 
         :param source: Source mesh
         :param target: Target mesh
@@ -23,7 +23,7 @@ class BarycentricMapping:
 
     def init_mapping(self):
         """
-        Compute barycentric coordinates of target to map source.
+        Compute barycentric coordinates of target to map src.
         """
 
         # 1. CONVERT SOURCE TO VTK
@@ -84,7 +84,7 @@ class BarycentricMapping:
 
     def apply(self, source_positions):
         """
-        Apply mapping between new source positions and target with barycentric coordinates.
+        Apply mapping between new src positions and target with barycentric coordinates.
         """
 
         ABC = np.array(source_positions)[np.array(self.source.cells())[self.index]]
