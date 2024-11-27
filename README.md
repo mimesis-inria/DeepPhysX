@@ -1,6 +1,6 @@
 ## DeepPhysX
 
-![logo](docs/source/_static/image/logo.png)
+![logo](docs/src/_static/image/logo.png)
 
 ### Interfacing AI with simulation
 
@@ -54,7 +54,7 @@ $ DPX --run <demo>      # Run one of the demo scripts
 
 |          **Armadillo**<br>`DPX -r armadillo`          |          **Beam**<br>`DPX -r beam`          |          **Liver**<br>`DPX -r liver`          |
 |:-----------------------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
-| ![armadillo](docs/source/_static/image/armadillo.png) | ![beam](docs/source/_static/image/beam.png) | ![liver](docs/source/_static/image/liver.png) |
+| ![armadillo](docs/src/_static/image/armadillo.png) | ![beam](docs/src/_static/image/beam.png) | ![liver](docs/src/_static/image/liver.png) |
 
 
 ### References

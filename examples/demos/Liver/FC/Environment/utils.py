@@ -7,7 +7,7 @@ def get_nb_nodes(source_file):
     """
     Get the number of node of the object.
 
-    :param source_file: Filename of the source object
+    :param source_file: Filename of the src object
     :return: Number of node
     """
 
@@ -18,7 +18,7 @@ def find_center(source_file, scale):
     """
     Find the center of mass of the object.
 
-    :param source_file: Filename of the source object
+    :param source_file: Filename of the src object
     :param scale: Scaling to apply to the objects
     :return: Center of mass of the object
     """
@@ -30,8 +30,8 @@ def find_boundaries(source_file, objects_files_list, scale):
     """
     Find the boundary conditions of the liver.
 
-    :param source_file: Filename of the source object
-    :param objects_files_list: List of filenames of objects which intersect the source object
+    :param source_file: Filename of the src object
+    :param objects_files_list: List of filenames of objects which intersect the src object
     :param scale: Scaling to apply to the objects
     :return: Boundary box defined by [xmin, ymin, zmin, xmax, ymax, zmax]
     """
