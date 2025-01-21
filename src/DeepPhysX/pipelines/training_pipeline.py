@@ -1,12 +1,13 @@
-from typing import Optional
+from typing import Optional, Type, Dict, Any, Callable
 from os.path import join, isfile, exists, sep
 from datetime import datetime
 from vedo import ProgressBar
+from torch.nn.modules.loss import _Loss
+from torch.optim import Optimizer
 
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
-from DeepPhysX.networks.network_manager import NetworkManager
+from DeepPhysX.net.network_manager import NetworkManager
 from DeepPhysX.networks.stats_manager import StatsManager
-from DeepPhysX.networks.network_config import NetworkConfig
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir, get_session_dir
 
@@ -14,8 +15,11 @@ from DeepPhysX.utils.path import create_dir, get_session_dir
 class TrainingPipeline:
 
     def __init__(self,
-                 network_config: NetworkConfig,
+                 network_manager: NetworkManager,
                  database_config: DatabaseConfig,
+                 loss_fnc: Type[_Loss],
+                 optimizer: Type[Optimizer],
+                 optimizer_kwargs: Dict[str, Any],
                  simulation_config: Optional[SimulationConfig] = None,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
@@ -23,22 +27,9 @@ class TrainingPipeline:
                  epoch_nb: int = 0,
                  batch_nb: int = 0,
                  batch_size: int = 0,
-                 debug: bool = False):
+                 debug: bool = False,
+                 save_intermediate_state_every: int = 0):
         """
-        BaseTraining implements the main loop that defines the training process of an artificial neural networks.
-        Training can be launched with several data sources (from a Dataset, from an Environment, from combined sources).
-        It provides a highly tunable learning process that can be used with any machine learning library.
-
-        :param network_config: Configuration object with the parameters of the networks.
-        :param database_config: Configuration object with the parameters of the Database.
-        :param simulation_config: Configuration object with the parameters of the Environment.
-        :param session_dir: Relative path to the directory which contains sessions repositories.
-        :param session_name: Name of the new the session repository.
-        :param new_session: If True, a new repository will be created for this session.
-        :param epoch_nb: Number of epochs to perform.
-        :param batch_nb: Number of batches to use.
-        :param batch_size: Number of samples in a single batch.
-        :param debug: If True, main training features will not be launched.
         """
 
         # Create a new session if required
@@ -61,6 +52,7 @@ class TrainingPipeline:
                                                      produce_data=self.produce_data)
 
         # Create a SimulationManager
+        self.simulation_manager = None
         if simulation_config is not None:
             self.simulation_manager = SimulationManager(config=simulation_config,
                                                         pipeline='training',
@@ -71,10 +63,13 @@ class TrainingPipeline:
                                                         normalize_data=self.database_manager.config.normalize)
 
         # Create a NetworkManager
-        self.network_manager = NetworkManager(network_config=network_config,
-                                              pipeline='training',
-                                              session=join(self.session_dir, session_name),
-                                              new_session=new_session)
+        self.network_manager = network_manager
+        self.network_manager.init_training(loss_fnc=loss_fnc,
+                                           optimizer=optimizer,
+                                           optimizer_kwargs=optimizer_kwargs,
+                                           new_session=new_session,
+                                           session=join(self.session_dir, session_name),
+                                           save_intermediate_state_every=save_intermediate_state_every)
         self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
                                                  normalize_data=self.database_manager.config.normalize)
         if self.simulation_manager is not None:
@@ -125,12 +120,21 @@ class TrainingPipeline:
                 f.write(str(self.stats_manager))
             f.close()
 
-    def execute(self) -> None:
+    def execute(self, user_training_loop: Optional[Callable] = None) -> None:
         """
         Launch the training Pipeline.
         Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
         more complex Pipeline.
         """
+
+        self.__default_training_loop() if user_training_loop is None else user_training_loop()
+        # Training end
+        for manager in (self.database_manager, self.network_manager, self.stats_manager, self.simulation_manager):
+            if manager is not None:
+                manager.close()
+
+
+    def __default_training_loop(self):
 
         # Epoch condition
         while self.epoch_id < self.epoch_nb:
@@ -169,34 +173,34 @@ class TrainingPipeline:
                         #     self.simulation_manager = None
 
                 # Optimize
-                self.loss_dict = self.network_manager.compute_prediction_and_loss(data_lines=self.data_lines,
-                                                                                  optimize=True)
+                batch_fwd, batch_bwd = self.network_manager.get_data(lines_id=self.data_lines)
+                net_predict = self.network_manager.get_predict(batch_fwd=batch_fwd)
+                loss = self.network_manager.get_loss(net_predict=net_predict, batch_bwd=batch_bwd)
+                self.network_manager.optimize()
+
+                # self.loss_dict = self.network_manager.get_prediction_and_loss(data_lines=self.data_lines,
+                #                                                                   optimize=True)
 
                 # Batch end
                 self.batch_id += 1
                 if self.stats_manager is not None:
-                    self.stats_manager.add_train_batch_loss(self.loss_dict['loss'],
+                    self.stats_manager.add_train_batch_loss(loss,
                                                             self.epoch_id * self.batch_nb + self.batch_id)
-                    for key in self.loss_dict.keys():
-                        if key != 'loss':
-                            self.stats_manager.add_custom_scalar(tag=key,
-                                                                 value=self.loss_dict[key],
-                                                                 count=self.epoch_id * self.batch_nb + self.batch_id)
+                    # for key in self.loss_dict.keys():
+                    #     if key != 'loss':
+                    #         self.stats_manager.add_custom_scalar(tag=key,
+                    #                                              value=self.loss_dict[key],
+                    #                                              count=self.epoch_id * self.batch_nb + self.batch_id)
 
             # Epoch end
             self.epoch_id += 1
             if self.simulation_manager is not None and self.produce_data and \
                     (self.epoch_id == 0 or self.simulation_manager.always_produce):
                 self.database_manager.compute_normalization()
-                self.network_manager.database_handler.reload_normalization()
+                self.network_manager.db_handler.reload_normalization()
             if self.stats_manager is not None:
-                self.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
+                self.stats_manager.add_train_epoch_loss(loss, self.epoch_id)
             self.network_manager.save_network()
-
-        # Training end
-        for manager in (self.database_manager, self.network_manager, self.stats_manager, self.simulation_manager):
-            if manager is not None:
-                manager.close()
 
     def __str__(self):
 

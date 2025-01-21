@@ -1,5 +1,6 @@
+from dataclasses import fields
 from typing import Any, Dict, List, Optional, Tuple
-from os.path import isdir, join, dirname
+from os.path import isdir, join, dirname, exists
 from os import symlink, makedirs
 import json
 from numpy import arange, ndarray, array
@@ -177,7 +178,11 @@ class DatabaseManager:
         self.__db.load()
 
         # Get the json information file
-        self.__init_json()
+        if exists(join(self.database_dir, 'dataset.json')):
+            with open(join(self.database_dir, 'dataset.json'), 'r') as json_file:
+                self.json_content = json.load(json_file)
+        else:
+            self.__init_json()
 
         # Index partitions
         self.index_samples()
@@ -207,7 +212,7 @@ class DatabaseManager:
             if field_name not in ['id', 'env_id']:
                 info = {'type': field.split(' ')[1][1:-1]}
                 if info['type'] == 'NUMPY':
-                    data = self.__db.get_line(table_name=self.mode, fields=field_name)
+                    data = self.__db.get_line(table_name='Train', fields=field_name)
                     info['shape'] = data[field_name].shape
                 info['normalize'] = [0., 1.]
                 self.json_content['fields'][field_name] = info

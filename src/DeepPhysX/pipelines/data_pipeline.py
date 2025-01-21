@@ -30,8 +30,7 @@ class DataPipeline:
 
         # Create a new session if required
         self.session_dir = get_session_dir(session_dir, new_session)
-        if not new_session:
-            self.new_session = not exists(join(self.session_dir, session_name))
+        self.new_session = new_session or not exists(join(self.session_dir, session_name))
         if self.new_session:
             session_name = create_dir(session_dir=self.session_dir,
                                       session_name=session_name).split(sep)[-1]

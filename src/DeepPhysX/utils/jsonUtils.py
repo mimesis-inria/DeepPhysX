@@ -74,18 +74,8 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 if __name__ == '__main__':
 
-    z = {"data_shape": {"input": (2, 1),
-                        "output": (2, 3)},
-         "nb_samples": {"total": 70,
-                        "Training": [30, 30, 10],
-                        "Validation": [],
-                        "Running": []},
-         "partitions": {"Training": {"input": ["generation_training_IN_0.npy",
-                                               "generation_training_IN_1.npy"],
-                                     "output": ["generation_training_OUT_0.npy",
-                                                "generation_training_OUT_1.npy"]},
-                        "Validation": {"input": [],
-                                       "output": []},
-                        "Running": {"input": [],
-                                    "output": []}}}
+    z = {'nb_samples': {'train': 10, 'test': 5, 'run': 0},
+         'fields': {'input': {'type': "NUMPY",
+                              'shape': [100, 3],
+                              'normalize': [0.5, 0.25]}}}
     print(json.dumps(z, indent=3, cls=CustomJSONEncoder))

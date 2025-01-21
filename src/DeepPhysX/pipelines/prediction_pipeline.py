@@ -3,14 +3,14 @@ from os.path import join, exists
 
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
-from DeepPhysX.networks.network_manager import NetworkManager, NetworkConfig
+from DeepPhysX.net.network_manager import NetworkManager
 from DeepPhysX.utils.path import get_session_dir
 
 
 class PredictionPipeline:
 
     def __init__(self,
-                 network_config: NetworkConfig,
+                 network_manager: NetworkManager,
                  simulation_config: SimulationConfig,
                  database_config: Optional[DatabaseConfig] = None,
                  session_dir: str = 'session',
@@ -18,16 +18,6 @@ class PredictionPipeline:
                  step_nb: int = -1,
                  record: bool = False):
         """
-        BasePrediction is a pipeline defining the running process of an artificial neural networks.
-        It provides a highly tunable learning process that can be used with any machine learning library.
-
-        :param network_config: Configuration object with the parameters of the networks.
-        :param simulation_config: Configuration object with the parameters of the Environment.
-        :param database_config: Configuration object with the parameters of the Database.
-        :param session_dir: Relative path to the directory which contains sessions repositories.
-        :param session_name: Name of the new the session repository.
-        :param step_nb: Number of simulation step to play.
-        :param record: If True, prediction data will be saved in a dedicated Database.
         """
 
         # Define the session repository
@@ -50,10 +40,8 @@ class PredictionPipeline:
                                                     normalize_data=self.database_manager.config.normalize)
 
         # Create a NetworkManager
-        self.network_manager = NetworkManager(network_config=network_config,
-                                              pipeline='prediction',
-                                              session=path,
-                                              new_session=False)
+        self.network_manager = network_manager
+        self.network_manager.init_prediction(session=path)
         self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
                                                  normalize_data=self.database_manager.config.normalize)
         self.network_manager.link_clients(1)
@@ -90,6 +78,10 @@ class PredictionPipeline:
                                                                    save_data=self.produce_data)
                 if self.produce_data:
                     self.database_manager.add_data(self.data_lines)
+
+            if self.simulation_manager.environment_controller.viewer is not None and self.step_nb < 0:
+                if not self.simulation_manager.environment_controller.viewer.is_open:
+                    break
 
         self.simulation_manager.close()
         self.database_manager.close()

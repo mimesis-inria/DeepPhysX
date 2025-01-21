@@ -3,6 +3,7 @@ from numpy import ndarray
 
 from DeepPhysX.simulation.abstract_controller import AbstractController
 from SimRender.core import Viewer
+from time import time
 
 
 class DPXSimulation:
@@ -172,7 +173,9 @@ class DPXSimulation:
         """
 
         if self.viewer is not None:
+            # s = time()
             self.viewer.render()
+            # print('rendering_time = ', time() - s)
 
     def __str__(self):
 

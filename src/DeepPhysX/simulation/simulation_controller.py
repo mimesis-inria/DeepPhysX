@@ -219,7 +219,7 @@ class SimulationController(AbstractController):
         else:
             raise ValueError(f"[{self.__environment.name}] The Environment has no Manager to request a prediction.")
         # 3.3. Receive the prediction data
-        data_prediction = self.__database_handler.get_line(exchange=True, line_id=self.__environment_id)
+        data_prediction = self.__database_handler.get_data(exchange=True, line_id=self.__environment_id)
         data_prediction.pop('id')
         return data_prediction
 

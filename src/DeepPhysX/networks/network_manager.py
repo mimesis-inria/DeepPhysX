@@ -1,97 +1,112 @@
-from typing import Any, Dict, Optional, List, Tuple
-from os import listdir, remove
-from os.path import join, isdir, isfile, sep
+from typing import Optional, Dict, Any, Type, Union, List, Tuple
+from os import sep, listdir, remove
+from os.path import isfile, isdir, join
 from numpy import ndarray, array
+from numpy.random import normal
+from torch.nn import Module
+from torch.nn.modules.loss import _Loss
+from torch.optim import Optimizer
+from torch import Tensor
 
+from DeepPhysX.net.network_wrapper import NetworkWrapper
 from DeepPhysX.database.database_handler import DatabaseHandler
-from DeepPhysX.networks.network_config import NetworkConfig
-from DeepPhysX.utils.path import copy_dir, create_dir
+from DeepPhysX.utils.path import create_dir, copy_dir
 
 
 class NetworkManager:
 
     def __init__(self,
-                 network_config: NetworkConfig,
-                 pipeline: str = '',
-                 session: str = 'sessions/default',
-                 new_session: bool = True):
-        """
-        NetworkManager deals with all the interactions with a neural networks: predictions, saves, initialisation,
-        loading, optimization.
-
-        :param network_config: Configuration object with the parameters of the networks.
-        :param pipeline: Type of the Pipeline.
-        :param session: Path to the session repository.
-        :param new_session: If True, the session is done in a new repository.
+                 network_architecture: Type[Module],
+                 network_kwargs: Dict[str, Any],
+                 data_forward_fields: Union[str, List[str]],
+                 data_backward_fields: Union[str, List[str]],
+                 network_dir: Optional[str] = None,
+                 network_load_id: int = -1,
+                 data_type: str = 'float32'):
         """
 
-        self.name: str = self.__class__.__name__
+        """
 
-        # Storage variables
-        self.database_handler: DatabaseHandler = DatabaseHandler()
-        self.batch: Optional[Any] = None
-        self.session: str = session
-        self.new_session: bool = new_session
-        self.network_dir: Optional[str] = None
-        self.network_template_name: str = session.split(sep)[-1] + '_network_{}'
-        self.saved_counter: int = 0
-        self.save_every_epoch: int = network_config.save_every_epoch
-
-        # Init networks
-        self.network = network_config.create_network()
+        # Define Network Module
+        self.network = NetworkWrapper(network_architecture=network_architecture,
+                                      network_kwargs=network_kwargs,
+                                      data_type=data_type)
         self.network.set_device()
-        if pipeline == 'training' and not network_config.training_stuff:
-            raise ValueError(f"[{self.name}] Training requires a loss and an optimizer in your NetworkConfig")
-        self.is_training: bool = pipeline == 'training'
 
-        # Init Optimization
-        self.optimization = network_config.create_optimization()
-        if self.optimization.loss_class is not None:
-            self.optimization.set_loss()
+        # Define Database access
+        self.db_handler: DatabaseHandler = DatabaseHandler()
+        self.data_forward_fields = data_forward_fields if isinstance(data_forward_fields, list) else [data_forward_fields]
+        self.data_backward_fields = data_backward_fields if isinstance(data_backward_fields, list) else [data_backward_fields]
 
-        # Init DataTransformation
-        self.data_transformation = network_config.create_data_transformation()
+        # Define session storage
+        self.network_dir = network_dir
+        self.network_load_id = network_load_id
+        # self.network_template_name: str = session.split(sep)[-1] + '_network_{}'
+        self.saved_counter: int = 0
+        self.save_every: int = 0
 
-        # Training configuration
-        if self.is_training:
-            self.network.set_train()
-            self.optimization.set_optimizer(self.network)
-            # Setting networks directory
-            if new_session and network_config.network_dir is not None and isdir(network_config.network_dir):
-                self.network_dir = copy_dir(src_dir=network_config.network_dir,
-                                            dest_dir=session,
-                                            sub_folders='networks')
-                self.load_network(which_network=network_config.which_network)
-            else:
-                self.network_dir = create_dir(session_dir=session, session_name='networks')
+        # Training materials
+        self.__is_training: bool = False
+        self.loss_fnc: Optional[_Loss] = None
+        self.__loss_value: Optional[Any] = None
+        self.optimizer: Optional[Optimizer] = None
 
-        # Prediction configuration
+    ################
+    # INIT METHODS #
+    ################
+
+    def init_training(self,
+                      loss_fnc: Type[_Loss],
+                      optimizer: Type[Optimizer],
+                      optimizer_kwargs: Dict[str, Any],
+                      new_session: bool,
+                      session: str = 'sessions/default',
+                      save_intermediate_state_every: int = 0,):
+        """
+        """
+
+        self.__is_training = True
+        self.network.train()
+        self.loss_fnc = loss_fnc()
+        self.optimizer = optimizer(params=self.network.parameters(), **optimizer_kwargs)
+
+        if new_session and self.network_dir is not None and isdir(self.network_dir):
+            self.network_dir = copy_dir(src_dir=self.network_dir,
+                                        dest_dir=session,
+                                        sub_folders='networks')
+            self.load_network(network_id=self.network_load_id)
         else:
-            self.network.set_eval()
-            self.network_dir = join(session, 'networks/')
-            self.load_network(which_network=network_config.which_network)
+            self.network_dir = create_dir(session_dir=session, session_name='networks')
 
-    ##########################################################################################
-    ##########################################################################################
-    #                              DatabaseHandler management                                #
-    ##########################################################################################
-    ##########################################################################################
+        self.save_every = save_intermediate_state_every
+
+    def init_prediction(self,
+                        session: str = 'sessions/default',):
+        """
+        """
+
+        self.network.eval()
+        self.network_dir = join(session, 'networks')
+        self.load_network(network_id=self.network_load_id)
+
+    #######################
+    # DATABASE MANAGEMENT #
+    #######################
 
     def connect_to_database(self,
                             database_path: Tuple[str, str],
                             normalize_data: bool):
 
-        self.database_handler.init(database_path=database_path, normalize_data=normalize_data)
+        self.db_handler.init(database_path=database_path, normalize_data=normalize_data)
 
     def get_database_handler(self) -> DatabaseHandler:
         """
         Get the DatabaseHandler of the NetworkManager.
         """
 
-        return self.database_handler
+        return self.db_handler
 
-    def link_clients(self,
-                     nb_clients: Optional[int] = None) -> None:
+    def link_clients(self, nb_clients: Optional[int] = None) -> None:
         """
         Update the data Exchange Database with a new line for each TcpIpClient.
 
@@ -100,171 +115,156 @@ class NetworkManager:
 
         if nb_clients is not None:
             # Create the networks fields in the Exchange Database
-            fields = [(field_name, ndarray) for field_name in self.network.net_fields + self.network.pred_fields]
-            self.database_handler.create_fields(fields=fields, exchange=True)
+            fields = [(field_name, ndarray) for field_name in self.db_handler.get_fields() if field_name not in ['id', 'env_id']]
+            self.db_handler.create_fields(fields=fields, exchange=True)
             # Add an empty line for each Client
             for _ in range(nb_clients):
-                self.database_handler.add_data(exchange=True, data={})
+                self.db_handler.add_data(exchange=True, data={})
 
-    ##########################################################################################
-    ##########################################################################################
-    #                            networks parameters management                               #
-    ##########################################################################################
-    ##########################################################################################
+    ##############################
+    # NETWORK WEIGHTS MANAGEMENT #
+    ##############################
 
-    def load_network(self,
-                     which_network: int = -1) -> None:
-        """
-        Load an existing set of parameters of the networks.
-
-        :param which_network: If several sets of parameters were saved, specify which one to load.
+    def load_network(self, network_id: int) -> None:
         """
 
-        # 1. Get the list of all sets of saved parameters
-        networks_list = [join(self.network_dir, f) for f in listdir(self.network_dir) if
-                         isfile(join(self.network_dir, f)) and f.__contains__('network_')]
-        networks_list = sorted(networks_list)
-        last_saved_network = [join(self.network_dir, f) for f in listdir(self.network_dir) if
-                              isfile(join(self.network_dir, f)) and f.__contains__('networks.')]
-        networks_list += last_saved_network
+        """
 
-        # 2. Check the networks to access
-        if len(networks_list) == 0:
-            raise FileNotFoundError(f"[{self.name}]: There is no networks in {self.network_dir}.")
-        elif len(networks_list) == 1:
-            which_network = 0
-        elif which_network > len(networks_list):
-            print(f"[{self.name}] The networks 'network_{self.saved_counter} doesn't exist, loading the most trained "
+        # 1. Get the list of the saved weights files
+        files = sorted([join(self.network_dir, f) for f in listdir(self.network_dir)
+                        if isfile(join(self.network_dir, f)) and f.endswith('.pth')])
+
+        # 2. Check the network id
+        if len(files) == 0:
+            raise FileNotFoundError(f"[{self.__class__.__name__}] No saved weights in {self.network_dir}.")
+        elif len(files) == 1:
+            network_id = 0
+        elif network_id > len(files):
+            print(f"[{self.__class__.__name__}] The networks 'network_{self.saved_counter} doesn't exist, loading the most trained "
                   f"by default.")
-            which_network = -1
+            network_id = -1
 
         # 3. Load the set of parameters
-        print(f"[{self.name}]: Loading networks from {networks_list[which_network]}.")
-        self.network.load_parameters(networks_list[which_network])
+        print(f"[{self.__class__.__name__}] Loading saved weights from {files[network_id]}.")
+        self.network.load(files[network_id])
 
-    def save_network(self,
-                     last_save: bool = False) -> None:
-        """
-        Save the current set of parameters of the networks.
-
-        :param last_save: If True, the networks training is done then give a special denomination.
+    def save_network(self, final_save: bool = False) -> None:
         """
 
-        # Final session saving
-        if last_save:
-            path = join(self.network_dir, 'networks')
-            print(f"[{self.name}] Saving final networks at {self.network_dir}.")
-            self.network.save_parameters(path)
+        """
 
-        # Intermediate session saving
+        # 1. Final save case
+        if final_save:
+            path = join(self.network_dir, 'network')
+            print(f"[{self.__class__.__name__}] Saving final set of weights at {path}.")
+            self.network.save(path=path)
+
+        # 2. Intermediate save case
         else:
-            # Remove previous temp file
-            temp_files = [file for file in listdir(self.network_dir) if 'backup' in file]
-            for temp_file in temp_files:
-                remove(join(self.network_dir, temp_file))
-            # Save intermediate state (either checkpoint, either backup)
-            if self.save_every_epoch > 0:
-                self.saved_counter += 1
-                if self.saved_counter % self.save_every_epoch:
-                    path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
-                    print(f"[{self.name}] Saving intermediate networks at {path}.")
-                    self.network.save_parameters(path)
-                else:
-                    path = join(self.network_dir, 'backup_network')
-                    self.network.save_parameters(path)
+            # Remove previous temporary backup file(s)
+            for temp in [f for f in listdir(self.network_dir) if 'temp' in f]:
+                remove(join(self.network_dir, temp))
+            # Save intermediate state
+            self.saved_counter += 1
+            if self.save_every > 0 and self.saved_counter % self.save_every == 0:
+                path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
+                print(f"[{self.__class__.__name__}] Saving intermediate set of weights at {path}.")
+                self.network.save(path=path)
+            # Save backup file
             else:
-                path = join(self.network_dir, 'backup_network')
-                self.network.save_parameters(path)
+                path = join(self.network_dir, f'temp_{self.saved_counter}')
+                self.network.save(path=path)
 
-    ##########################################################################################
-    ##########################################################################################
-    #                          networks optimization and prediction                           #
-    ##########################################################################################
-    ##########################################################################################
+    #####################################
+    # NETWORK OPTIMIZATION & PREDICTION #
+    #####################################
 
-    def compute_prediction_and_loss(self,
-                                    optimize: bool,
-                                    data_lines: List[int]) -> Dict[str, float]:
+    def get_data(self, lines_id: List[int]):
+
+        # 1. Get data from the Database
+        batch_fwd = self.db_handler.get_batch(lines_id=lines_id,
+                                              fields=self.data_forward_fields)
+        batch_bwd = self.db_handler.get_batch(lines_id,
+                                              fields=self.data_backward_fields)
+
+
+        # 2. Convert data to PyTorch & normalize if required
+        for batch in (batch_fwd, batch_bwd):
+            for field_name in batch.keys():
+                batch[field_name] = array(batch[field_name])
+                if self.db_handler.do_normalize and field_name in self.db_handler.normalization:
+                    batch[field_name] = self.normalize_data(data=batch[field_name],
+                                                            normalization=self.db_handler.normalization[field_name])
+                batch[field_name] = self.network.to_torch(tensor=batch[field_name],
+                                                          grad=self.__is_training)
+
+        return batch_fwd, batch_bwd
+
+    def get_predict(self, batch_fwd: Dict[str, Tensor]):
         """
-        Make a prediction with the data passed as argument, optimize or not the networks
-
-        :param optimize: If true, run a backward propagation.
-        :param data_lines: Batch of indices of samples in the Database.
-        :return: The prediction and the associated loss value
-        """
-
-        # 1. Define networks and Optimization batches
-        batches = {}
-        normalization = self.database_handler.normalization
-        for side, fields in zip(['net', 'opt'], [self.network.net_fields, self.network.opt_fields]):
-            # Get the batch from the Database
-            batch = self.database_handler.get_batch(fields=fields,
-                                                    lines_id=data_lines)
-            # Apply normalization and convert to tensor
-            for field in batch.keys():
-                batch[field] = array(batch[field])
-                if field in normalization:
-                    batch[field] = self.normalize_data(data=batch[field],
-                                                       normalization=normalization[field])
-                batch[field] = self.network.numpy_to_tensor(data=batch[field],
-                                                            grad=optimize)
-            batches[side] = batch
-        data_net, data_opt = batches.values()
-
-        # 2. Compute prediction
-        data_net = self.data_transformation.transform_before_prediction(data_net)
-        data_pred = self.network.predict(data_net)
-
-        # 3. Compute loss
-        data_pred, data_opt = self.data_transformation.transform_before_loss(data_pred, data_opt)
-        data_loss = self.optimization.compute_loss(data_pred, data_opt)
-
-        # 4. Optimize networks if training
-        if optimize:
-            self.optimization.optimize()
-
-        return data_loss
-
-    def compute_online_prediction(self, instance_id: int) -> None:
-        """
-        Make a prediction with the data passed as argument.
-
-        :param instance_id: Index of the Environment instance to provide a prediction.
         """
 
-        # Get networks data
-        normalization = self.database_handler.normalization
-        sample = self.database_handler.get_data(exchange=True,
-                                                fields=self.network.net_fields,
-                                                line_id=instance_id)
+        return self.network.predict(*batch_fwd.values())
+
+    def predict_to_db(self, batch_fwd: Dict[str, Tensor], instance_id: int):
+        """
+        """
+
+        net_predict = self.network.predict(*batch_fwd.values())
+        data = {}
+        for field, value in zip(self.data_backward_fields, net_predict):
+            data[field] = self.network.to_numpy(tensor=net_predict[0])
+            if field in self.db_handler.normalization.keys():
+                data[field] = self.normalize_data(data=data[field], normalization=self.db_handler.normalization[field],
+                                                  reverse=True)
+            data[field].reshape(-1)
+        self.db_handler.update(exchange=True, data=data, line_id=instance_id)
+
+    def get_loss(self, batch_bwd: Dict[str, Tensor], net_predict):
+        """
+        """
+
+        net_predict = net_predict if isinstance(net_predict, tuple) else (net_predict,)
+        self.__loss_value = self.loss_fnc(*net_predict, *batch_bwd.values())
+        return self.__loss_value.item()
+
+    def optimize(self):
+        """
+        """
+
+        self.optimizer.zero_grad()
+        self.__loss_value.backward()
+        self.optimizer.step()
+
+    def get_prediction(self, instance_id: int) -> None:
+        """
+
+        """
+
+        # 1. Normalize the batch of data
+        normalization = self.db_handler.normalization
+        sample = self.db_handler.get_data(exchange=True, line_id=instance_id)
         del sample['id']
-
-        # Apply normalization and convert to tensor
         for field in sample.keys():
             sample[field] = array([sample[field]])
-            if field in normalization.keys():
-                sample[field] = self.normalize_data(data=sample[field],
-                                                    normalization=normalization[field])
-            sample[field] = self.network.numpy_to_tensor(data=sample[field])
+            if field in normalization:
+                sample[field] = self.normalize_data(data=sample[field], normalization=normalization[field])
+            sample[field] = self.network.to_torch(tensor=sample[field], grad=False)
 
-        # Compute prediction
-        data_net = self.data_transformation.transform_before_prediction(sample)
-        data_pred = self.network.predict(data_net)
-        data_pred, _ = self.data_transformation.transform_before_loss(data_pred)
-        data_pred = self.data_transformation.transform_before_apply(data_pred)
+        # 2. Compute prediction
+        inp = (sample[field_name] for field_name in self.data_forward_fields)
+        net_predict = self.network.predict(*inp)
+        net_predict = net_predict if isinstance(net_predict, tuple) else (net_predict,)
 
-        # Return the prediction
+        # 3. Return the prediction
         data = {}
-        for field in data_pred.keys():
-            data[field] = self.network.tensor_to_numpy(data=data_pred[field][0])
-            if self.network.pred_norm_fields[field] in normalization.keys():
-                data[field] = self.normalize_data(data=data[field],
-                                                  normalization=normalization[self.network.pred_norm_fields[field]],
+        for field, value in zip(self.data_backward_fields, net_predict):
+            data[field] = self.network.to_numpy(tensor=net_predict[0])
+            if field in normalization.keys():
+                data[field] = self.normalize_data(data=data[field], normalization=normalization[field],
                                                   reverse=True)
-            data_pred[field].reshape(-1)
-        self.database_handler.update(exchange=True,
-                                     data=data_pred,
-                                     line_id=instance_id)
+            data[field].reshape(-1)
+        self.db_handler.update(exchange=True, data=data, line_id=instance_id)
 
     @classmethod
     def normalize_data(cls,
@@ -287,19 +287,17 @@ class NetworkManager:
         # Apply normalization
         return (data - normalization[0]) / normalization[1]
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                   Manager behavior                                     #
-    ##########################################################################################
-    ##########################################################################################
+    ###################
+    # MANAGER METHODS #
+    ####################
 
     def close(self) -> None:
         """
         Launch the closing procedure of the NetworkManager.
         """
 
-        if self.is_training:
-            self.save_network(last_save=True)
+        if self.__is_training:
+            self.save_network(final_save=True)
         del self.network
 
     def __str__(self) -> str:
@@ -308,9 +306,5 @@ class NetworkManager:
         description += f"# {self.__class__.__name__}\n"
         description += f"    networks Directory: {self.network_dir}\n"
         description += f"    Managed objects: networks: {self.network.__class__.__name__}\n"
-        description += f"                     Optimization: {self.optimization.__class__.__name__}\n"
-        description += f"                     Data Transformation: {self.data_transformation.__class__.__name__}\n"
         description += str(self.network)
-        description += str(self.optimization)
-        description += str(self.data_transformation)
         return description

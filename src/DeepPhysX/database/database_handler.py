@@ -17,6 +17,7 @@ class DatabaseHandler:
         self.__current_table: str = 'train'
         self.__exchange_db: Optional[Database] = None
 
+        self.do_normalize = False
         self.__normalize: bool = False
         self.__json_file: str = ''
 
@@ -41,6 +42,7 @@ class DatabaseHandler:
             fields = json.load(json_file)['fields']
 
         if normalize_data:
+            self.do_normalize = True
             self.__normalize = {field: fields[field]['normalize'] for field in fields}
         else:
             self.__normalize = {field: [0, 1] for field in fields}
@@ -89,14 +91,14 @@ class DatabaseHandler:
                 self.__db.create_fields(table_name=mode,
                                         fields=fields)
 
-    def get_fields(self, exchange: bool = False) -> List[str]:
+    def get_fields(self, exchange: bool = False, only_names: bool = True) -> List[str]:
         """
         Get the list of Fields in a Table.
         """
 
         if not exchange:
-            return self.__db.get_fields(table_name=self.__current_table)
-        return self.__exchange_db.get_fields(table_name='data')
+            return self.__db.get_fields(table_name=self.__current_table, only_names=only_names)
+        return self.__exchange_db.get_fields(table_name='data', only_names=only_names)
 
     @property
     def normalization(self):
