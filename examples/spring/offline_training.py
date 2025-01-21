@@ -8,7 +8,8 @@ from torch.optim import Adam
 from DeepPhysX.pipelines import DataPipeline, TrainingPipeline
 from DeepPhysX.simulation.simulation_config import SimulationConfig
 from DeepPhysX.database.database_config import DatabaseConfig
-from DeepPhysX.networks.architectures.mlp.mlp_config import MLPConfig
+from DeepPhysX.networks.architecture.mlp import MLP
+from DeepPhysX.networks.network_manager import NetworkManager
 
 # Session related imports
 from simulation import SpringEnvironment
@@ -42,11 +43,11 @@ if __name__ == '__main__':
 
     # Fully Connected configuration (the number of neurones on the first and last layer is defined by the total amount
     # of parameters in the input and the output vectors respectively)
-    network_config = MLPConfig(lr=1e-4,
-                               loss=MSELoss,
-                               optimizer=Adam,
-                               dim_layers=[5, 5, 5, 1],
-                               dim_output=1)
+    network_manager = NetworkManager(network_architecture=MLP,
+                                     network_kwargs={'dim_layers': [5, 5, 5, 1],
+                                                     'out_shape': (1,)},
+                                     data_forward_fields='state',
+                                     data_backward_fields='displacement')
 
     # Dataset configuration with the path to the existing Dataset
     database_config = DatabaseConfig(existing_dir='networks_sessions/data_generation/',
@@ -54,7 +55,10 @@ if __name__ == '__main__':
                                      normalize=True)
 
     # Create DataGenerator
-    trainer = TrainingPipeline(network_config=network_config,
+    trainer = TrainingPipeline(network_manager=network_manager,
+                               loss_fnc=MSELoss,
+                               optimizer=Adam,
+                               optimizer_kwargs={'lr': 1e-4},
                        database_config=database_config,
                        session_dir='networks_sessions',
                        session_name='offline_training',

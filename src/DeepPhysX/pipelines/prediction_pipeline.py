@@ -3,7 +3,7 @@ from os.path import join, exists
 
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
-from DeepPhysX.net.network_manager import NetworkManager
+from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.utils.path import get_session_dir
 
 

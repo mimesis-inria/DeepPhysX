@@ -2,13 +2,12 @@ from typing import Optional, Dict, Any, Type, Union, List, Tuple
 from os import sep, listdir, remove
 from os.path import isfile, isdir, join
 from numpy import ndarray, array
-from numpy.random import normal
 from torch.nn import Module
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 from torch import Tensor
 
-from DeepPhysX.net.network_wrapper import NetworkWrapper
+from DeepPhysX.networks.network_wrapper import NetworkWrapper
 from DeepPhysX.database.database_handler import DatabaseHandler
 from DeepPhysX.utils.path import create_dir, copy_dir
 

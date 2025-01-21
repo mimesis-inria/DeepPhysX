@@ -2,8 +2,6 @@ from typing import List, Union, Optional, Tuple
 from torch import Tensor
 from torch.nn import Module, Sequential, PReLU, Linear
 
-from DeepPhysX.networks.network_config import Network
-
 
 class MLP(Module):
 
