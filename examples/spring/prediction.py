@@ -8,7 +8,7 @@ from os.path import exists
 
 # DeepPhysX related imports
 from DeepPhysX.pipelines.prediction_pipeline import PredictionPipeline
-from DeepPhysX.simulation import SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.architecture.mlp import MLP
 from DeepPhysX.networks.network_manager import NetworkManager
@@ -26,8 +26,8 @@ if __name__ == '__main__':
             quit(print("Trained networks required. Run a training script first."))
 
     # Environment configuration
-    environment_config = SimulationConfig(environment_class=SpringEnvironmentPrediction,
-                                          use_viewer=True)
+    simulation_manager = SimulationManager(simulation_class=SpringEnvironmentPrediction,
+                                           use_viewer=True)
 
     # Dataset configuration with the path to the existing Dataset
     database_manager = DatabaseManager(normalize=True)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
                                      data_backward_fields='displacement')
 
     # Create DataGenerator
-    pipeline = PredictionPipeline(simulation_config=environment_config,
+    pipeline = PredictionPipeline(simulation_manager=simulation_manager,
                                   database_manager=database_manager,
                                   network_manager=network_manager,
                                   session_dir='sessions',

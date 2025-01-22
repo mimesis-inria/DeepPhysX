@@ -1,66 +1,148 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Type, Dict, Any
 from asyncio import run as async_run
+from os import cpu_count
+from os.path import join, dirname
+from sys import modules, executable
+from threading import Thread
+from subprocess import run
 
-from DeepPhysX.simulation.simulation_config import TcpIpServer, SimulationConfig, SimulationController
+from DeepPhysX.simulation.simulation_controller import SimulationController
+from DeepPhysX.simulation.multiprocess.tcpip_server import TcpIpServer
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.database.database_manager import DatabaseManager
+from DeepPhysX.simulation.simulation_controller import DPXSimulation
+
 
 
 class SimulationManager:
 
     def __init__(self,
-                 config: SimulationConfig,
-                 pipeline: str = '',
-                 session: str = 'sessions/default',
-                 produce_data: bool = True,
-                 batch_size: int = 1):
+                 simulation_class: Type[DPXSimulation],
+                 simulation_kwargs: Optional[Dict[str, Any]] = None,
+                 nb_parallel_env: int = 1,
+                 simulations_per_step: int = 1,
+                 max_wrong_samples_per_step: int = 10,
+                 load_samples: bool = False,
+                 only_first_epoch: bool = True,
+                 always_produce: bool = False,
+                 use_viewer: bool = False):
         """
-        EnvironmentManager handle the communication with Environment(s).
-
-        :param config: Configuration object with the parameters of the Environment.
-        :param pipeline: Type of the pipeline.
-        :param session: Path to the session repository.
-        :param produce_data: If True, this session will store data in the Database.
-        :param batch_size: Number of samples in a single batch.
         """
 
         self.name: str = self.__class__.__name__
 
-        # Data production variables
-        self.batch_size: int = batch_size
-        self.only_first_epoch: bool = config.only_first_epoch
-        self.load_samples: bool = config.load_samples
-        self.always_produce: bool = config.always_produce
-        self.simulations_per_step: int = config.simulations_per_step
-        self.max_wrong_samples_per_step: int = config.max_wrong_samples_per_step
-        self.allow_prediction_requests: bool = pipeline != 'data_generation'
-        self.dataset_batch: Optional[List[List[int]]] = None
+        # Config
+        self.simulation_class = simulation_class
+        self.simulation_file = modules[self.simulation_class.__module__].__file__
+        self.server_is_ready = False
+        self.simulation_kwargs = {} if simulation_kwargs is None else simulation_kwargs
 
-        # Create a single Environment or a TcpIpServer
-        force_local = pipeline == 'prediction'
-        self.nb_parallel_env: int = 1 if force_local else config.nb_parallel_env
+
+        # Data production variables
+        self.batch_size: int = 1
+        self.only_first_epoch: bool = only_first_epoch
+        self.load_samples: bool = load_samples
+        self.always_produce: bool = always_produce
+        self.simulations_per_step: int = simulations_per_step
+        self.max_wrong_samples_per_step: int = max_wrong_samples_per_step
+        self.dataset_batch: Optional[List[List[int]]] = None
+        self.use_viewer: bool = use_viewer
+        self.nb_parallel_env = min(max(nb_parallel_env, 1), cpu_count())
+        self.allow_prediction_requests: bool = True
+
+
         self.server: Optional[TcpIpServer] = None
         self.environment_controller: Optional[SimulationController] = None
-
-        # Create Server
-        if self.nb_parallel_env > 1 and not force_local:
-            self.server = config.create_server(environment_manager=self,
-                                               batch_size=batch_size)
-
-        # Create Environment
-        else:
-            self.environment_controller = config.create_environment()
-            self.environment_controller.environment_manager = self
-            self.environment_controller.create_environment()
-            if config.use_viewer:
-                self.environment_controller.launch_visualization()
-
-        # Define whether methods are used for environment or server
-        self.get_data = self.__get_data_from_server if self.server else self.__get_data_from_environment
-        self.dispatch_batch = self.__dispatch_batch_to_server if self.server else self.__dispatch_batch_to_environment
-
         self.__network_manager: Optional[NetworkManager] = None
         self.__database_manager: Optional[DatabaseManager] = None
+        self.get_data = self.__get_data_from_environment
+        self.dispatch_batch = self.__dispatch_batch_to_environment
+
+    ################
+    # Init methods #
+    ################
+
+    def init_data_pipeline(self, batch_size: int) -> None:
+        """
+        """
+
+        self.allow_prediction_requests = False
+        self.init_training_pipeline(batch_size=batch_size)
+
+    def init_training_pipeline(self, batch_size: int) -> None:
+        """
+        """
+
+        self.batch_size = batch_size
+
+        # Create Server
+        if self.nb_parallel_env > 1:
+            self.create_server(batch_size=batch_size)
+            self.get_data = self.__get_data_from_server
+            self.dispatch_batch = self.__dispatch_batch_to_server
+        # Create Environment
+        else:
+            self.create_simulation()
+
+    def init_prediction_pipeline(self) -> None:
+        """
+        """
+
+        self.nb_parallel_env = 1
+        self.create_simulation()
+
+    def create_server(self, batch_size: int):
+
+        # Create server
+        self.server = TcpIpServer(nb_client=self.nb_parallel_env,
+                                  batch_size=batch_size,
+                                  manager=self,
+                                  use_viewer=self.use_viewer)
+        server_thread = Thread(target=self.start_server)
+        server_thread.start()
+
+        # Create clients
+        client_threads = []
+        for i in range(self.nb_parallel_env):
+            client_thread = Thread(target=self.start_client, args=(i + 1,))
+            client_threads.append(client_thread)
+        for client in client_threads:
+            client.start()
+
+        # Return server to manager when it is ready
+        while not self.server_is_ready:
+            pass
+
+    def start_server(self) -> None:
+        """
+        Start TcpIpServer.
+        """
+
+        self.server.connect()
+        self.server.initialize(env_kwargs=self.simulation_kwargs)
+        self.server_is_ready = True
+
+    def start_client(self,
+                     idx: int) -> None:
+        """
+        Run a subprocess to start a TcpIpClient.
+
+        :param idx: Index of client.
+        """
+
+        script = join(dirname(modules[DPXSimulation.__module__].__file__), 'multiprocess', 'launcher.py')
+        run([executable, script, self.simulation_file, self.simulation_class.__name__,
+             self.server.ip_address, str(self.server.port), str(idx), str(self.nb_parallel_env)])
+
+    def create_simulation(self):
+
+        self.environment_controller = SimulationController(environment_class=self.simulation_class,
+                                                           environment_kwargs=self.simulation_kwargs)
+        self.environment_controller.environment_manager = self
+        self.environment_controller.create_environment()
+        if self.use_viewer:
+            self.environment_controller.launch_visualization()
+
 
     ##########################################################################################
     ##########################################################################################

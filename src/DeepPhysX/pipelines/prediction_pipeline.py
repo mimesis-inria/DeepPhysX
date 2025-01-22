@@ -1,7 +1,7 @@
 from typing import Optional
 from os.path import join, exists
 
-from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.utils.path import get_session_dir
@@ -11,7 +11,7 @@ class PredictionPipeline:
 
     def __init__(self,
                  network_manager: NetworkManager,
-                 simulation_config: SimulationConfig,
+                 simulation_manager: SimulationManager,
                  database_manager: Optional[DatabaseManager] = None,
                  session_dir: str = 'session',
                  session_name: str = 'training',
@@ -33,11 +33,13 @@ class PredictionPipeline:
                                                        produce_data=record)
 
         # Create a SimulationManager
-        self.simulation_manager = SimulationManager(config=simulation_config,
-                                                     pipeline='prediction',
-                                                     session=path,
-                                                     produce_data=record,
-                                                     batch_size=1)
+        self.simulation_manager = simulation_manager
+        self.simulation_manager.init_prediction_pipeline()
+        # self.simulation_manager = SimulationManager(config=simulation_config,
+        #                                              pipeline='prediction',
+        #                                              session=path,
+        #                                              produce_data=record,
+        #                                              batch_size=1)
         self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
                                                     normalize_data=self.database_manager.normalize)
 

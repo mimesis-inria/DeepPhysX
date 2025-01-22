@@ -2,14 +2,14 @@ from os.path import join, sep, exists
 from vedo import ProgressBar
 
 from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.utils.path import create_dir, get_session_dir
 
 
 class DataPipeline:
 
     def __init__(self,
-                 simulation_config: SimulationConfig,
+                 simulation_manager: SimulationManager,
                  database_manager: DatabaseManager,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
@@ -34,11 +34,13 @@ class DataPipeline:
                                                  new_session=self.new_session)
 
         # Create a SimulationManager
-        self.simulation_manager = SimulationManager(config=simulation_config,
-                                                    pipeline='data_generation',
-                                                    session=join(self.session_dir, session_name),
-                                                    produce_data=True,
-                                                    batch_size=batch_size)
+        self.simulation_manager = simulation_manager
+        # self.simulation_manager = SimulationManager(config=simulation_config,
+        #                                             pipeline='data_generation',
+        #                                             session=join(self.session_dir, session_name),
+        #                                             produce_data=True,
+        #                                             batch_size=batch_size)
+        self.simulation_manager.init_data_pipeline(batch_size=batch_size)
         self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
                                                     normalize_data=self.database_manager.normalize)
 

@@ -1,1 +1,1 @@
-from DeepPhysX.simulation.simulation_manager import SimulationConfig, SimulationManager
+from DeepPhysX.simulation.simulation_manager import SimulationManager

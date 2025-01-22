@@ -7,7 +7,7 @@ from torch.optim import Adam
 # DeepPhysX related imports
 from DeepPhysX.pipelines.data_pipeline import DataPipeline
 from DeepPhysX.pipelines.training_pipeline import TrainingPipeline
-from DeepPhysX.simulation.simulation_config import SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.architecture.mlp import MLP
 from DeepPhysX.networks.network_manager import NetworkManager
@@ -20,16 +20,14 @@ if __name__ == '__main__':
     if not exists('sessions/data_generation'):
 
         # Environment configuration
-        simulation_config = SimulationConfig(environment_class=SpringEnvironment,
-                                              use_viewer=False,
-                                              nb_parallel_env=1,
-                                              simulations_per_step=5)
-        # Database configuration
-        database_manager = DatabaseManager()
+        simulation_manager = SimulationManager(simulation_class=SpringEnvironment,
+                                               use_viewer=False,
+                                               nb_parallel_env=1,
+                                               simulations_per_step=5)
 
         # Create DataGenerator
-        data_generator = DataPipeline(simulation_config=simulation_config,
-                                      database_manager=database_manager,
+        data_generator = DataPipeline(simulation_manager=simulation_manager,
+                                      database_manager=DatabaseManager(),
                                       batch_nb=1000,
                                       batch_size=16)
 

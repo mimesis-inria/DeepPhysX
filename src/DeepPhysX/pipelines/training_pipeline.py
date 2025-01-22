@@ -8,7 +8,7 @@ from torch.optim import Optimizer
 from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.networks.stats_manager import StatsManager
-from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
+from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.utils.path import create_dir, get_session_dir
 
 
@@ -20,7 +20,7 @@ class TrainingPipeline:
                  loss_fnc: Type[_Loss],
                  optimizer: Type[Optimizer],
                  optimizer_kwargs: Dict[str, Any],
-                 simulation_config: Optional[SimulationConfig] = None,
+                 simulation_manager: Optional[SimulationManager] = None,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'training',
@@ -55,12 +55,14 @@ class TrainingPipeline:
 
         # Create a SimulationManager
         self.simulation_manager = None
-        if simulation_config is not None:
-            self.simulation_manager = SimulationManager(config=simulation_config,
-                                                        pipeline='training',
-                                                        session=join(self.session_dir, session_name),
-                                                        produce_data=self.produce_data,
-                                                        batch_size=batch_size)
+        if simulation_manager is not None:
+            self.simulation_manager = simulation_manager
+            self.simulation_manager.init_training_pipeline(batch_size=batch_size)
+            # self.simulation_manager = SimulationManager(config=simulation_config,
+            #                                             pipeline='training',
+            #                                             session=join(self.session_dir, session_name),
+            #                                             produce_data=self.produce_data,
+            #                                             batch_size=batch_size)
             self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
                                                         normalize_data=self.database_manager.normalize)
 
