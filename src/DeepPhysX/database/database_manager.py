@@ -1,6 +1,5 @@
-from dataclasses import fields
 from typing import Any, Dict, List, Optional, Tuple
-from os.path import isdir, join, dirname, exists
+from os.path import isdir, join, dirname, exists, sep, isabs, abspath
 from os import symlink, makedirs
 import json
 from numpy import arange, ndarray, array
@@ -8,7 +7,6 @@ from numpy.random import shuffle
 
 from SSD.core import Database
 
-from DeepPhysX.database.database_config import DatabaseConfig
 from DeepPhysX.utils.path import copy_dir
 from DeepPhysX.utils.jsonUtils import CustomJSONEncoder
 
@@ -16,25 +14,37 @@ from DeepPhysX.utils.jsonUtils import CustomJSONEncoder
 class DatabaseManager:
 
     def __init__(self,
-                 config: DatabaseConfig,
-                 session: str = 'sessions/default'):
+                 existing_dir: Optional[str] = None,
+                 mode: Optional[str] = None,
+                 shuffle: bool = True,
+                 normalize: bool = True,
+                 recompute_normalization: bool = False,
+                 ):
         """
-        DatabaseManager handle all operations the Database.
-
-        :param config: Configuration object with the parameters of the Database.
-        :param session: Path to the session repository.
         """
 
         # Database repository
-        self.database_dir: str = join(session, 'dataset')
+        self.database_dir: str = ''
         self.modes: List[str] = ['train', 'test', 'run']
         self.mode: str = ''
         self.json_content: Dict[str, Dict[str, Any]] = {'nb_samples': {mode: 0 for mode in self.modes},
                                                         'fields': {}}
 
+        if existing_dir is not None:
+            if not isdir(existing_dir):
+                raise ValueError(f"[] The given 'existing_dir'={existing_dir} does not exist.")
+            if len(existing_dir.split(sep)) > 1 and existing_dir.split(sep)[-1] == 'dataset':
+                existing_dir = join(*existing_dir.split(sep)[:-1])
+            if not isabs(existing_dir):
+                existing_dir = abspath(existing_dir)
+
         # Pipeline parameters
         self.pipeline: str = ''
-        self.config: DatabaseConfig = config
+        self.existing_dir: Optional[str] = existing_dir
+        self.mode: Optional[str] = mode
+        self.shuffle: bool = shuffle
+        self.normalize: bool = normalize
+        self.recompute_normalization: bool = recompute_normalization
 
         # Database instances
         self.__db = Database(database_dir=self.database_dir, database_name='dataset')
@@ -57,26 +67,30 @@ class DatabaseManager:
         self.__exchange.new(remove_existing=True)
         self.__exchange.create_table(table_name='data')
 
-    def init_data_pipeline(self, new_session: bool) -> None:
+    def init_data_pipeline(self, session: str, new_session: bool) -> None:
         """
         Init method for the data pipeline.
 
         :param new_session: If True, the session is done in a new repository.
         """
 
+        self.database_dir = join(session, 'dataset')
+        self.__db = Database(database_dir=self.database_dir, database_name='dataset')
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
+
         # Define the Database mode
-        self.mode = 'train' if self.config.mode is None else self.config.mode
+        self.mode = 'train' if self.mode is None else self.mode
         self.pipeline = 'data'
 
         # Init Database repository for a new session
         if new_session:
             # Generate new data from scratch --> create a new directory
-            if self.config.existing_dir is None:
+            if self.existing_dir is None:
                 makedirs(self.database_dir)
                 self.__create()
             # Use existing data in a new session --> copy and load the existing directory
             else:
-                copy_dir(src_dir=self.config.existing_dir, dest_dir=dirname(self.database_dir), sub_folders='dataset')
+                copy_dir(src_dir=self.existing_dir, dest_dir=dirname(self.database_dir), sub_folders='dataset')
                 self.__load()
 
         # Init Database repository for an existing session
@@ -86,6 +100,7 @@ class DatabaseManager:
         self.__init()
 
     def init_training_pipeline(self,
+                               session: str,
                                new_session: bool,
                                produce_data: bool) -> None:
         """
@@ -94,6 +109,10 @@ class DatabaseManager:
         :param new_session: If True, the session is done in a new repository.
         :param produce_data: If True, this session will store data in the Database.
         """
+
+        self.database_dir = join(session, 'dataset')
+        self.__db = Database(database_dir=self.database_dir, database_name='dataset')
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
 
         # Define the Database mode
         self.mode = 'train'
@@ -105,12 +124,12 @@ class DatabaseManager:
             # Init Database repository for a new session
             if new_session:
                 # Generate new data from scratch --> create a new directory
-                if self.config.existing_dir is None:
+                if self.existing_dir is None:
                     makedirs(self.database_dir)
                     self.__create()
                 # Use existing data in a new session --> copy and load the existing directory
                 else:
-                    copy_dir(src_dir=self.config.existing_dir, dest_dir=dirname(self.database_dir), sub_folders='dataset')
+                    copy_dir(src_dir=self.existing_dir, dest_dir=dirname(self.database_dir), sub_folders='dataset')
                     self.__load()
 
             # Init Database repository for an existing session
@@ -122,7 +141,7 @@ class DatabaseManager:
 
             # Init Database repository for a new session --> link and load the existing Database directory
             if new_session:
-                symlink(src=join(self.config.existing_dir, 'dataset'), dst=join(dirname(self.database_dir), 'dataset'))
+                symlink(src=join(self.existing_dir, 'dataset'), dst=self.database_dir)
                 self.__load()
 
             # Init Database repository for an existing session
@@ -131,15 +150,19 @@ class DatabaseManager:
 
         self.__init()
 
-    def init_prediction_pipeline(self, produce_data: bool) -> None:
+    def init_prediction_pipeline(self, session: str, produce_data: bool) -> None:
         """
         Init method for the prediction pipeline.
 
         :param produce_data: If True, this session will store data in the Database.
         """
 
+        self.database_dir = join(session, 'dataset')
+        self.__db = Database(database_dir=self.database_dir, database_name='dataset')
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
+
         # Define the Database mode
-        self.mode = 'run' if self.config.mode is None else self.config.mode
+        self.mode = 'run' if self.mode is None else self.mode
         self.mode = 'run' if produce_data else self.mode
         self.pipeline = 'prediction'
 
@@ -188,7 +211,7 @@ class DatabaseManager:
         self.index_samples()
 
         # Check normalization
-        if self.config.normalize or self.config.recompute_normalization:
+        if self.normalize or self.recompute_normalization:
             self.compute_normalization()
 
     def get_database_path(self) -> Tuple[str, str]:
@@ -244,7 +267,7 @@ class DatabaseManager:
         # Init current sample position
         self.sample_id = 0
         # Shuffle the indices if required
-        if self.config.shuffle:
+        if self.shuffle:
             shuffle(self.sample_indices)
 
     def add_data(self, data_lines: Optional[List[int]] = None) -> None:
@@ -263,7 +286,7 @@ class DatabaseManager:
         self.json_content['nb_samples'][self.mode] = self.__db.nb_lines(table_name=self.mode)
 
         # 1.2. Update the normalization coefficients if required
-        if self.config.normalize and self.mode == 'train' and self.pipeline == 'training' and data_lines is not None:
+        if self.normalize and self.mode == 'train' and self.pipeline == 'training' and data_lines is not None:
             self.compute_batch_normalization(data_lines=data_lines)
 
         # 1. Update the json file
@@ -342,7 +365,7 @@ class DatabaseManager:
         """
 
         # Compute final normalization if required
-        if self.config.normalize and self.pipeline == 'data':
+        if self.normalize and self.pipeline == 'data':
             self.compute_normalization()
 
         # Close Database partitions

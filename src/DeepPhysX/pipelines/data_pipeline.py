@@ -1,7 +1,7 @@
 from os.path import join, sep, exists
 from vedo import ProgressBar
 
-from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
+from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
 from DeepPhysX.utils.path import create_dir, get_session_dir
 
@@ -10,22 +10,13 @@ class DataPipeline:
 
     def __init__(self,
                  simulation_config: SimulationConfig,
-                 database_config: DatabaseConfig,
+                 database_manager: DatabaseManager,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
                  session_name: str = 'data_generation',
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
-        BaseDataGeneration implements the main loop that only produces and stores data (no networks training).
-
-        :param database_config: Configuration object with the parameters of the Database.
-        :param simulation_config: Configuration object with the parameters of the Environment.
-        :param new_session: If True, a new repository will be created for this session.
-        :param session_dir: Path to the directory which contains your DeepPhysX session repositories.
-        :param session_name: Name of the current session repository.
-        :param batch_nb: Number of batches to produce.
-        :param batch_size: Number of samples in a single batch.
         """
 
         # Create a new session if required
@@ -36,9 +27,11 @@ class DataPipeline:
                                       session_name=session_name).split(sep)[-1]
 
         # Create a DatabaseManager
-        self.database_manager = DatabaseManager(config=database_config,
-                                                session=join(self.session_dir, session_name))
-        self.database_manager.init_data_pipeline(new_session=self.new_session)
+        self.database_manager = database_manager
+        # self.database_manager = DatabaseManager(config=database_config,
+        #                                         session=join(self.session_dir, session_name))
+        self.database_manager.init_data_pipeline(session=join(self.session_dir, session_name),
+                                                 new_session=self.new_session)
 
         # Create a SimulationManager
         self.simulation_manager = SimulationManager(config=simulation_config,
@@ -47,7 +40,7 @@ class DataPipeline:
                                                     produce_data=True,
                                                     batch_size=batch_size)
         self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
-                                                    normalize_data=self.database_manager.config.normalize)
+                                                    normalize_data=self.database_manager.normalize)
 
         # Data generation variables
         self.batch_nb: int = batch_nb

@@ -111,10 +111,15 @@ class SimulationManager:
         :param request_prediction: If True, a prediction request will be triggered.
         """
 
+        from time import time
+
         # Produce batch while batch size is not complete
         nb_sample = 0
         dataset_lines = []
+        t1, t2, t3 = 0, 0, 0
         while nb_sample < self.batch_size:
+
+            t = time()
 
             # 1. Send a sample from the Database if one is given
             update_line = None
@@ -122,12 +127,18 @@ class SimulationManager:
                 update_line = self.dataset_batch.pop(0)
                 self.environment_controller.trigger_get_data(line_id=update_line)
 
+            t1 += time() - t
+            t = time()
+
             # 2. Run the defined number of steps
             if animate:
                 for current_step in range(self.simulations_per_step):
                     # Sub-steps do not produce data
                     self.environment_controller.compute_training_data = current_step == self.simulations_per_step - 1
                     async_run(self.environment_controller.environment.step())
+
+            t2 += time() - t
+            t = time()
 
             # 3. Add the produced sample index to the batch if the sample is validated
             if self.environment_controller.environment.check_sample():
@@ -147,6 +158,10 @@ class SimulationManager:
                         dataset_lines.append(update_line)
                 # 3.3. Rest the data variables
                 self.environment_controller.reset_data()
+
+            t3 += time() - t
+        # print(f't1={round(t1, 4)}, t2={round(t2, 4)}, t3={round(t3, 4)}')
+
 
         return dataset_lines
 

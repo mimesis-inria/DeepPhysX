@@ -1,1 +1,1 @@
-from DeepPhysX.database.database_manager import DatabaseConfig, DatabaseManager
+from DeepPhysX.database.database_manager import DatabaseManager

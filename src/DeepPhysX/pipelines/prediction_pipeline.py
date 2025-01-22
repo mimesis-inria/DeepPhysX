@@ -2,7 +2,7 @@ from typing import Optional
 from os.path import join, exists
 
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
-from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
+from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.utils.path import get_session_dir
 
@@ -12,7 +12,7 @@ class PredictionPipeline:
     def __init__(self,
                  network_manager: NetworkManager,
                  simulation_config: SimulationConfig,
-                 database_config: Optional[DatabaseConfig] = None,
+                 database_manager: Optional[DatabaseManager] = None,
                  session_dir: str = 'session',
                  session_name: str = 'training',
                  step_nb: int = -1,
@@ -26,9 +26,11 @@ class PredictionPipeline:
             raise ValueError(f"[{self.__class__.__name__}] The following directory does not exist: {path}")
 
         # Create a DatabaseManager
-        self.database_manager = DatabaseManager(config=database_config,
-                                                session=join(self.session_dir, session_name))
-        self.database_manager.init_prediction_pipeline(produce_data=record)
+        self.database_manager = database_manager
+        # self.database_manager = DatabaseManager(config=database_config,
+        #                                         session=join(self.session_dir, session_name))
+        self.database_manager.init_prediction_pipeline(session=join(self.session_dir, session_name),
+                                                       produce_data=record)
 
         # Create a SimulationManager
         self.simulation_manager = SimulationManager(config=simulation_config,
@@ -37,13 +39,13 @@ class PredictionPipeline:
                                                      produce_data=record,
                                                      batch_size=1)
         self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
-                                                    normalize_data=self.database_manager.config.normalize)
+                                                    normalize_data=self.database_manager.normalize)
 
         # Create a NetworkManager
         self.network_manager = network_manager
         self.network_manager.init_prediction(session=path)
         self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
-                                                 normalize_data=self.database_manager.config.normalize)
+                                                 normalize_data=self.database_manager.normalize)
         self.network_manager.link_clients(1)
 
         self.simulation_manager.connect_to_network_manager(network_manager=self.network_manager)

@@ -1,7 +1,7 @@
 from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
-from time import sleep
+from time import sleep, time
 
 from DeepPhysX.simulation.dpx_simulation import DPXSimulation
 
@@ -34,6 +34,7 @@ class SpringEnvironment(DPXSimulation):
 
         # Meshes of the cube, spring, floor and wall
         self.mesh_cube = Cube(pos=self.X_rest, side=self.cube_size).clean()
+        self.mesh_cube_init = self.mesh_cube.vertices
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X_rest,
                                   coils=int(15 * self.spring_length), r1=0.05, thickness=0.01).triangulate()
         self.mesh_floor = Box(pos=[-0.02, 1.75 * self.spring_length + 0.5 * self.cube_size,
@@ -67,6 +68,10 @@ class SpringEnvironment(DPXSimulation):
 
     async def step(self):
 
+        from time import time
+
+        t = time()
+
         # Reset the simulation when the max time step is reached
         if self.t >= self.T:
             self.create()
@@ -85,14 +90,15 @@ class SpringEnvironment(DPXSimulation):
             # self.set_data(input=net_input, ground_truth=net_output)
             self.set_data(state=net_input, displacement=net_output)
 
-
-        self.mesh_cube.pos(self.X)
+        self.mesh_cube.vertices = self.mesh_cube_init + self.X - self.X_rest
         self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X,
                                   coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
         if self.viewer is not None:
             self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
             self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
-            # self.update_visualisation()
+            self.update_visualisation()
+
+        # print('t =', round(time() - t, 4))
 
 
 class SpringEnvironmentPrediction(SpringEnvironment):

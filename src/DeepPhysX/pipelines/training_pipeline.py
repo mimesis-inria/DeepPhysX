@@ -5,7 +5,7 @@ from vedo import ProgressBar
 from torch.nn.modules.loss import _Loss
 from torch.optim import Optimizer
 
-from DeepPhysX.database.database_manager import DatabaseManager, DatabaseConfig
+from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.networks.stats_manager import StatsManager
 from DeepPhysX.simulation.simulation_manager import SimulationManager, SimulationConfig
@@ -16,7 +16,7 @@ class TrainingPipeline:
 
     def __init__(self,
                  network_manager: NetworkManager,
-                 database_config: DatabaseConfig,
+                 database_manager: DatabaseManager,
                  loss_fnc: Type[_Loss],
                  optimizer: Type[Optimizer],
                  optimizer_kwargs: Dict[str, Any],
@@ -41,14 +41,16 @@ class TrainingPipeline:
                                       session_name=session_name).split(sep)[-1]
 
         # Configure 'produce_data' flag
-        if simulation_config is None and database_config.existing_dir is None:
-            raise ValueError(f"[{self.__class__.__name__}] No data source provided.")
-        self.produce_data = database_config.existing_dir is None
+        # if simulation_config is None and database_config.existing_dir is None:
+        #     raise ValueError(f"[{self.__class__.__name__}] No data source provided.")
+        self.produce_data = database_manager.existing_dir is None
 
         # Create a DatabaseManager
-        self.database_manager = DatabaseManager(config=database_config,
-                                                session=join(self.session_dir, session_name))
-        self.database_manager.init_training_pipeline(new_session=new_session,
+        self.database_manager = database_manager
+        # self.database_manager = DatabaseManager(config=database_config,
+        #                                         session=join(self.session_dir, session_name))
+        self.database_manager.init_training_pipeline(session=join(self.session_dir, session_name),
+                                                     new_session=new_session,
                                                      produce_data=self.produce_data)
 
         # Create a SimulationManager
@@ -60,7 +62,7 @@ class TrainingPipeline:
                                                         produce_data=self.produce_data,
                                                         batch_size=batch_size)
             self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
-                                                        normalize_data=self.database_manager.config.normalize)
+                                                        normalize_data=self.database_manager.normalize)
 
         # Create a NetworkManager
         self.network_manager = network_manager
@@ -71,7 +73,7 @@ class TrainingPipeline:
                                            session=join(self.session_dir, session_name),
                                            save_intermediate_state_every=save_intermediate_state_every)
         self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
-                                                 normalize_data=self.database_manager.config.normalize)
+                                                 normalize_data=self.database_manager.normalize)
         if self.simulation_manager is not None:
             self.network_manager.link_clients(1 if self.simulation_manager.server is None
                                               else self.simulation_manager.nb_parallel_env)
