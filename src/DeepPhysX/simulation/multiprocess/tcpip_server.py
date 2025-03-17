@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple
-from asyncio import get_event_loop, gather
-from asyncio import AbstractEventLoop as EventLoop
-from asyncio import run as async_run
+from asyncio import get_event_loop, run as async_run
 from socket import socket
 from queue import SimpleQueue
+from threading import Thread
 
 from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
 from SimRender.core import ViewerBatch
@@ -67,31 +66,6 @@ class TcpIpServer(TcpIpObject):
 
     ##########################################################################################
     ##########################################################################################
-    #                              DatabaseHandler management                                #
-    ##########################################################################################
-    ##########################################################################################
-
-    # def get_database_handler(self) -> DatabaseHandler:
-    #     """
-    #     Get the DatabaseHandler of the TcpIpServer.
-    #     """
-    #
-    #     return self.database_handler
-
-    # def __database_handler_partitions(self) -> None:
-    #     """
-    #     Partition update event of the DatabaseHandler.
-    #     """
-    #
-    #     # Send the new partition to every Client
-    #     for _, client in self.clients:
-    #         self.sync_send_command_change_db(receiver=client)
-    #         new_partition = self.database_handler.get_partitions()[-1]
-    #         self.sync_send_data(data_to_send=f'{new_partition.get_path()[0]}///{new_partition.get_path()[1]}',
-    #                             receiver=client)
-
-    ##########################################################################################
-    ##########################################################################################
     #                                     Connect Clients                                    #
     ##########################################################################################
     ##########################################################################################
@@ -115,7 +89,7 @@ class TcpIpServer(TcpIpObject):
             # Accept connection
             client, _ = await loop.sock_accept(self.sock)
             # Get the instance ID
-            label, client_id = await self.receive_labeled_data(loop=loop, sender=client)
+            label, client_id = self.receive_labeled_data(sender=client)
             print(f"[{self.name}] Client n°{client_id} connected: {client}")
             self.clients.append([client_id, client])
 
@@ -133,16 +107,6 @@ class TcpIpServer(TcpIpObject):
         """
 
         print(f"[{self.name}] Initializing clients...")
-        async_run(self.__initialize(env_kwargs))
-
-    async def __initialize(self, env_kwargs: Dict[str, Any]) -> None:
-        """
-        Send parameters to the clients to create their environments.
-
-        :param env_kwargs: Additional arguments to pass to the Environment.
-        """
-
-        loop = get_event_loop()
 
         # Init ViewerBatch
         viewer_keys = None if self.viewer_batch is None else self.viewer_batch.start(nb_view=self.nb_client)
@@ -151,22 +115,21 @@ class TcpIpServer(TcpIpObject):
         for client_id, client in self.clients:
 
             # Send additional arguments
-            await self.send_dict(name='env_kwargs', dict_to_send=env_kwargs, loop=loop, receiver=client)
+            self.send_dict(name='env_kwargs', dict_to_send=env_kwargs, receiver=client)
 
             # Send prediction request authorization
-            await self.send_data(data_to_send=self.environment_manager.allow_prediction_requests,
-                                 loop=loop, receiver=client)
+            self.send_data(data_to_send=self.environment_manager.allow_prediction_requests, receiver=client)
 
             # Send number of sub-steps
             nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
-            await self.send_data(data_to_send=nb_steps, loop=loop, receiver=client)
+            self.send_data(data_to_send=nb_steps, receiver=client)
 
             # Send visualization Database
             visualization = 'None' if viewer_keys is None else f'{viewer_keys[client_id - 1]}'
-            await self.send_data(data_to_send=visualization, loop=loop, receiver=client)
+            self.send_data(data_to_send=visualization, receiver=client)
 
             # Wait Client init
-            await self.receive_data(loop=loop, sender=client)
+            self.receive_data(sender=client)
             print(f"[{self.name}] Client n°{client_id} initialisation done")
 
         # Synchronize Clients
@@ -177,34 +140,19 @@ class TcpIpServer(TcpIpObject):
                             database_path: Tuple[str, str],
                             normalize_data: bool):
 
-        async_run(self.__connect_to_database(database_path, normalize_data))
-
-    async def __connect_to_database(self,
-                                    database_path: Tuple[str, str],
-                                    normalize_data: bool):
-
-        loop = get_event_loop()
         for client_id, client in self.clients:
-            await self.send_data(data_to_send=database_path[0], loop=loop, receiver=client)
-            await self.send_data(data_to_send=database_path[1], loop=loop, receiver=client)
-            await self.send_data(data_to_send=normalize_data, loop=loop, receiver=client)
-            await self.receive_data(loop=loop, sender=client)
+            self.send_data(data_to_send=database_path[0], receiver=client)
+            self.send_data(data_to_send=database_path[1], receiver=client)
+            self.send_data(data_to_send=normalize_data, receiver=client)
+            self.receive_data(sender=client)
 
     def connect_visualization(self) -> None:
         """
         Connect the Factories of the Clients to the Visualizer.
         """
 
-        async_run(self.__connect_visualization())
-
-    async def __connect_visualization(self):
-        """
-        Connect the Factories of the Clients to the Visualizer.
-        """
-
-        loop = get_event_loop()
         for _, client in self.clients:
-            await self.send_data(data_to_send='conn', loop=loop, receiver=client)
+            self.send_data(data_to_send='conn', receiver=client)
 
     ##########################################################################################
     ##########################################################################################
@@ -212,70 +160,46 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def get_batch(self,
-                  animate: bool = True) -> List[List[int]]:
-        """
-        Build a batch from clients samples.
-
-        :param animate: If True, triggers an environment step.
-        """
-
-        # Trigger communication protocol
-        async_run(self.__request_data_to_clients(animate=animate))
-        return self.data_lines
-
-    async def __request_data_to_clients(self,
-                                        animate: bool = True) -> None:
-        """
-        Trigger a communication protocol for each client. Wait for all clients before to launch another communication
-        protocol while the batch is not full.
-
-        :param animate: If True, triggers an environment step
-        """
+    def get_batch(self, animate: bool = True) -> List[List[int]]:
 
         nb_sample = 0
         self.data_lines = []
+
         # Launch the communication protocol while the batch needs to be filled
         while nb_sample < self.batch_size:
             clients = self.clients[:min(len(self.clients), self.batch_size - nb_sample)]
             # Run communicate protocol for each client and wait for the last one to finish
-            await gather(*[self.__communicate(client=client,
-                                              client_id=client_id,
-                                              animate=animate) for client_id, client in clients])
+            threads = [Thread(target=self.communicate, args=(client, client_id, animate)) for client_id, client in clients]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
             nb_sample += len(clients)
 
-    async def __communicate(self,
-                            client: Optional[socket] = None,
-                            client_id: Optional[int] = None,
-                            animate: bool = True) -> None:
-        """
-        Communication protocol with a client.
+        return self.data_lines
 
-        :param client: TcpIpObject client to communicate with.
-        :param client_id: Index of the client.
-        :param animate: If True, triggers an environment step.
-        """
+    def communicate(self,
+                         client: Optional[socket] = None,
+                         client_id: Optional[int] = None,
+                         animate: bool = True) -> None:
 
-        loop = get_event_loop()
+            # 1. Send a sample to the Client if a batch from the Dataset is given
+            if self.batch_from_dataset is not None:
+                # Check if there is remaining samples, otherwise the Client is not used
+                if len(self.batch_from_dataset) == 0:
+                    return
+                # Send the sample to the Client
+                self.send_command_sample(receiver=client)
+                line = self.batch_from_dataset.pop(0)
+                self.send_data(data_to_send=line, receiver=client)
 
-        # 1. Send a sample to the Client if a batch from the Dataset is given
-        if self.batch_from_dataset is not None:
-            # Check if there is remaining samples, otherwise the Client is not used
-            if len(self.batch_from_dataset) == 0:
-                return
-            # Send the sample to the Client
-            await self.send_command_sample(loop=loop, receiver=client)
-            line = self.batch_from_dataset.pop(0)
-            await self.send_data(data_to_send=line, loop=loop, receiver=client)
-
-        # 2. Execute n steps, the last one send data computation signal
-        if animate:
-            await self.send_command_step(loop=loop, receiver=client)
-            # Receive data
-            await self.listen_while_not_done(loop=loop, sender=client, data_dict=self.data_dict,
-                                             client_id=client_id)
-            line = await self.receive_data(loop=loop, sender=client)
-            self.data_lines.append(line)
+            # 2. Execute n steps, the last one send data computation signal
+            if animate:
+                self.send_command_step(receiver=client)
+                # Receive data
+                self.listen_while_not_done(sender=client, data_dict=self.data_dict, client_id=client_id)
+                line = self.receive_data(sender=client)
+                self.data_lines.append(line)
 
     def set_dataset_batch(self,
                           data_lines: List[int]) -> None:
@@ -300,23 +224,17 @@ class TcpIpServer(TcpIpObject):
         """
 
         print(f"[{self.name}] Closing clients...")
-        async_run(self.__close())
-
-    async def __close(self) -> None:
-        """
-        Run server shutdown protocol.
-        """
 
         # Send all exit protocol and wait for the last one to finish
-        await gather(*[self.__shutdown(client=client, idx=client_id) for client_id, client in self.clients])
+        for client_id, client in self.clients:
+            self.__shutdown(client=client, idx=client_id)
         # Close socket
         self.sock.close()
 
         if self.viewer_batch is not None:
             self.viewer_batch.stop()
 
-    async def __shutdown(self,
-                         client: socket, idx: int) -> None:
+    def __shutdown(self, client: socket, idx: int) -> None:
         """
         Send exit command to all clients.
 
@@ -324,13 +242,12 @@ class TcpIpServer(TcpIpObject):
         :param idx: Client index.
         """
 
-        loop = get_event_loop()
         print(f"[{self.name}] Sending exit command to", idx)
         # Send exit command
-        await self.send_command_exit(loop=loop, receiver=client)
-        await self.send_command_done(loop=loop, receiver=client)
+        self.send_command_exit(receiver=client)
+        self.send_command_done(receiver=client)
         # Wait for exit confirmation
-        data = await self.receive_data(loop=loop, sender=client)
+        data = self.receive_data(sender=client)
         if data != b'exit':
             raise ValueError(f"Client {idx} was supposed to exit.")
 
@@ -340,38 +257,28 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    async def action_on_prediction(self,
-                                   data: Dict[Any, Any],
-                                   client_id: int,
-                                   sender: socket,
-                                   loop: EventLoop) -> None:
+    def action_on_prediction(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'prediction' command.
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
         :param sender: TcpIpObject sender.
         """
 
         if self.environment_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
         self.environment_manager.data_manager.get_prediction(client_id)
-        await self.send_data(data_to_send=True, receiver=sender)
+        self.send_data(data_to_send=True, receiver=sender)
 
-    async def action_on_visualisation(self,
-                                      data: Dict[Any, Any],
-                                      client_id: int,
-                                      sender: socket,
-                                      loop: EventLoop) -> None:
+    def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'visualisation' command.
 
         :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
-        :param loop: asyncio.get_event_loop() return.
         :param sender: TcpIpObject sender.
         """
 
-        _, idx = await self.receive_labeled_data(loop=loop, sender=sender)
+        _, idx = self.receive_labeled_data(sender=sender)
         self.environment_manager.update_visualizer(idx)
