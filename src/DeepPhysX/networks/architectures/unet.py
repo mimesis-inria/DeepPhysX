@@ -61,7 +61,7 @@ class UNet(Module):
                                    two_sublayers=two_sublayers))
               for i in range(nb_steps - 1, -1, -1)]]
 
-        # Set encoder - decoder architecture
+        # Set encoder - decoder architectures
         layers = down_layers + up_layers
         architecture: EncoderDecoder = EncoderDecoder(layers=layers,
                                                       nb_encoding_layers=nb_steps + 1)
@@ -168,7 +168,7 @@ class UNet(Module):
 
     def compute_pad_widths(self, desired_shape: List[int]) -> None:
         """
-        Define padding to apply on data given the data shape and the networks architecture.
+        Define padding to apply on data given the data shape and the networks architectures.
 
         :param desired_shape: Data shape without padding.
         """

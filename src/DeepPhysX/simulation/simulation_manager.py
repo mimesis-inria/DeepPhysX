@@ -306,6 +306,13 @@ class SimulationManager:
         self.__network_manager.get_prediction(instance_id=instance_id)
         # self.__network_manager.compute_online_prediction(instance_id=instance_id)
 
+    @__check_init
+    def is_viewer_open(self) -> bool:
+
+        if self.__simulation_controller.viewer is None:
+            return False
+        return self.__simulation_controller.viewer.is_open
+
     ###################
     # Manager methods #
     ###################

@@ -27,26 +27,19 @@ class PredictionPipeline:
 
         # Create a DatabaseManager
         self.database_manager = database_manager
-        # self.database_manager = DatabaseManager(config=database_config,
-        #                                         session=join(self.session_dir, session_name))
         self.database_manager.init_prediction_pipeline(session=join(self.session_dir, session_name),
                                                        produce_data=record)
 
         # Create a SimulationManager
         self.simulation_manager = simulation_manager
         self.simulation_manager.init_prediction_pipeline()
-        # self.simulation_manager = SimulationManager(config=simulation_config,
-        #                                              pipeline='prediction',
-        #                                              session=path,
-        #                                              produce_data=record,
-        #                                              batch_size=1)
-        self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
+        self.simulation_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                     normalize_data=self.database_manager.normalize)
 
         # Create a NetworkManager
         self.network_manager = network_manager
-        self.network_manager.init_prediction(session=path)
-        self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
+        self.network_manager.init_prediction_pipeline(session=path)
+        self.network_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                  normalize_data=self.database_manager.normalize)
         self.network_manager.link_clients(1)
 
@@ -83,9 +76,9 @@ class PredictionPipeline:
                 if self.produce_data:
                     self.database_manager.add_data(self.data_lines)
 
-            if self.simulation_manager.environment_controller.viewer is not None and self.step_nb < 0:
-                if not self.simulation_manager.environment_controller.viewer.is_open:
-                    break
+            # Check viewer closed event
+            if self.step_nb < 0 and not self.simulation_manager.is_viewer_open():
+                break
 
         self.simulation_manager.close()
         self.database_manager.close()
