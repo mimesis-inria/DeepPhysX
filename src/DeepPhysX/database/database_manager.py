@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from os.path import isdir, join, dirname, exists, sep, isabs, abspath
 from os import symlink, makedirs
 from numpy import arange, ndarray, array
@@ -189,7 +189,7 @@ class DatabaseManager:
             if self.__db is None:
                 raise ValueError(f"[DatabaseManager] The manager is not completely initialized; please use one of the "
                                  f"'init_*_pipeline' methods.")
-            foo(self, *args, **kwargs)
+            return foo(self, *args, **kwargs)
 
         return wrapper
 
@@ -312,8 +312,7 @@ class DatabaseManager:
         self.__update_json()
 
     @__check_init
-    def get_data(self,
-                 batch_size: int) -> List[List[int]]:
+    def get_data(self, batch_size: int) -> List[int]:
         """
         Select a batch of indices to read in the Database.
 

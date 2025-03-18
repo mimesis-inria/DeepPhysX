@@ -1,4 +1,4 @@
-from typing import Dict, Any, Callable, Type
+from typing import Dict, Any, Type
 from os import cpu_count
 from numpy import ndarray
 from torch import device, set_num_threads, load, save, as_tensor
@@ -17,6 +17,8 @@ class NetworkWrapper:
         self.__network = network_architecture(**network_kwargs)
         self.__device = None
         self.data_type = data_type
+        self.__is_ready = False
+        self.__is_training = False
         # if config.data_type == 'float64':
         #     torch.set_default_dtype(torch.float64)
         # else:
@@ -26,12 +28,23 @@ class NetworkWrapper:
 
         return self.__network.forward(*args)
 
+    @property
+    def is_ready(self):
+        return self.__is_ready
+
+    @property
+    def is_training(self):
+        return self.__is_training
+
     def train(self) -> None:
 
+        self.__is_ready = True
+        self.__is_training = True
         self.__network.train()
 
     def eval(self) -> None:
 
+        self.__is_ready = True
         self.__network.eval()
 
     def set_device(self) -> None:
@@ -46,8 +59,7 @@ class NetworkWrapper:
             set_num_threads(cpu_count() - 1)
 
         self.__network.to(self.__device)
-        print(f"[{self.__class__.__name__}] Device is {self.__device}")
-
+        print(f"[Network] Device is {self.__device}")
 
     def load(self, path: str) -> None:
 

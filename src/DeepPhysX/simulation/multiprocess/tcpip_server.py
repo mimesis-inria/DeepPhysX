@@ -160,7 +160,7 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def get_batch(self, animate: bool = True) -> List[List[int]]:
+    def get_batch(self, animate: bool = True) -> List[int]:
 
         nb_sample = 0
         self.data_lines = []

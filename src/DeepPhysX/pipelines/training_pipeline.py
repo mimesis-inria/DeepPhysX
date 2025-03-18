@@ -39,16 +39,10 @@ class TrainingPipeline:
         if new_session:
             session_name = create_dir(session_dir=self.session_dir,
                                       session_name=session_name).split(sep)[-1]
-
-        # Configure 'produce_data' flag
-        # if simulation_config is None and database_config.existing_dir is None:
-        #     raise ValueError(f"[{self.__class__.__name__}] No data source provided.")
         self.produce_data = database_manager.existing_dir is None
 
         # Create a DatabaseManager
         self.database_manager = database_manager
-        # self.database_manager = DatabaseManager(config=database_config,
-        #                                         session=join(self.session_dir, session_name))
         self.database_manager.init_training_pipeline(session=join(self.session_dir, session_name),
                                                      new_session=new_session,
                                                      produce_data=self.produce_data)
@@ -58,27 +52,21 @@ class TrainingPipeline:
         if simulation_manager is not None:
             self.simulation_manager = simulation_manager
             self.simulation_manager.init_training_pipeline(batch_size=batch_size)
-            # self.simulation_manager = SimulationManager(config=simulation_config,
-            #                                             pipeline='training',
-            #                                             session=join(self.session_dir, session_name),
-            #                                             produce_data=self.produce_data,
-            #                                             batch_size=batch_size)
-            self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
+            self.simulation_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                         normalize_data=self.database_manager.normalize)
 
         # Create a NetworkManager
         self.network_manager = network_manager
-        self.network_manager.init_training(loss_fnc=loss_fnc,
-                                           optimizer=optimizer,
-                                           optimizer_kwargs=optimizer_kwargs,
-                                           new_session=new_session,
-                                           session=join(self.session_dir, session_name),
-                                           save_intermediate_state_every=save_intermediate_state_every)
-        self.network_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
+        self.network_manager.init_training_pipeline(loss_fnc=loss_fnc,
+                                                    optimizer=optimizer,
+                                                    optimizer_kwargs=optimizer_kwargs,
+                                                    new_session=new_session,
+                                                    session=join(self.session_dir, session_name),
+                                                    save_intermediate_state_every=save_intermediate_state_every)
+        self.network_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                  normalize_data=self.database_manager.normalize)
         if self.simulation_manager is not None:
-            self.network_manager.link_clients(1 if self.simulation_manager.server is None
-                                              else self.simulation_manager.nb_parallel_env)
+            self.network_manager.link_clients(self.simulation_manager.nb_parallel_env)
 
         # Create a StatsManager
         self.stats_manager = StatsManager(session=join(self.session_dir, session_name)) if not debug else None
@@ -182,9 +170,6 @@ class TrainingPipeline:
                 loss = self.network_manager.get_loss(net_predict=net_predict, batch_bwd=batch_bwd)
                 self.network_manager.optimize()
 
-                # self.loss_dict = self.network_manager.get_prediction_and_loss(data_lines=self.data_lines,
-                #                                                                   optimize=True)
-
                 # Batch end
                 self.batch_id += 1
                 if self.stats_manager is not None:
@@ -201,7 +186,7 @@ class TrainingPipeline:
             if self.simulation_manager is not None and self.produce_data and \
                     (self.epoch_id == 0 or self.simulation_manager.always_produce):
                 self.database_manager.compute_normalization()
-                self.network_manager.db_handler.reload_normalization()
+                self.network_manager.reload_normalization()
             if self.stats_manager is not None:
                 self.stats_manager.add_train_epoch_loss(loss, self.epoch_id)
             self.network_manager.save_network()

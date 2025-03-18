@@ -120,7 +120,7 @@ class SimulationManager:
             if self.__server is None and self.__simulation_controller is None:
                 raise ValueError(f"[SimulationManager] The manager is not completely initialized; please use one of the "
                                  f"'init_*_pipeline' methods.")
-            foo(self, *args, **kwargs)
+            return foo(self, *args, **kwargs)
 
         return wrapper
 
@@ -201,8 +201,7 @@ class SimulationManager:
     #########################
 
     @__check_init
-    def __get_data_from_server(self,
-                               animate: bool = True) -> List[List[int]]:
+    def __get_data_from_server(self, animate: bool = True) -> List[int]:
         """
         Compute a batch of data from Environments requested through TcpIpServer.
 
@@ -215,7 +214,7 @@ class SimulationManager:
     def __get_data_from_simulation(self,
                                    animate: bool = True,
                                    save_data: bool = True,
-                                   request_prediction: bool = False) -> List[List[int]]:
+                                   request_prediction: bool = False) -> List[int]:
         """
         Compute a batch of data directly from Environment.
 
