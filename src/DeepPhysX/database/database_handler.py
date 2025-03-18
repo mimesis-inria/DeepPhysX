@@ -64,12 +64,12 @@ class DatabaseHandler:
         self.__db.load()
         self.__exchange_db.load()
 
-    ##########################
-    # Databases architecture #
-    ##########################
+    ###########################
+    # Databases architectures #
+    ###########################
 
     def create_fields(self,
-                      fields: Union[List[Tuple[str, Type]], Tuple[str, Type]],
+                      fields: List[Tuple[str, Type]],
                       exchange: bool = False) -> None:
         """
         Create new Fields in a Table from one of the Databases.

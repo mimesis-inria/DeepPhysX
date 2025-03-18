@@ -1,16 +1,14 @@
 from typing import Optional, List, Tuple, Type, Dict, Any
-from asyncio import run as async_run
 from os import cpu_count
 from os.path import join, dirname
 from sys import modules, executable
 from threading import Thread
 from subprocess import run
 
-from DeepPhysX.simulation.simulation_controller import SimulationController
 from DeepPhysX.simulation.multiprocess.tcpip_server import TcpIpServer
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.simulation.simulation_controller import DPXSimulation
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation, SimulationController
 
 
 
@@ -27,16 +25,33 @@ class SimulationManager:
                  always_produce: bool = False,
                  use_viewer: bool = False):
         """
+        SimulationManager handles the numerical simulation(s) to produce synthetic data and communicate with the neural
+        network.
+
+        :param simulation_class: The numerical simulation class.
+        :param simulation_kwargs: Dict of kwargs to create an instance of the numerical simulation.
+        :param nb_parallel_env: Number of numerical simulations to run in parallel.
+        :param simulations_per_step: Number of simulation steps to compute before producing a data sample.
+        :param max_wrong_samples_per_step:
+        :param load_samples:
+        :param only_first_epoch:
+        :param always_produce:
+        :param use_viewer: If True, the viewer will be displayed.
         """
 
-        self.name: str = self.__class__.__name__
+        # Simulation variables
+        self.__simulation_class = simulation_class
+        self.__simulation_file = modules[self.__simulation_class.__module__].__file__
+        self.__simulation_kwargs = {} if simulation_kwargs is None else simulation_kwargs
 
-        # Config
-        self.simulation_class = simulation_class
-        self.simulation_file = modules[self.simulation_class.__module__].__file__
-        self.server_is_ready = False
-        self.simulation_kwargs = {} if simulation_kwargs is None else simulation_kwargs
+        # Single Simulation controller variables
+        self.__simulation_controller: Optional[SimulationController] = None
+        self.get_data = self.__get_data_from_simulation
+        self.dispatch_batch = self.__dispatch_batch_to_simulation
 
+        # Multi Simulations controller variables
+        self.__server: Optional[TcpIpServer] = None
+        self.__server_is_ready = False
 
         # Data production variables
         self.batch_size: int = 1
@@ -50,13 +65,9 @@ class SimulationManager:
         self.nb_parallel_env = min(max(nb_parallel_env, 1), cpu_count())
         self.allow_prediction_requests: bool = True
 
-
-        self.server: Optional[TcpIpServer] = None
-        self.environment_controller: Optional[SimulationController] = None
+        # Manager variables
         self.__network_manager: Optional[NetworkManager] = None
         self.__database_manager: Optional[DatabaseManager] = None
-        self.get_data = self.__get_data_from_environment
-        self.dispatch_batch = self.__dispatch_batch_to_environment
 
     ################
     # Init methods #
@@ -64,6 +75,9 @@ class SimulationManager:
 
     def init_data_pipeline(self, batch_size: int) -> None:
         """
+        Init the SimulationManager for the data generation pipeline.
+
+        :param batch_size: Number of sample to produce per batch.
         """
 
         self.allow_prediction_requests = False
@@ -71,59 +85,88 @@ class SimulationManager:
 
     def init_training_pipeline(self, batch_size: int) -> None:
         """
+        Init the SimulationManager for the training pipeline.
+
+        :param batch_size: Number of sample to produce per batch.
         """
 
         self.batch_size = batch_size
 
         # Create Server
         if self.nb_parallel_env > 1:
-            self.create_server(batch_size=batch_size)
+            self.__create_server(batch_size=batch_size)
             self.get_data = self.__get_data_from_server
             self.dispatch_batch = self.__dispatch_batch_to_server
+
         # Create Environment
         else:
-            self.create_simulation()
+            self.__create_simulation()
 
     def init_prediction_pipeline(self) -> None:
         """
+        Init the SimulationManager for the prediction pipeline.
         """
 
         self.nb_parallel_env = 1
-        self.create_simulation()
+        self.__create_simulation()
 
-    def create_server(self, batch_size: int):
+    @staticmethod
+    def __check_init(foo):
+        """
+        Wrapper to check that an 'init_*_pipeline' method was called before to use the SimulationManager.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            if self.__server is None and self.__simulation_controller is None:
+                raise ValueError(f"[SimulationManager] The manager is not completely initialized; please use one of the "
+                                 f"'init_*_pipeline' methods.")
+            foo(self, *args, **kwargs)
+
+        return wrapper
+
+    #############################
+    # Controller create methods #
+    #############################
+
+    def __create_simulation(self):
+
+        self.__simulation_controller = SimulationController(simulation_class=self.__simulation_class,
+                                                            simulation_kwargs=self.__simulation_kwargs,
+                                                            manager=self)
+        self.__simulation_controller.create_simulation()
+        if self.use_viewer:
+            self.__simulation_controller.launch_visualization()
+
+    def __create_server(self, batch_size: int):
 
         # Create server
-        self.server = TcpIpServer(nb_client=self.nb_parallel_env,
-                                  batch_size=batch_size,
-                                  manager=self,
-                                  use_viewer=self.use_viewer)
-        server_thread = Thread(target=self.start_server)
+        self.__server = TcpIpServer(nb_client=self.nb_parallel_env, batch_size=batch_size,
+                                    manager=self, use_viewer=self.use_viewer)
+        server_thread = Thread(target=self.__start_server)
         server_thread.start()
 
         # Create clients
         client_threads = []
         for i in range(self.nb_parallel_env):
-            client_thread = Thread(target=self.start_client, args=(i + 1,))
+            client_thread = Thread(target=self.__start_client, args=(i + 1,))
             client_threads.append(client_thread)
         for client in client_threads:
             client.start()
 
         # Return server to manager when it is ready
-        while not self.server_is_ready:
+        while not self.__server_is_ready:
             pass
 
-    def start_server(self) -> None:
+    def __start_server(self) -> None:
         """
         Start TcpIpServer.
         """
 
-        self.server.connect()
-        self.server.initialize(env_kwargs=self.simulation_kwargs)
-        self.server_is_ready = True
+        self.__server.connect()
+        self.__server.initialize(env_kwargs=self.__simulation_kwargs)
+        self.__server_is_ready = True
 
-    def start_client(self,
-                     idx: int) -> None:
+    def __start_client(self, idx: int) -> None:
         """
         Run a subprocess to start a TcpIpClient.
 
@@ -131,33 +174,21 @@ class SimulationManager:
         """
 
         script = join(dirname(modules[DPXSimulation.__module__].__file__), 'multiprocess', 'launcher.py')
-        run([executable, script, self.simulation_file, self.simulation_class.__name__,
-             self.server.ip_address, str(self.server.port), str(idx), str(self.nb_parallel_env)])
+        run([executable, script, self.__simulation_file, self.__simulation_class.__name__,
+             self.__server.ip_address, str(self.__server.port), str(idx), str(self.nb_parallel_env)])
 
-    def create_simulation(self):
-
-        self.environment_controller = SimulationController(environment_class=self.simulation_class,
-                                                           environment_kwargs=self.simulation_kwargs)
-        self.environment_controller.environment_manager = self
-        self.environment_controller.create_environment()
-        if self.use_viewer:
-            self.environment_controller.launch_visualization()
-
-
-    ##########################################################################################
-    ##########################################################################################
-    #                              DatabaseHandler management                                #
-    ##########################################################################################
-    ##########################################################################################
+    ##############################
+    # Database access management #
+    ##############################
 
     def connect_to_database(self,
                             database_path: Tuple[str, str],
                             normalize_data: bool):
 
-        if self.environment_controller is not None:
-            self.environment_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
-        elif self.server is not None:
-            self.server.connect_to_database(database_path=database_path, normalize_data=normalize_data)
+        if self.__simulation_controller is not None:
+            self.__simulation_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
+        elif self.__server is not None:
+            self.__server.connect_to_database(database_path=database_path, normalize_data=normalize_data)
 
     def connect_to_network_manager(self, network_manager):
         self.__network_manager = network_manager
@@ -165,88 +196,74 @@ class SimulationManager:
     def connect_to_database_manager(self, database_manager):
         self.__database_manager = database_manager
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                Data creation management                                #
-    ##########################################################################################
-    ##########################################################################################
+    #########################
+    # Simulation management #
+    #########################
 
+    @__check_init
     def __get_data_from_server(self,
                                animate: bool = True) -> List[List[int]]:
         """
         Compute a batch of data from Environments requested through TcpIpServer.
 
-        :param animate: If True, triggers an environment step.
+        :param animate: If True, triggers a simulation step.
         """
 
-        return self.server.get_batch(animate)
+        return self.__server.get_batch(animate)
 
-    def __get_data_from_environment(self,
-                                    animate: bool = True,
-                                    save_data: bool = True,
-                                    request_prediction: bool = False) -> List[List[int]]:
+    @__check_init
+    def __get_data_from_simulation(self,
+                                   animate: bool = True,
+                                   save_data: bool = True,
+                                   request_prediction: bool = False) -> List[List[int]]:
         """
         Compute a batch of data directly from Environment.
 
-        :param animate: If True, triggers an environment step.
+        :param animate: If True, triggers a simulation step.
         :param save_data: If True, data must be stored in the Database.
         :param request_prediction: If True, a prediction request will be triggered.
         """
 
-        from time import time
-
         # Produce batch while batch size is not complete
         nb_sample = 0
         dataset_lines = []
-        t1, t2, t3 = 0, 0, 0
         while nb_sample < self.batch_size:
-
-            t = time()
 
             # 1. Send a sample from the Database if one is given
             update_line = None
             if self.dataset_batch is not None:
                 update_line = self.dataset_batch.pop(0)
-                self.environment_controller.trigger_get_data(line_id=update_line)
-
-            t1 += time() - t
-            t = time()
+                self.__simulation_controller.trigger_get_data(line_id=update_line)
 
             # 2. Run the defined number of steps
             if animate:
                 for current_step in range(self.simulations_per_step):
                     # Sub-steps do not produce data
-                    self.environment_controller.compute_training_data = current_step == self.simulations_per_step - 1
-                    async_run(self.environment_controller.environment.step())
-
-            t2 += time() - t
-            t = time()
+                    self.__simulation_controller.compute_training_data = current_step == self.simulations_per_step - 1
+                    self.__simulation_controller.simulation.step()
 
             # 3. Add the produced sample index to the batch if the sample is validated
-            if self.environment_controller.environment.check_sample():
+            if self.__simulation_controller.simulation.check_sample():
                 nb_sample += 1
                 # 3.1. The prediction Pipeline triggers a prediction request
                 if request_prediction:
-                    self.environment_controller.trigger_prediction()
+                    self.__simulation_controller.trigger_prediction()
                 # 3.2. Add the data to the Database
                 if save_data:
                     # Update the line if the sample was given by the database
                     if update_line is None:
-                        new_line = self.environment_controller.trigger_send_data()
+                        new_line = self.__simulation_controller.trigger_send_data()
                         dataset_lines.append(new_line)
                     # Create a new line otherwise
                     else:
-                        self.environment_controller.trigger_update_data(line_id=update_line)
+                        self.__simulation_controller.trigger_update_data(line_id=update_line)
                         dataset_lines.append(update_line)
                 # 3.3. Rest the data variables
-                self.environment_controller.reset_data()
-
-            t3 += time() - t
-        # print(f't1={round(t1, 4)}, t2={round(t2, 4)}, t3={round(t3, 4)}')
-
+                self.__simulation_controller.reset_data()
 
         return dataset_lines
 
+    @__check_init
     def __dispatch_batch_to_server(self,
                                    data_lines: List[int],
                                    animate: bool = True) -> None:
@@ -254,24 +271,25 @@ class SimulationManager:
         Send samples from the Database to the Environments and get back the produced data.
 
         :param data_lines: Batch of indices of samples.
-        :param animate: If True, triggers an environment step.
+        :param animate: If True, triggers a simulation step.
         """
 
         # Define the batch to dispatch
-        self.server.set_dataset_batch(data_lines)
+        self.__server.set_dataset_batch(data_lines)
         # Get data
         self.__get_data_from_server(animate=animate)
 
-    def __dispatch_batch_to_environment(self,
-                                        data_lines: Optional[List[int]] = None,
-                                        animate: bool = True,
-                                        save_data: bool = True,
-                                        request_prediction: bool = False) -> None:
+    @__check_init
+    def __dispatch_batch_to_simulation(self,
+                                       data_lines: Optional[List[int]] = None,
+                                       animate: bool = True,
+                                       save_data: bool = True,
+                                       request_prediction: bool = False) -> None:
         """
         Send samples from the Database to the Environment and get back the produced data.
 
         :param data_lines: Batch of indices of samples.
-        :param animate: If True, triggers an environment step.
+        :param animate: If True, triggers a simulation step.
         :param save_data: If True, data must be stored in the Database.
         :param request_prediction: If True, a prediction request will be triggered.
         """
@@ -279,20 +297,19 @@ class SimulationManager:
         # Define the batch to dispatch
         self.dataset_batch = data_lines.copy() if data_lines is not None else None
         # Get data
-        self.__get_data_from_environment(animate=animate,
-                                         save_data=save_data,
-                                         request_prediction=request_prediction)
+        self.__get_data_from_simulation(animate=animate,
+                                        save_data=save_data,
+                                        request_prediction=request_prediction)
 
+    @__check_init
     def get_prediction(self, instance_id: int):
 
         self.__network_manager.get_prediction(instance_id=instance_id)
         # self.__network_manager.compute_online_prediction(instance_id=instance_id)
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                   Manager behavior                                     #
-    ##########################################################################################
-    ##########################################################################################
+    ###################
+    # Manager methods #
+    ###################
 
     def close(self) -> None:
         """
@@ -300,17 +317,17 @@ class SimulationManager:
         """
 
         # Server case
-        if self.server is not None:
-            self.server.close()
+        if self.__server is not None:
+            self.__server.close()
 
         # Environment case
-        if self.environment_controller is not None:
-            self.environment_controller.close()
+        if self.__simulation_controller is not None:
+            self.__simulation_controller.close()
 
     def __str__(self) -> str:
 
-        description = "\n"
-        description += f"# {self.name}\n"
-        description += f"    Always create data: {self.only_first_epoch}\n"
-        description += f"    Number of threads: {self.nb_parallel_env}\n"
-        return description
+        desc = "\n"
+        desc += f"# SIMULATION MANAGER\n"
+        desc += f"    Always create data: {self.only_first_epoch}\n"
+        desc += f"    Number of threads: {self.nb_parallel_env}\n"
+        return desc

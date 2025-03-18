@@ -52,7 +52,7 @@ class TcpIpServer(TcpIpObject):
         self.data_lines: List[List[int]] = []
 
         # Reference to EnvironmentManager
-        self.environment_manager: Optional[Any] = manager
+        self.simulation_manager: Optional[Any] = manager
 
         # Create ViewerBatch
         self.viewer_batch: Optional[ViewerBatch] = None
@@ -101,7 +101,7 @@ class TcpIpServer(TcpIpObject):
 
     def initialize(self, env_kwargs: Dict[str, Any]) -> None:
         """
-        Send parameters to the clients to create their environments.
+        Send parameters to the clients to create their simulations.
 
         :param env_kwargs: Additional arguments to pass to the Environment.
         """
@@ -118,10 +118,10 @@ class TcpIpServer(TcpIpObject):
             self.send_dict(name='env_kwargs', dict_to_send=env_kwargs, receiver=client)
 
             # Send prediction request authorization
-            self.send_data(data_to_send=self.environment_manager.allow_prediction_requests, receiver=client)
+            self.send_data(data_to_send=self.simulation_manager.allow_prediction_requests, receiver=client)
 
             # Send number of sub-steps
-            nb_steps = self.environment_manager.simulations_per_step if self.environment_manager else 1
+            nb_steps = self.simulation_manager.simulations_per_step if self.simulation_manager else 1
             self.send_data(data_to_send=nb_steps, receiver=client)
 
             # Send visualization Database
@@ -266,9 +266,9 @@ class TcpIpServer(TcpIpObject):
         :param sender: TcpIpObject sender.
         """
 
-        if self.environment_manager.data_manager is None:
+        if self.simulation_manager.data_manager is None:
             raise ValueError("Cannot request prediction if DataManager does not exist")
-        self.environment_manager.data_manager.get_prediction(client_id)
+        self.simulation_manager.data_manager.get_prediction(client_id)
         self.send_data(data_to_send=True, receiver=sender)
 
     def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:
@@ -281,4 +281,4 @@ class TcpIpServer(TcpIpObject):
         """
 
         _, idx = self.receive_labeled_data(sender=sender)
-        self.environment_manager.update_visualizer(idx)
+        self.simulation_manager.update_visualizer(idx)

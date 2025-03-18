@@ -3,22 +3,21 @@ from socket import socket
 from numpy import ndarray
 
 from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
-from DeepPhysX.simulation.dpx_simulation import DPXSimulation
-from DeepPhysX.simulation.simulation_controller import SimulationController
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation, SimulationController
 
 
 class TcpIpClient(TcpIpObject):
 
     def __init__(self,
-                 environment: Type[DPXSimulation],
+                 simulation: Type[DPXSimulation],
                  ip_address: str = 'localhost',
                  port: int = 10000,
                  instance_id: int = 0,
                  instance_nb: int = 1):
         """
-        TcpIpClient is a TcpIpObject which communicate with a TcpIpServer and manages an Environment to compute data.
+        TcpIpClient is a TcpIpObject which communicate with a TcpIpServer and manages a Simulation to compute data.
 
-        :param environment: Environment class.
+        :param simulation: Simulation class.
         :param ip_address: IP address of the TcpIpObject.
         :param port: Port number of the TcpIpObject.
         :param instance_id: Index of this instance.
@@ -27,10 +26,10 @@ class TcpIpClient(TcpIpObject):
 
         TcpIpObject.__init__(self)
 
-        # Environment instance
-        self.environment_class = environment
-        self.environment_instance = (instance_id, instance_nb)
-        self.environment_controller: SimulationController
+        # Simulation instance
+        self.simulation_class = simulation
+        self.simulation_instance = (instance_id, instance_nb)
+        self.simulation_controller: SimulationController
 
         # Bind to client address and send ID
         self.sock.connect((ip_address, port))
@@ -38,15 +37,13 @@ class TcpIpClient(TcpIpObject):
                                receiver=self.sock, send_read_command=False)
         self.close_client: bool = False
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                 Initializing Environment                               #
-    ##########################################################################################
-    ##########################################################################################
+    ###########################
+    # Initializing Simulation #
+    ###########################
 
     def initialize(self) -> None:
         """
-        Receive parameters from the server to create environment.
+        Receive parameters from the server to create simulation.
         """
 
         # Receive additional arguments
@@ -54,11 +51,11 @@ class TcpIpClient(TcpIpObject):
         self.receive_dict(recv_to=env_kwargs, sender=self.sock)
         env_kwargs = env_kwargs['env_kwargs'] if 'env_kwargs' in env_kwargs else {}
 
-        self.environment_controller = SimulationController(simulation_class=self.environment_class,
-                                                           simulation_kwargs=env_kwargs,
-                                                           manager=self,
-                                                           simulation_id=self.environment_instance[0],
-                                                           simulation_nb=self.environment_instance[1])
+        self.simulation_controller = SimulationController(simulation_class=self.simulation_class,
+                                                          simulation_kwargs=env_kwargs,
+                                                          manager=self,
+                                                          simulation_id=self.simulation_instance[0],
+                                                          simulation_nb=self.simulation_instance[1])
 
         # Receive prediction requests authorization
         self.allow_prediction_requests = self.receive_data(sender=self.sock)
@@ -70,10 +67,10 @@ class TcpIpClient(TcpIpObject):
         viewer_key = self.receive_data(sender=self.sock)
         viewer_key = None if viewer_key == 'None' else int(viewer_key)
 
-        # Initialize the environment
-        self.environment_controller.create_environment()
+        # Initialize the simulation
+        self.simulation_controller.create_simulation()
         if viewer_key is not None:
-            self.environment_controller.launch_visualization(viewer_key=viewer_key)
+            self.simulation_controller.launch_visualization(viewer_key=viewer_key)
 
         # Initialization done
         self.send_data(data_to_send='done', receiver=self.sock)
@@ -81,14 +78,12 @@ class TcpIpClient(TcpIpObject):
         # Synchronize Database
         database_path = (self.receive_data(sender=self.sock), self.receive_data(sender=self.sock))
         normalize_data = self.receive_data(sender=self.sock)
-        self.environment_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
+        self.simulation_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
         self.send_data(data_to_send='done', receiver=self.sock)
 
-    ##########################################################################################
-    ##########################################################################################
-    #                                      Running Client                                    #
-    ##########################################################################################
-    ##########################################################################################
+    ##################
+    # Running Client #
+    ##################
 
     def launch(self) -> None:
         """
@@ -117,11 +112,11 @@ class TcpIpClient(TcpIpObject):
 
     def __close(self) -> None:
         """
-        Close the environment and shutdown the client.
+        Close the simulation and shutdown the client.
         """
 
-        # Close environment
-        self.environment_controller.close()
+        # Close simulation
+        self.simulation_controller.close()
 
         # Confirm exit command to the server
         self.send_command_exit(receiver=self.sock)
@@ -129,11 +124,9 @@ class TcpIpClient(TcpIpObject):
         # Close socket
         self.sock.close()
 
-    ##########################################################################################
-    ##########################################################################################
-    #                              Available requests to Server                              #
-    ##########################################################################################
-    ##########################################################################################
+    ################################
+    # Available requests to Server #
+    ################################
 
     def get_prediction(self, *args, **kwargs) -> None:
         """
@@ -151,13 +144,11 @@ class TcpIpClient(TcpIpObject):
         """
 
         self.send_command_visualisation()
-        self.send_labeled_data(data_to_send=self.environment_instance[0], label='instance')
+        self.send_labeled_data(data_to_send=self.simulation_instance[0], label='instance')
 
-    ##########################################################################################
-    ##########################################################################################
-    #                            Actions to perform on commands                              #
-    ##########################################################################################
-    ##########################################################################################
+    ##################################
+    # Actions to perform on commands #
+    ##################################
 
     def action_on_exit(self, data: ndarray, client_id: int, sender: socket) -> None:
         """
@@ -182,8 +173,8 @@ class TcpIpClient(TcpIpObject):
 
         # Receive prediction
         prediction = self.receive_data(sender=sender)
-        # Apply the prediction in Environment
-        self.environment_controller.environment.apply_prediction(prediction)
+        # Apply the prediction in the simulation
+        self.simulation_controller.simulation.apply_prediction(prediction)
 
     def action_on_sample(self, data: ndarray, client_id: int, sender: socket) -> None:
         """
@@ -195,7 +186,7 @@ class TcpIpClient(TcpIpObject):
         """
 
         dataset_batch = self.receive_data(sender=sender)
-        self.environment_controller.trigger_get_data(dataset_batch)
+        self.simulation_controller.trigger_get_data(dataset_batch)
 
     def action_on_step(self, data: ndarray, client_id: int, sender: socket) -> None:
         """
@@ -209,22 +200,22 @@ class TcpIpClient(TcpIpObject):
         # Execute the required number of steps
         for step in range(self.simulations_per_step):
             # Compute data only on final step
-            self.environment_controller.compute_training_data = step == self.simulations_per_step - 1
-            self.environment_controller.environment.step()
+            self.simulation_controller.compute_training_data = step == self.simulations_per_step - 1
+            self.simulation_controller.simulation.step()
 
         # If produced sample is not usable, run again
-        while not self.environment_controller.environment.check_sample():
+        while not self.simulation_controller.simulation.check_sample():
             for step in range(self.simulations_per_step):
                 # Compute data only on final step
-                self.environment_controller.compute_training_data = step == self.simulations_per_step - 1
-                self.environment_controller.environment.step()
+                self.simulation_controller.compute_training_data = step == self.simulations_per_step - 1
+                self.simulation_controller.simulation.step()
 
         # Sent training data to Server
-        if self.environment_controller.update_line is None:
-            line = self.environment_controller.trigger_send_data()
+        if self.simulation_controller.update_line is None:
+            line = self.simulation_controller.trigger_send_data()
         else:
-            self.environment_controller.trigger_update_data(self.environment_controller.update_line)
-            line = self.environment_controller.update_line
-        self.environment_controller.reset_data()
+            self.simulation_controller.trigger_update_data(self.simulation_controller.update_line)
+            line = self.simulation_controller.update_line
+        self.simulation_controller.reset_data()
         self.send_command_done(receiver=sender)
         self.send_data(data_to_send=line, receiver=sender)

@@ -17,60 +17,66 @@ class DataPipeline:
                  batch_nb: int = 0,
                  batch_size: int = 0):
         """
+        DataPipeline implements the main loop that produces data from a numerical simulation.
+
+        :param simulation_manager: Manager for the numerical Simulation.
+        :param database_manager: Manager for the Database.
+        :param new_session: If True, a new repository is created for the session.
+        :param session_dir: Path to the directory that contains the DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
+        :param batch_nb: Number of batches to produce.
+        :param batch_size: Number of samples to produce per batch.
         """
 
         # Create a new session if required
-        self.session_dir = get_session_dir(session_dir, new_session)
-        self.new_session = new_session or not exists(join(self.session_dir, session_name))
-        if self.new_session:
-            session_name = create_dir(session_dir=self.session_dir,
+        session_dir = get_session_dir(session_dir, new_session)
+        new_session = new_session or not exists(join(session_dir, session_name))
+        if new_session:
+            session_name = create_dir(session_dir=session_dir,
                                       session_name=session_name).split(sep)[-1]
 
         # Create a DatabaseManager
         self.database_manager = database_manager
-        # self.database_manager = DatabaseManager(config=database_config,
-        #                                         session=join(self.session_dir, session_name))
-        self.database_manager.init_data_pipeline(session=join(self.session_dir, session_name),
-                                                 new_session=self.new_session)
+        self.database_manager.init_data_pipeline(session=join(session_dir, session_name),
+                                                 new_session=new_session)
 
         # Create a SimulationManager
         self.simulation_manager = simulation_manager
-        # self.simulation_manager = SimulationManager(config=simulation_config,
-        #                                             pipeline='data_generation',
-        #                                             session=join(self.session_dir, session_name),
-        #                                             produce_data=True,
-        #                                             batch_size=batch_size)
         self.simulation_manager.init_data_pipeline(batch_size=batch_size)
-        self.simulation_manager.connect_to_database(database_path=self.database_manager.get_database_path(),
+        self.simulation_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                     normalize_data=self.database_manager.normalize)
 
         # Data generation variables
-        self.batch_nb: int = batch_nb
-        self.batch_id: int = 0
-        self.batch_size = batch_size
-        self.progress_bar = ProgressBar(start=0, stop=self.batch_nb, c='orange', title="Data Generation")
+        self.__batch_nb = batch_nb
+        self.__progress_bar = ProgressBar(start=0, stop=self.__batch_nb, c='orange', title="Data Generation")
+
+        # Description
+        self.__desc = {'repository': session_dir,
+                       'batch_nb': self.__batch_nb,
+                       'batch_size': batch_size}
 
     def execute(self) -> None:
         """
         Launch the data generation Pipeline.
         """
 
-        while self.batch_id < self.batch_nb:
+        batch_id = 0
+        while batch_id < self.__batch_nb:
 
             lines_id = self.simulation_manager.get_data(animate=True)
             self.database_manager.add_data(data_lines=lines_id)
 
-            self.batch_id += 1
-            self.progress_bar.print()
+            batch_id += 1
+            self.__progress_bar.print()
 
         self.database_manager.close()
         self.simulation_manager.close()
 
     def __str__(self):
 
-        description = "\n"
-        description += f"# {self.__class__.__name__}\n"
-        description += f"    Session repository: {self.session_dir}\n"
-        description += f"    Number of batches: {self.batch_nb}\n"
-        description += f"    Number of sample per batch: {self.batch_size}\n"
-        return description
+        desc = "\n"
+        desc += f"# DATA PIPELINE\n"
+        desc += f"    Session repository: {self.__desc['repository']}\n"
+        desc += f"    Number of batches: {self.__desc['batch_nb']}\n"
+        desc += f"    Number of sample per batch: {self.__desc['batch_size']}\n"
+        return desc

@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Tuple
 from os.path import isdir, join, dirname, exists, sep, isabs, abspath
 from os import symlink, makedirs
-import json
 from numpy import arange, ndarray, array
 from numpy.random import shuffle
+import json
 
 from SSD.core import Database
 
@@ -15,21 +15,21 @@ class DatabaseManager:
 
     def __init__(self,
                  existing_dir: Optional[str] = None,
-                 mode: Optional[str] = None,
-                 shuffle: bool = True,
+                 shuffle_data: bool = True,
                  normalize: bool = True,
-                 recompute_normalization: bool = False,
-                 ):
+                 recompute_normalization: bool = False):
         """
+        DatabaseManager handles the Database files, the data writing and reading access, the data normalisation and
+        shuffle.
+
+        :param existing_dir: Path to an existing Database repository.
+        :param shuffle_data: If True, data is shuffled when a batch is taken.
+        :param normalize: If True, the data will be normalized using standard score.
+        :param recompute_normalization: If True, compute the normalisation coefficients.
         """
 
-        # Database repository
+        # Database repository variables
         self.database_dir: str = ''
-        self.modes: List[str] = ['train', 'test', 'run']
-        self.mode: str = ''
-        self.json_content: Dict[str, Dict[str, Any]] = {'nb_samples': {mode: 0 for mode in self.modes},
-                                                        'fields': {}}
-
         if existing_dir is not None:
             if not isdir(existing_dir):
                 raise ValueError(f"[] The given 'existing_dir'={existing_dir} does not exist.")
@@ -37,88 +37,90 @@ class DatabaseManager:
                 existing_dir = join(*existing_dir.split(sep)[:-1])
             if not isabs(existing_dir):
                 existing_dir = abspath(existing_dir)
-
-        # Pipeline parameters
-        self.pipeline: str = ''
         self.existing_dir: Optional[str] = existing_dir
-        self.mode: Optional[str] = mode
-        self.shuffle: bool = shuffle
+
+        # Database instances variables
+        self.__db: Optional[Database] = None
+        self.__exchange: Optional[Database] = None
+
+        # Database tables variables
+        self.mode: str = ''
+        self.modes: List[str] = ['train', 'test', 'run']
+        self.json_content: Dict[str, Dict[str, Any]] = {'nb_samples': {mode: 0 for mode in self.modes},
+                                                        'fields': {}}
+
+        # Data access variables
+        self.pipeline: str = ''
+        self.first_add = True
+        self.sample_id: int = 0
+        self.sample_indices: ndarray = array([])
+        self.shuffle: bool = shuffle_data
         self.normalize: bool = normalize
         self.recompute_normalization: bool = recompute_normalization
-
-        # Database instances
-        self.__db = Database(database_dir=self.database_dir, database_name='dataset')
-        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
-
-        # Samples indexing
-        self.sample_indices: ndarray = array([])
-        self.sample_id: int = 0
-        self.first_add = True
-
-        # Dataset parameters
-        # self.normalize: bool = database_config.normalize
-        # self.total_nb_sample: int = 0
 
     ################
     # Init methods #
     ################
 
-    def __init(self):
-        self.__exchange.new(remove_existing=True)
-        self.__exchange.create_table(table_name='data')
-
     def init_data_pipeline(self, session: str, new_session: bool) -> None:
         """
-        Init method for the data pipeline.
+        Init the DatabaseManager for the data generation pipeline.
 
-        :param new_session: If True, the session is done in a new repository.
+        :param session: Path to the session repository.
+        :param new_session: If True, a new repository is created for the session.
         """
 
+        # Create the Database
         self.database_dir = join(session, 'dataset')
         self.__db = Database(database_dir=self.database_dir, database_name='dataset')
-        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
 
-        # Define the Database mode
-        self.mode = 'train' if self.mode is None else self.mode
+        # Configure the Database for the current pipeline
+        self.mode = 'train'
         self.pipeline = 'data'
 
-        # Init Database repository for a new session
+        # Case 1: Use a new Database repository
         if new_session:
-            # Generate new data from scratch --> create a new directory
+
+            # Case 1.1: Generate data from scratch --> create a new repository
             if self.existing_dir is None:
                 makedirs(self.database_dir)
                 self.__create()
-            # Use existing data in a new session --> copy and load the existing directory
+
+            # Case 1.2: Add data to an existing Database --> copy and load the existing repository
             else:
                 copy_dir(src_dir=self.existing_dir, dest_dir=dirname(self.database_dir), sub_folders='dataset')
                 self.__load()
 
-        # Init Database repository for an existing session
+        # Case 2: Use an existing Database repository
         else:
             self.__load()
 
-        self.__init()
+        # Create the exchange Database
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
+        self.__exchange.new(remove_existing=True)
+        self.__exchange.create_table(table_name='data')
 
     def init_training_pipeline(self,
                                session: str,
                                new_session: bool,
                                produce_data: bool) -> None:
         """
-        Init method for the training pipeline.
+        Init the DatabaseManager for the training pipeline.
 
-        :param new_session: If True, the session is done in a new repository.
+        :param session: Path to the session repository.
+        :param new_session: If True, a new repository is created for the session.
         :param produce_data: If True, this session will store data in the Database.
         """
 
+        # Create the Database
         self.database_dir = join(session, 'dataset')
         self.__db = Database(database_dir=self.database_dir, database_name='dataset')
-        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
 
-        # Define the Database mode
+        # Configure the Database for the current pipeline 
         self.mode = 'train'
         self.pipeline = 'training'
 
-        # Online training pipeline: create data
+        # Case 1: Online training pipeline: create data
         if produce_data:
 
             # Init Database repository for a new session
@@ -136,7 +138,7 @@ class DatabaseManager:
             else:
                 self.__load()
 
-        # Load data
+        # Case 2: Offline training pipeline: load data
         else:
 
             # Init Database repository for a new session --> link and load the existing Database directory
@@ -148,28 +150,48 @@ class DatabaseManager:
             else:
                 self.__load()
 
-        self.__init()
+        # Create the exchange Database
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
+        self.__exchange.new(remove_existing=True)
+        self.__exchange.create_table(table_name='data')
 
     def init_prediction_pipeline(self, session: str, produce_data: bool) -> None:
         """
         Init method for the prediction pipeline.
 
+        :param session:
         :param produce_data: If True, this session will store data in the Database.
         """
 
+        # Create the Database
         self.database_dir = join(session, 'dataset')
         self.__db = Database(database_dir=self.database_dir, database_name='dataset')
-        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
 
-        # Define the Database mode
-        self.mode = 'run' if self.mode is None else self.mode
-        self.mode = 'run' if produce_data else self.mode
+        # Configure the Database for the current pipeline
+        self.mode = 'run'
         self.pipeline = 'prediction'
 
-        # Init Database repository
+        # Load data
         self.__load()
 
-        self.__init()
+        # Create the exchange Database
+        self.__exchange = Database(database_dir=self.database_dir, database_name='temp')
+        self.__exchange.new(remove_existing=True)
+        self.__exchange.create_table(table_name='data')
+
+    @staticmethod
+    def __check_init(foo):
+        """
+        Wrapper to check that an 'init_*_pipeline' method was called before to use the DatabaseManager.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            if self.__db is None:
+                raise ValueError(f"[DatabaseManager] The manager is not completely initialized; please use one of the "
+                                 f"'init_*_pipeline' methods.")
+            foo(self, *args, **kwargs)
+
+        return wrapper
 
     #########################
     # Repository Management #
@@ -180,10 +202,8 @@ class DatabaseManager:
         Create a new Database.
         """
 
-        # Create a new Database
+        # Create a new Database with a new Table for each mode
         self.__db.new()
-
-        # Create a new Table for each mode
         for mode in self.modes:
             self.__db.create_table(table_name=mode, fields=('env_id', int))
 
@@ -208,27 +228,26 @@ class DatabaseManager:
             self.__init_json()
 
         # Index partitions
-        self.index_samples()
+        self.__index_samples()
 
         # Check normalization
         if self.normalize or self.recompute_normalization:
             self.compute_normalization()
-
-    def get_database_path(self) -> Tuple[str, str]:
-
-        return self.__db.get_path()
 
     #########################
     # Json information file #
     #########################
 
     def __init_json(self) -> None:
+        """
+        Initialize the JSON information file.
+        """
 
         # Get the number of samples for each mode
         for table in self.modes:
             self.json_content['nb_samples'][table] = self.__db.nb_lines(table_name=table)
 
-        # Get the fields architecture
+        # Get the fields architectures
         self.json_content['fields'] = {}
         for field in self.__db.get_architecture()['Train']:
             field_name = field.split(' ')[0]
@@ -245,7 +264,7 @@ class DatabaseManager:
 
     def __update_json(self) -> None:
         """
-        Update the JSON info file with the current Database information.
+        Update the JSON information file with the current Database information.
         """
 
         # Overwrite json file
@@ -256,20 +275,20 @@ class DatabaseManager:
     # Database index access #
     #########################
 
-    def index_samples(self) -> None:
+    def __index_samples(self) -> None:
         """
-        Create a new indexing list of samples. Samples are identified by [partition_id, line_id].
+        Create a new indexing list of samples.
         """
 
-        # Create the indices for each sample such as [partition_id, line_id]
-        nb_sample = self.json_content['nb_samples'][self.mode]
-        self.sample_indices = arange(1, nb_sample + 1)
-        # Init current sample position
+        # Create the indexing list
+        self.sample_indices = arange(1, self.json_content['nb_samples'][self.mode] + 1)
         self.sample_id = 0
+
         # Shuffle the indices if required
         if self.shuffle:
             shuffle(self.sample_indices)
 
+    @__check_init
     def add_data(self, data_lines: Optional[List[int]] = None) -> None:
         """
         Manage new lines adding in the Database.
@@ -287,11 +306,12 @@ class DatabaseManager:
 
         # 1.2. Update the normalization coefficients if required
         if self.normalize and self.mode == 'train' and self.pipeline == 'training' and data_lines is not None:
-            self.compute_batch_normalization(data_lines=data_lines)
+            self.__compute_batch_normalization(data_lines=data_lines)
 
         # 1. Update the json file
         self.__update_json()
 
+    @__check_init
     def get_data(self,
                  batch_size: int) -> List[List[int]]:
         """
@@ -302,7 +322,7 @@ class DatabaseManager:
 
         # 1. Check if dataset is loaded and if the current sample is not the last
         if self.sample_id >= len(self.sample_indices):
-            self.index_samples()
+            self.__index_samples()
 
         # 2. Update dataset index and get a batch of data
         idx = self.sample_id
@@ -322,6 +342,7 @@ class DatabaseManager:
         :param mode: Name of the Database mode.
         """
 
+        # TODO: check if the change of this mode really behaves correctly, then turn the mode variable to private
         self.mode = mode
 
     ######################
@@ -333,26 +354,33 @@ class DatabaseManager:
         Compute the mean and the standard deviation of all the training samples for each data field.
         """
 
-        data_to_normalize = self.__db.get_lines(table_name='train',
-                                                fields=list(self.json_content['fields'].keys()),
-                                                batched=True)
-        del data_to_normalize['id']
-        for field_name, data in data_to_normalize.items():
+        # Get the normalization coefficient for each data field
+        for field_name in self.json_content['fields'].keys():
+
+            # Load the data to normalize
+            data = self.__db.get_lines(table_name='train', fields=field_name, batched=True)[field_name]
+
+            # Get the normalization coefficients
             self.json_content['fields'][field_name]['normalize'] = [array(data).mean(), array(data).std()]
+
+        # Update the json information file
         self.__update_json()
 
-    def compute_batch_normalization(self, data_lines: List[int]) -> None:
+    def __compute_batch_normalization(self, data_lines: List[int]) -> None:
         """
         Compute the mean and the standard deviation of the batched samples for each data field.
         """
 
-        data_to_normalize = self.__db.get_lines(table_name='train',
-                                                fields=list(self.json_content['fields'].keys()),
-                                                lines_id=data_lines,
-                                                batched=True)
-        del data_to_normalize['id']
-        for field_name, data in data_to_normalize.items():
+        # Get the normalization coefficient for each data field
+        for field_name in self.json_content['fields'].keys():
+
+            # Load the batch to normalize
+            data = self.__db.get_lines(table_name='train', fields=field_name, lines_id=data_lines, batched=True)[field_name]
+
+            # Get the normalization coefficients
             self.json_content['fields'][field_name]['normalize'] = [array(data).mean(), array(data).std()]
+
+        # Update the json information file
         self.__update_json()
 
     ####################
@@ -374,7 +402,7 @@ class DatabaseManager:
 
     def __str__(self):
 
-        description = "\n"
-        description += f"# {self.__class__.__name__}\n"
-        description += f"    Dataset Repository: {self.database_dir}\n"
-        return description
+        desc = "\n"
+        desc += f"# DATABASE MANAGER\n"
+        desc += f"    Dataset Repository: {self.database_dir}\n"
+        return desc
