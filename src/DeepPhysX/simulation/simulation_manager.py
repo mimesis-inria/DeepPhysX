@@ -133,9 +133,7 @@ class SimulationManager:
         self.__simulation_controller = SimulationController(simulation_class=self.__simulation_class,
                                                             simulation_kwargs=self.__simulation_kwargs,
                                                             manager=self)
-        self.__simulation_controller.create_simulation()
-        if self.use_viewer:
-            self.__simulation_controller.launch_visualization()
+        self.__simulation_controller.create_simulation(use_viewer=self.use_viewer)
 
     def __create_server(self, batch_size: int):
 
@@ -309,9 +307,9 @@ class SimulationManager:
     @__check_init
     def is_viewer_open(self) -> bool:
 
-        if self.__simulation_controller.viewer is None:
+        if self.__simulation_controller.simulation.viewer is None:
             return False
-        return self.__simulation_controller.viewer.is_open
+        return self.__simulation_controller.simulation.viewer.is_open
 
     ###################
     # Manager methods #

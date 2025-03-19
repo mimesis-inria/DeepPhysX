@@ -55,9 +55,7 @@ class TcpIpServer(TcpIpObject):
         self.simulation_manager: Optional[Any] = manager
 
         # Create ViewerBatch
-        self.viewer_batch: Optional[ViewerBatch] = None
-        if use_viewer:
-            self.viewer_batch = ViewerBatch()
+        self.viewer_batch: Optional[ViewerBatch] = ViewerBatch() if use_viewer else None
 
     def message(self, txt: str):
 

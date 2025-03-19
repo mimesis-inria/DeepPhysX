@@ -5,6 +5,13 @@ from numpy import ndarray
 from SimRender.core import Viewer
 from DeepPhysX.database.database_handler import DatabaseHandler, Database
 
+try:
+    import Sofa
+    import Sofa.Simulation
+    from SimRender.sofa import Viewer as SofaViewer
+except ImportError:
+    pass
+
 
 class DPXSimulation:
 
@@ -14,6 +21,7 @@ class DPXSimulation:
         """
 
         self.__controller: SimulationController = kwargs.pop('simulation_controller')
+        self.viewer: Optional[Viewer] = None
 
     @property
     def simulation_id(self) -> int:
@@ -22,10 +30,6 @@ class DPXSimulation:
     @property
     def simulation_nb(self) -> int:
         return self.__controller.simulation_ids[1]
-
-    @property
-    def viewer(self) -> Optional[Viewer]:
-        return self.__controller.viewer
 
     @property
     def compute_training_data(self) -> bool:
@@ -42,14 +46,6 @@ class DPXSimulation:
         """
 
         raise NotImplementedError
-
-    def init(self) -> None:
-        """
-        Initialize the Simulation. Automatically called when Simulation is launched.
-        Not mandatory.
-        """
-
-        pass
 
     def init_database(self) -> None:
         """
@@ -81,9 +77,9 @@ class DPXSimulation:
 
         return self.__controller.load_parameters()
 
-    ########################
+    #######################
     # Simulation behavior #
-    ########################
+    #######################
 
     def step(self) -> None:
         """
@@ -159,14 +155,6 @@ class DPXSimulation:
 
         return self.__controller.get_prediction(**kwargs)
 
-    def update_visualisation(self) -> None:
-        """
-        Triggers the Visualizer update.
-        """
-
-        if self.viewer is not None:
-            self.viewer.render()
-
     def __str__(self):
 
         description = "\n"
@@ -176,6 +164,22 @@ class DPXSimulation:
         # description += f"    Input size:\n"
         # description += f"    Output size:\n"
         return description
+
+
+class SofaSimulation(Sofa.Core.Controller, DPXSimulation):
+
+    def __init__(self, **kwargs):
+
+        Sofa.Core.Controller.__init__(self, **kwargs)
+        # Warning: Define root node before init Environment
+        self.root = Sofa.Core.Node('root')
+        self.root.addObject(self)
+        DPXSimulation.__init__(self, **kwargs)
+        self.viewer: Optional[SofaViewer] = None
+
+    def step(self):
+
+        Sofa.Simulation.animate(self.root, self.root.dt.value)
 
 
 class SimulationController:
@@ -209,9 +213,6 @@ class SimulationController:
         self.compute_training_data: bool = True
         self.update_line: Optional[List[int]] = None
 
-        # Viewer variables
-        self.viewer: Optional[Viewer] = None
-
     @property
     def simulation(self) -> DPXSimulation:
         return self.__simulation
@@ -224,13 +225,32 @@ class SimulationController:
     def database_handler(self) -> DatabaseHandler:
         return self.__database_handler
 
-    def create_simulation(self) -> None:
+    def create_simulation(self, use_viewer: bool, viewer_key: Optional[int] = None) -> None:
 
+        # Create the simulation instance
         self.__simulation: DPXSimulation = self.__simulation_class(**self.__simulation_kwargs,
                                                                    simulation_controller=self)
-
         self.__simulation.create()
-        self.__simulation.init()
+
+        # In case of Sofa simulation, init the root node
+        if isinstance(self.__simulation, SofaSimulation):
+            Sofa.Simulation.initRoot(self.__simulation.root)
+
+        # In case of visualization, launch the viewer
+        if use_viewer:
+
+            # Create the viewer instance
+            if isinstance(self.__simulation, SofaSimulation):
+                viewer = SofaViewer(root_node=self.__simulation.root, sync=False)
+            else:
+                viewer = Viewer(sync=False)
+
+            # Init the visualization in the simulation
+            self.__simulation.viewer = viewer
+            self.__simulation.init_visualization()
+
+            # Launch the viewer (use batch_key in case of multi-simulations)
+            viewer.launch(batch_key=viewer_key)
 
     def connect_to_database(self,
                             database_path: Tuple[str, str],
@@ -281,12 +301,6 @@ class SimulationController:
         fields = [fields] if not isinstance(fields, list) else fields
         self.__database_handler.create_fields(fields=fields)
         self.__required_fields += [f[0] for f in fields]
-
-    def launch_visualization(self, viewer_key: Optional[int] = None):
-
-        self.viewer = Viewer(sync=False)
-        self.__simulation.init_visualization()
-        self.viewer.launch(batch_key=viewer_key)
 
     def set_data(self, **kwargs) -> None:
         """
@@ -440,6 +454,6 @@ class SimulationController:
 
     def close(self):
 
-        if self.viewer is not None:
-            self.viewer.shutdown()
+        if self.__simulation.viewer is not None:
+            self.__simulation.viewer.shutdown()
         self.__simulation.close()

@@ -68,9 +68,7 @@ class TcpIpClient(TcpIpObject):
         viewer_key = None if viewer_key == 'None' else int(viewer_key)
 
         # Initialize the simulation
-        self.simulation_controller.create_simulation()
-        if viewer_key is not None:
-            self.simulation_controller.launch_visualization(viewer_key=viewer_key)
+        self.simulation_controller.create_simulation(use_viewer=viewer_key is not None, viewer_key=viewer_key)
 
         # Initialization done
         self.send_data(data_to_send='done', receiver=self.sock)
