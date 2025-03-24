@@ -27,9 +27,26 @@ class TrainingPipeline:
                  epoch_nb: int = 0,
                  batch_nb: int = 0,
                  batch_size: int = 0,
-                 debug: bool = False,
+                 use_tensorboard: bool = True,
                  save_intermediate_state_every: int = 0):
         """
+        TrainingPipeline implements the main loop that trains a neural network from simulation data.
+        Data can be pre-computed or generated on the fly.
+
+        :param network_manager: Manager for the Network.
+        :param database_manager: Manager for the Database.
+        :param loss_fnc: Loss function to use in the optimization process.
+        :param optimizer: Optimizer used for training.
+        :param optimizer_kwargs: Dict of kwargs to create an instance of the optimizer.
+        :param simulation_manager: Manager for the numerical Simulation.
+        :param new_session: If True, a new repository is created for the session.
+        :param session_dir: Path to the directory that contains the DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
+        :param epoch_nb: Number of epochs to perform.
+        :param batch_nb: Number of batches to use.
+        :param batch_size: Number of samples to produce per batch.
+        :param use_tensorboard: If True, display training curves in tensorboard.
+        :param save_intermediate_state_every: Save the Network state periodically if > 1.
         """
 
         # Create a new session if required
@@ -69,7 +86,7 @@ class TrainingPipeline:
             self.network_manager.link_clients(self.simulation_manager.nb_parallel_env)
 
         # Create a StatsManager
-        self.stats_manager = StatsManager(session=join(self.session_dir, session_name)) if not debug else None
+        self.stats_manager = StatsManager(session=join(self.session_dir, session_name)) if use_tensorboard else None
 
         # Training variables
         self.epoch_nb = epoch_nb
@@ -79,7 +96,6 @@ class TrainingPipeline:
         self.batch_id = 0
         self.nb_samples = batch_nb * batch_size * epoch_nb
         self.loss_dict = None
-        self.debug = debug
 
         # Progressbar
         self.digits = ['{' + f':0{len(str(self.epoch_nb))}d' + '}',
@@ -115,8 +131,6 @@ class TrainingPipeline:
     def execute(self, user_training_loop: Optional[Callable] = None) -> None:
         """
         Launch the training Pipeline.
-        Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
-        more complex Pipeline.
         """
 
         self.__default_training_loop() if user_training_loop is None else user_training_loop()

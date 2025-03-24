@@ -60,15 +60,19 @@ class DataPipeline:
         Launch the data generation Pipeline.
         """
 
+        # Produce the batches
         batch_id = 0
         while batch_id < self.__batch_nb:
 
+            # Get data from simulation and update the data manager
             lines_id = self.simulation_manager.get_data(animate=True)
             self.database_manager.add_data(data_lines=lines_id)
 
+            # Display the progressbar
             batch_id += 1
             self.__progress_bar.print()
 
+        # Close managers
         self.database_manager.close()
         self.simulation_manager.close()
 

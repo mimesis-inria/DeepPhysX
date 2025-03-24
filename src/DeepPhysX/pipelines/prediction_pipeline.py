@@ -24,6 +24,15 @@ class PredictionPipeline:
                  step_nb: int = -1,
                  record: bool = False):
         """
+        PredictionPipeline implements the main loop that uses a Network predictions in the numerical Simulation.
+
+        :param network_manager: Manager for the neural Network.
+        :param simulation_manager: Manager for the numerical Simulation.
+        :param database_manager: Manager for the Database.
+        :param session_dir: Path to the directory that contains the DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
+        :param step_nb: Number of step of predictions tu run (set to -1 for infinite).
+        :param record: Save the produced samples in the Database.
         """
 
         # Define the session repository
@@ -60,8 +69,6 @@ class PredictionPipeline:
     def execute(self) -> None:
         """
         Launch the prediction Pipeline.
-        Each event is already implemented for a basic pipeline but can also be rewritten via inheritance to describe a
-        more complex Pipeline.
         """
 
         while self.step_id < self.step_nb if self.step_nb > 0 else True:
@@ -86,6 +93,7 @@ class PredictionPipeline:
             if self.step_nb < 0 and not self.simulation_manager.is_viewer_open():
                 break
 
+        # Close managers
         self.simulation_manager.close()
         self.database_manager.close()
         self.network_manager.close()
@@ -111,8 +119,15 @@ class SofaPredictionPipeline(Sofa.Core.Controller, PredictionPipeline):
                  record: bool = False,
                  *args, **kwargs):
         """
-        SofaPrediction is a pipeline defining the running process of an artificial neural networks.
-        It provides a highly tunable learning process that can be used with any machine learning library.
+        SofaPredictionPipeline allows to run the main prediction loop in a SOFA GUI.
+
+        :param network_manager: Manager for the neural Network.
+        :param simulation_manager: Manager for the numerical Simulation.
+        :param database_manager: Manager for the Database.
+        :param session_dir: Path to the directory that contains the DeepPhysX session repositories.
+        :param session_name: Name of the current session repository.
+        :param step_nb: Number of step of predictions tu run (set to -1 for infinite).
+        :param record: Save the produced samples in the Database.
         """
 
         Sofa.Core.Controller.__init__(self, name='DPX_Pipeline', *args, **kwargs)
@@ -130,27 +145,31 @@ class SofaPredictionPipeline(Sofa.Core.Controller, PredictionPipeline):
         self.root.addObject(self)
 
     def execute(self) -> None:
+        """
+        Launch the SOFA GUI and the prediction Pipeline.
+        """
 
+        # Launch the GUI
         Sofa.Gui.GUIManager.Init("main", "qglviewer")
         Sofa.Gui.GUIManager.createGUI(self.root, __file__)
         Sofa.Gui.GUIManager.SetDimension(1080, 1080)
         Sofa.Gui.GUIManager.MainLoop(self.root)
         Sofa.Gui.GUIManager.closeGUI()
 
+        # Close managers
         self.simulation_manager.close()
         self.database_manager.close()
         self.network_manager.close()
 
 
     def onAnimateEndEvent(self, event):
+        """
+        Event callback for SOFA.
+        """
 
+        # Get and apply the prediction at each time step.
         if self.step_id < self.step_nb if self.step_nb > 0 else True:
             self.step_id += 1
-            self.data_lines = self.simulation_manager.get_data(animate=False,
-                                                               request_prediction=True,
-                                                               save_data=self.produce_data)
-
-
-
-
-
+            self.simulation_manager.get_data(animate=False,
+                                             request_prediction=True,
+                                             save_data=self.produce_data)
