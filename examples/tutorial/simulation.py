@@ -1,7 +1,7 @@
+from time import sleep, time
 from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
-from time import sleep, time
 
 from DeepPhysX.simulation.dpx_simulation import DPXSimulation
 
@@ -55,8 +55,8 @@ class SpringEnvironment(DPXSimulation):
 
     def init_database(self):
 
-        self.define_fields(fields=[('state', ndarray), ('displacement', ndarray)])
-        # self.define_fields(fields=[('input', ndarray), ('ground_truth', ndarray)])
+        for field_name in ('state', 'displacement'):
+            self.add_data_field(field_name=field_name, field_type=ndarray)
 
     def init_visualization(self):
 
@@ -66,11 +66,7 @@ class SpringEnvironment(DPXSimulation):
         self.viewer.objects.add_mesh(positions=self.mesh_floor.vertices, cells=self.mesh_floor.cells, color='grey')
         self.viewer.objects.add_mesh(positions=self.mesh_wall.vertices, cells=self.mesh_wall.cells, color='grey')
 
-    async def step(self):
-
-        from time import time
-
-        t = time()
+    def step(self):
 
         # Reset the simulation when the max time step is reached
         if self.t >= self.T:
@@ -90,15 +86,13 @@ class SpringEnvironment(DPXSimulation):
             # self.set_data(input=net_input, ground_truth=net_output)
             self.set_data(state=net_input, displacement=net_output)
 
-        # self.mesh_cube.vertices = self.mesh_cube_init + self.X - self.X_rest
+        self.mesh_cube.vertices = self.mesh_cube_init + self.X - self.X_rest
         # self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X,
         #                           coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
         if self.viewer is not None:
             self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
             self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
-            self.update_visualisation()
-
-        # print('t =', round(time() - t, 4))
+            self.viewer.render()
 
 
 class SpringEnvironmentPrediction(SpringEnvironment):
@@ -121,5 +115,5 @@ class SpringEnvironmentPrediction(SpringEnvironment):
         self.mesh_pred.pos([self.X_rest[0] + U, 0.5 * self.cube_size, 0])
         if self.viewer is not None:
             self.viewer.objects.update_mesh(object_id=4, positions=self.mesh_pred.vertices)
-            self.update_visualisation()
+            self.viewer.render()
             sleep(0.01)

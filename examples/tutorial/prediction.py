@@ -10,7 +10,7 @@ from os.path import exists
 from DeepPhysX.pipelines.prediction_pipeline import PredictionPipeline
 from DeepPhysX.simulation.simulation_manager import SimulationManager
 from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.networks.architecture.mlp import MLP
+from DeepPhysX.networks.architectures.mlp import MLP
 from DeepPhysX.networks.network_manager import NetworkManager
 
 # Session imports
