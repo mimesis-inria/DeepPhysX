@@ -45,7 +45,7 @@ class SimulationManager:
         self.__simulation_kwargs = {} if simulation_kwargs is None else simulation_kwargs
 
         # Single Simulation controller variables
-        self.__simulation_controller: Optional[SimulationController] = None
+        self.simulation_controller: Optional[SimulationController] = None
         self.get_data = self.__get_data_from_simulation
         self.dispatch_batch = self.__dispatch_batch_to_simulation
 
@@ -117,7 +117,7 @@ class SimulationManager:
         """
 
         def wrapper(self, *args, **kwargs):
-            if self.__server is None and self.__simulation_controller is None:
+            if self.__server is None and self.simulation_controller is None:
                 raise ValueError(f"[SimulationManager] The manager is not completely initialized; please use one of the "
                                  f"'init_*_pipeline' methods.")
             return foo(self, *args, **kwargs)
@@ -130,10 +130,10 @@ class SimulationManager:
 
     def __create_simulation(self):
 
-        self.__simulation_controller = SimulationController(simulation_class=self.__simulation_class,
-                                                            simulation_kwargs=self.__simulation_kwargs,
-                                                            manager=self)
-        self.__simulation_controller.create_simulation(use_viewer=self.use_viewer)
+        self.simulation_controller = SimulationController(simulation_class=self.__simulation_class,
+                                                          simulation_kwargs=self.__simulation_kwargs,
+                                                          manager=self)
+        self.simulation_controller.create_simulation(use_viewer=self.use_viewer)
 
     def __create_server(self, batch_size: int):
 
@@ -183,8 +183,8 @@ class SimulationManager:
                             database_path: Tuple[str, str],
                             normalize_data: bool):
 
-        if self.__simulation_controller is not None:
-            self.__simulation_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
+        if self.simulation_controller is not None:
+            self.simulation_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
         elif self.__server is not None:
             self.__server.connect_to_database(database_path=database_path, normalize_data=normalize_data)
 
@@ -230,33 +230,33 @@ class SimulationManager:
             update_line = None
             if self.dataset_batch is not None:
                 update_line = self.dataset_batch.pop(0)
-                self.__simulation_controller.trigger_get_data(line_id=update_line)
+                self.simulation_controller.trigger_get_data(line_id=update_line)
 
             # 2. Run the defined number of steps
             if animate:
                 for current_step in range(self.simulations_per_step):
                     # Sub-steps do not produce data
-                    self.__simulation_controller.compute_training_data = current_step == self.simulations_per_step - 1
-                    self.__simulation_controller.simulation.step()
+                    self.simulation_controller.compute_training_data = current_step == self.simulations_per_step - 1
+                    self.simulation_controller.simulation.step()
 
             # 3. Add the produced sample index to the batch if the sample is validated
-            if self.__simulation_controller.simulation.check_sample():
+            if self.simulation_controller.simulation.check_sample():
                 nb_sample += 1
                 # 3.1. The prediction Pipeline triggers a prediction request
                 if request_prediction:
-                    self.__simulation_controller.trigger_prediction()
+                    self.simulation_controller.trigger_prediction()
                 # 3.2. Add the data to the Database
                 if save_data:
                     # Update the line if the sample was given by the database
                     if update_line is None:
-                        new_line = self.__simulation_controller.trigger_send_data()
+                        new_line = self.simulation_controller.trigger_send_data()
                         dataset_lines.append(new_line)
                     # Create a new line otherwise
                     else:
-                        self.__simulation_controller.trigger_update_data(line_id=update_line)
+                        self.simulation_controller.trigger_update_data(line_id=update_line)
                         dataset_lines.append(update_line)
                 # 3.3. Rest the data variables
-                self.__simulation_controller.reset_data()
+                self.simulation_controller.reset_data()
 
         return dataset_lines
 
@@ -307,9 +307,9 @@ class SimulationManager:
     @__check_init
     def is_viewer_open(self) -> bool:
 
-        if self.__simulation_controller.simulation.viewer is None:
+        if self.simulation_controller.simulation.viewer is None:
             return False
-        return self.__simulation_controller.simulation.viewer.is_open
+        return self.simulation_controller.simulation.viewer.is_open
 
     ###################
     # Manager methods #
@@ -325,8 +325,8 @@ class SimulationManager:
             self.__server.close()
 
         # Environment case
-        if self.__simulation_controller is not None:
-            self.__simulation_controller.close()
+        if self.simulation_controller is not None:
+            self.simulation_controller.close()
 
     def __str__(self) -> str:
 
