@@ -6,6 +6,12 @@ from DeepPhysX.database.database_manager import DatabaseManager
 from DeepPhysX.networks.network_manager import NetworkManager
 from DeepPhysX.utils.path import get_session_dir
 
+try:
+    import Sofa
+    import Sofa.Gui
+except ImportError:
+    pass
+
 
 class PredictionPipeline:
 
@@ -13,7 +19,7 @@ class PredictionPipeline:
                  network_manager: NetworkManager,
                  simulation_manager: SimulationManager,
                  database_manager: Optional[DatabaseManager] = None,
-                 session_dir: str = 'session',
+                 session_dir: str = 'sessions',
                  session_name: str = 'training',
                  step_nb: int = -1,
                  record: bool = False):
@@ -91,3 +97,60 @@ class PredictionPipeline:
         description += f"    Session repository: {self.session_dir}\n"
         description += f"   Number of step: {self.step_nb}\n"
         return description
+
+
+class SofaPredictionPipeline(Sofa.Core.Controller, PredictionPipeline):
+
+    def __init__(self,
+                 network_manager: NetworkManager,
+                 simulation_manager: SimulationManager,
+                 database_manager: Optional[DatabaseManager] = None,
+                 session_dir: str = 'sessions',
+                 session_name: str = 'training',
+                 step_nb: int = -1,
+                 record: bool = False,
+                 *args, **kwargs):
+        """
+        SofaPrediction is a pipeline defining the running process of an artificial neural networks.
+        It provides a highly tunable learning process that can be used with any machine learning library.
+        """
+
+        Sofa.Core.Controller.__init__(self, name='DPX_Pipeline', *args, **kwargs)
+        simulation_manager.use_viewer = False
+        PredictionPipeline.__init__(self,
+                                    network_manager=network_manager,
+                                    simulation_manager=simulation_manager,
+                                    database_manager=database_manager,
+                                    session_dir=session_dir,
+                                    session_name=session_name,
+                                    step_nb=step_nb,
+                                    record=record)
+
+        self.root: Sofa.Core.Node = self.simulation_manager.simulation_controller.simulation.root
+        self.root.addObject(self)
+
+    def execute(self) -> None:
+
+        Sofa.Gui.GUIManager.Init("main", "qglviewer")
+        Sofa.Gui.GUIManager.createGUI(self.root, __file__)
+        Sofa.Gui.GUIManager.SetDimension(1080, 1080)
+        Sofa.Gui.GUIManager.MainLoop(self.root)
+        Sofa.Gui.GUIManager.closeGUI()
+
+        self.simulation_manager.close()
+        self.database_manager.close()
+        self.network_manager.close()
+
+
+    def onAnimateEndEvent(self, event):
+
+        if self.step_id < self.step_nb if self.step_nb > 0 else True:
+            self.step_id += 1
+            self.data_lines = self.simulation_manager.get_data(animate=False,
+                                                               request_prediction=True,
+                                                               save_data=self.produce_data)
+
+
+
+
+

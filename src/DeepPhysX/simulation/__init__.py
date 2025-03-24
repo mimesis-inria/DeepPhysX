@@ -1,1 +1,2 @@
 from DeepPhysX.simulation.simulation_manager import SimulationManager
+from DeepPhysX.simulation.dpx_simulation import DPXSimulation, SofaSimulation

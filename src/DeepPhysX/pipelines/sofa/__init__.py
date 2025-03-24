@@ -1,1 +1,0 @@
-from DeepPhysX.pipelines.sofa.sofa_prediction_pipeline import PredictionPipeline

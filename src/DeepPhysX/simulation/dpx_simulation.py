@@ -20,8 +20,8 @@ class DPXSimulation:
         BaseSimulation computes simulated data for the networks and its training process.
         """
 
-        self.__controller: SimulationController = kwargs.pop('simulation_controller')
-        self.viewer: Optional[Viewer] = None
+        self.__controller: Optional[SimulationController] = kwargs.pop('simulation_controller', None)
+        self.viewer: Viewer = None
 
     @property
     def simulation_id(self) -> int:
@@ -175,7 +175,7 @@ class SofaSimulation(Sofa.Core.Controller, DPXSimulation):
         self.root = Sofa.Core.Node('root')
         self.root.addObject(self)
         DPXSimulation.__init__(self, **kwargs)
-        self.viewer: Optional[SofaViewer] = None
+        self.viewer: SofaViewer = None
 
     def step(self):
 
