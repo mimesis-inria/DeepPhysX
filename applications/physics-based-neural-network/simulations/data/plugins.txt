@@ -1,0 +1,11 @@
+Sofa.Component.Constraint.Projective
+Sofa.Component.Engine.Select
+Sofa.Component.Mapping.Linear
+Sofa.Component.MechanicalLoad
+Sofa.Component.StateContainer
+Sofa.Component.Topology.Container.Dynamic
+Sofa.Component.Topology.Container.Grid
+Sofa.Component.Topology.Mapping
+Sofa.Component.Visual
+Sofa.GL.Component.Rendering3D
+SofaCaribou
