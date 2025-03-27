@@ -83,13 +83,15 @@ class TcpIpServer(TcpIpObject):
 
         loop = get_event_loop()
         # Accept clients connections one by one
+        self.clients = [None] * self.nb_client
         for _ in range(self.nb_client):
             # Accept connection
             client, _ = await loop.sock_accept(self.sock)
             # Get the instance ID
             label, client_id = self.receive_labeled_data(sender=client)
             print(f"[{self.name}] Client n°{client_id} connected: {client}")
-            self.clients.append([client_id, client])
+            self.clients[client_id - 1] = [client_id, client]
+            # self.clients.append([client_id, client])
 
     ##########################################################################################
     ##########################################################################################
