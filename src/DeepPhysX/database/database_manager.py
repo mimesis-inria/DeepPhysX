@@ -8,7 +8,7 @@ import json
 from SSD.core import Database
 
 from DeepPhysX.utils.path import copy_dir
-from DeepPhysX.utils.jsonUtils import CustomJSONEncoder
+from DeepPhysX.utils.json_encoder import CustomJSONEncoder
 
 
 class DatabaseManager:
@@ -62,7 +62,9 @@ class DatabaseManager:
     # Init methods #
     ################
 
-    def init_data_pipeline(self, session: str, new_session: bool) -> None:
+    def init_data_pipeline(self,
+                           session: str,
+                           new_session: bool) -> None:
         """
         Init the DatabaseManager for the data generation pipeline.
 
@@ -155,7 +157,9 @@ class DatabaseManager:
         self.__exchange.new(remove_existing=True)
         self.__exchange.create_table(table_name='data')
 
-    def init_prediction_pipeline(self, session: str, produce_data: bool) -> None:
+    def init_prediction_pipeline(self,
+                                 session: str,
+                                 produce_data: bool) -> None:
         """
         Init method for the prediction pipeline.
 
@@ -231,7 +235,7 @@ class DatabaseManager:
         self.__index_samples()
 
         # Check normalization
-        if self.normalize or self.recompute_normalization:
+        if self.normalize and self.recompute_normalization:
             self.compute_normalization()
 
     #########################
@@ -341,7 +345,6 @@ class DatabaseManager:
         :param mode: Name of the Database mode.
         """
 
-        # TODO: check if the change of this mode really behaves correctly, then turn the mode variable to private
         self.mode = mode
 
     ######################

@@ -9,7 +9,8 @@ class DatabaseHandler:
 
     def __init__(self, ):
         """
-        DatabaseHandler allows components to be synchronized with the Database partitions and to read / write data.
+        DatabaseHandler allows components to be synchronized with the Database partitions and to  have a read & write
+        access to data.
         """
 
         # Databases variables
@@ -32,15 +33,19 @@ class DatabaseHandler:
         Initialize the Database access.
 
         :param database_path: Storing Database path.
+        :param normalize_data: If True, data will be normalized.
         """
 
+        # Load the Database that was created in the DatabaseManager
         self.__db = Database(database_dir=database_path[0], database_name=database_path[1]).load()
         self.__exchange_db = Database(database_dir=database_path[0], database_name='temp').load()
 
+        # Load the json file that contains data fields information
         self.__json_file = join(database_path[0], 'dataset.json')
         with open(self.__json_file) as json_file:
             fields = json.load(json_file)['fields']
 
+        # Load the normalization coefficients
         if normalize_data:
             self.do_normalize = True
             self.__normalize = {field: fields[field]['normalize'] for field in fields}
@@ -119,11 +124,8 @@ class DatabaseHandler:
         :param exchange: If True, add data to the exchange Table.
         """
 
-        # Add data in the exchange Database
         if exchange:
             return self.__exchange_db.add_data(table_name='data', data=data)
-
-        # Add data in the storing Database
         return self.__db.add_data(table_name=self.__current_table, data=data)
 
     def add_batch(self, batch: Dict[str, List[Any]]) -> None:
@@ -133,7 +135,7 @@ class DatabaseHandler:
         :param batch: New lines of the Table.
         """
 
-        self.__db.add_batch(table_name='train', batch=batch)
+        self.__db.add_batch(table_name=self.__current_table, batch=batch)
 
     def update(self,
                data: Dict[str, Any],
@@ -149,7 +151,7 @@ class DatabaseHandler:
 
         line_id = line_id[1] if type(line_id) == list else line_id
         if not exchange:
-            self.__db.update(table_name='train', data=data, line_id=line_id)
+            self.__db.update(table_name=self.__current_table, data=data, line_id=line_id)
         else:
             self.__exchange_db.update(table_name='data', data=data, line_id=line_id)
 
@@ -167,16 +169,12 @@ class DatabaseHandler:
 
         line_id = line_id[1] if type(line_id) == list else line_id
         if not exchange:
-            if self.__db.nb_lines(table_name='train') == 0:
+            if self.__db.nb_lines(table_name=self.__current_table) == 0:
                 return {}
-            return self.__db.get_line(table_name='train',
-                                     line_id=line_id,
-                                     fields=fields)
+            return self.__db.get_line(table_name=self.__current_table, line_id=line_id, fields=fields)
         if self.__exchange_db.nb_lines(table_name='data') == 0:
             return {}
-        return self.__exchange_db.get_line(table_name='data',
-                                  line_id=line_id,
-                                  fields=fields)
+        return self.__exchange_db.get_line(table_name='data', line_id=line_id, fields=fields)
 
     def get_batch(self,
                   lines_id: List[int],
@@ -188,10 +186,6 @@ class DatabaseHandler:
         :param fields: Data fields to extract.
         """
 
-        # Get lines of data
-        data = self.__db.get_lines(table_name='train',
-                                   lines_id=lines_id,
-                                   fields=fields,
-                                   batched=True)
+        data = self.__db.get_lines(table_name=self.__current_table, lines_id=lines_id, fields=fields, batched=True)
         del data['id']
         return data

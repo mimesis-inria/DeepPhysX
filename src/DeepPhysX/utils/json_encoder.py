@@ -6,24 +6,25 @@ class CustomJSONEncoder(json.JSONEncoder):
     """
     JSON encoder class.
         Description:
-            Transform description dictionary into a json file
+
     """
 
     indentation_level: int
 
     def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]):
         """
-        Custom JSON encoder with readable indentation.
-
-        :param args:
-        :param kwargs:
+        Custom JSON encoder with readable indentation. Transform description dictionary into a json file.
         """
+
         super().__init__(*args, **kwargs)
         self.indentation_level = 0
 
     @property
     def indent_str(self) -> str:
-        """Generate an indentation string"""
+        """
+        Generate an indentation string
+        """
+
         return " " * self.indentation_level * self.indent
 
     def iterencode(self, o: Iterable, **kwargs: Dict[str, Any]) -> str:
@@ -33,6 +34,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         :param o: Serializable object.
         :return: Return the object "o" encoded with JSON style
         """
+
         return self.encode(o)[1:]
 
     def encode(self, o: Iterable) -> str:
