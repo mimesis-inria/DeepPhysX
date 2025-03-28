@@ -143,6 +143,7 @@ class BaseTraining(BasePipeline):
         Called one at the beginning of each epoch.
         """
 
+        self.set_train()
         self.batch_id = 0
 
     def batch_condition(self) -> bool:
@@ -173,6 +174,23 @@ class BaseTraining(BasePipeline):
             data_lines=self.data_manager.data_lines,
             normalization=self.data_manager.normalization,
             optimize=True)
+
+    def execute_validation(self):
+        self.set_eval()
+        id_batch = 0
+        while id_batch < self.nb_validation_batches:
+            self.validate()
+            id_batch += 1
+
+    def validate(self):
+        """
+        | Pulls data from the manager and run a prediction step.
+        """
+        self.data_manager.get_data(epoch=0)
+        self.loss_dict = self.network_manager.compute_prediction_and_loss(
+            data_lines=self.data_manager.data_lines,
+            normalization=self.data_manager.normalization,
+            optimize=False)
 
     def batch_count(self) -> None:
         """
@@ -210,6 +228,9 @@ class BaseTraining(BasePipeline):
         if self.stats_manager is not None:
             self.stats_manager.add_train_epoch_loss(self.loss_dict['loss'], self.epoch_id)
         self.network_manager.save_network()
+        if self.do_validation:
+            self.execute_validation()
+            self.stats_manager.add_test_loss(self.loss_dict['loss'], self.epoch_id)
 
     def train_end(self) -> None:
         """
@@ -220,6 +241,26 @@ class BaseTraining(BasePipeline):
         self.network_manager.close()
         if self.stats_manager is not None:
             self.stats_manager.close()
+
+    def set_eval(self):
+        # Set DBManager mode, build indices
+        self.data_manager.set_eval()
+        # Set network to eval mode
+        self.network_manager.set_eval()
+        # Connect the handler to the validation partition
+        self.data_manager.connect_handler(self.network_manager.get_database_handler())
+        # Create the links
+        self.network_manager.link_clients(self.data_manager.nb_environment)
+
+    def set_train(self):
+        # Set DBManager mode, build indices
+        self.data_manager.set_train()
+        # Set network to train mode
+        self.network_manager.set_train()
+        # Connect the handler to the training partition
+        self.data_manager.connect_handler(self.network_manager.get_database_handler())
+        # Create the links
+        self.network_manager.link_clients(self.data_manager.nb_environment)
 
     def save_info_file(self) -> None:
         """

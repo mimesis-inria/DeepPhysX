@@ -92,7 +92,8 @@ class DatabaseManager:
                     self.create_partition()
                 # Complete a Database in a new session --> copy and load the existing directory
                 else:
-                    copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
+                    copy_dir(src_dir=database_config.existing_dir, dest_dir=session,
+                             sub_folders='dataset')
                     self.load_directory(rename_partitions=True)
             # Complete a Database in the same session --> load the directory
             else:
@@ -111,7 +112,8 @@ class DatabaseManager:
                         self.create_partition()
                     # Complete a Database in a new session --> copy and load the existing directory
                     else:
-                        copy_dir(src_dir=database_config.existing_dir, dest_dir=session, sub_folders='dataset')
+                        copy_dir(src_dir=database_config.existing_dir, dest_dir=session,
+                                 sub_folders='dataset')
                         self.load_directory()
                 # Complete a Database in the same directory --> load the directory
                 else:
@@ -285,8 +287,8 @@ class DatabaseManager:
 
         :param mode: Name of the Database mode.
         """
-
-        pass
+        self.mode = mode
+        self.index_samples()
 
     ##########################################################################################
     ##########################################################################################
@@ -416,6 +418,7 @@ class DatabaseManager:
         Create a new indexing list of samples. Samples are identified by [partition_id, line_id].
         """
 
+        self.sample_indices = empty((0, 2), dtype=int)
         # Create the indices for each sample such as [partition_id, line_id]
         for i, nb_sample in enumerate(self.json_content['nb_samples'][self.mode]):
             partition_indices = empty((nb_sample, 2), dtype=int)
@@ -507,7 +510,7 @@ class DatabaseManager:
         for field in self.json_content['data_shape']:
             table_name, field_name = field.split('.')
             fields += [field_name] if table_name == 'Training' else []
-        normalization = {field: [0., 0.] for field in fields}
+        normalization = {field: [0., 1.] for field in fields}
 
         # 2. Compute the mean of samples for each field
         means = {field: [] for field in fields}
@@ -606,6 +609,12 @@ class DatabaseManager:
     #                                     Manager behavior                                   #
     ##########################################################################################
     ##########################################################################################
+
+    def set_eval(self):
+        self.change_mode('validation')
+
+    def set_train(self):
+        self.change_mode('training')
 
     def close(self):
         """
