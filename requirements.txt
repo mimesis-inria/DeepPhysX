@@ -3,3 +3,4 @@ SimulationSimpleDatabase
 tensorboard
 pyDataverse
 torch
+yaml
