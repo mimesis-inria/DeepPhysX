@@ -18,8 +18,7 @@ class UNet(Module):
                  two_sublayers: bool = True,
                  border_mode: str = 'valid',
                  skip_merge: bool = False,
-                 data_scale: float = 1.
-                 ):
+                 data_scale: float = 1.):
         """
         """
 
@@ -74,7 +73,7 @@ class UNet(Module):
                                                                         kernel_size=final_kernel_size)
 
         # Data transform config
-        self.input_size: List[int] = input_size
+        self.input_size: List[int] = [int(s) for s in input_size]
         self.nb_steps: int = nb_steps
         self.nb_output_channels: int = nb_output_channels
         self.nb_input_channels: int = nb_input_channels
@@ -116,8 +115,7 @@ class UNet(Module):
         pred = self.finalLayer(x)
 
         # TRANSFORMS AFTER PREDICTION
-        pred = self.transform_before_loss(data=pred)
-        pred = self.transform_before_apply(data=pred)
+        pred = self.transform_after_prediction(data=pred)
 
         return pred
 
@@ -135,35 +133,14 @@ class UNet(Module):
             self.compute_pad_widths(transformed_shape)
 
         # Apply padding
-        data_in = pad(data, self.pad_widths, mode='constant')
+        data = pad(data, self.pad_widths, mode='constant')
         return data
 
-    def transform_before_loss(self, data: Tensor) -> Tensor:
-        """
-        """
+    def transform_after_prediction(self, data: Tensor) -> Tensor:
 
-        # Transform ground truth
-        # Transform tensor shape, apply scale
-        # if data_opt is not None:
-        #     data_gt = data_opt['ground_truth']
-        #     data_gt = reshape(data_gt,
-        #                       (-1, self.input_size[2], self.input_size[1], self.input_size[0], self.nb_output_channels))
-        #     data_gt = self.data_scale * data_gt
-        #     data_opt['ground_truth'] = data_gt
-
-        # Transform prediction
-        # Apply inverse padding, permute
         data = pad(data, self.inverse_pad_widths)
         data = data.permute(0, 2, 3, 4, 1)
-
-        return data
-
-    def transform_before_apply(self, data: Tensor) -> Tensor:
-        """
-        """
-
-        # Rescale prediction
-        data = data / self.data_scale
+        data = data.view((-1, self.input_size[0] * self.input_size[1] * self.input_size[2], self.nb_output_channels))
         return data
 
     def compute_pad_widths(self, desired_shape: List[int]) -> None:
@@ -302,9 +279,6 @@ class EncoderDecoder:
 
     def execute_sequential(self) -> Sequential:
         return Sequential(*[*self.encoder, *self.decoder])
-
-
-
 
 
 def crop_slices(shape1: List[int], shape2: List[int]) -> List[slice]:

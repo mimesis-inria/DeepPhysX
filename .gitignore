@@ -26,8 +26,6 @@ debug/
 *.pdf
 *.pth
 *.csv
-*.npy
-*.obj
 *.vtk
 *.ini
 *.json

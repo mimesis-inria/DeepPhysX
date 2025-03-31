@@ -49,7 +49,10 @@ class BeamPrediction(BeamTraining):
 
     def apply_prediction(self, prediction: Dict[str, np.ndarray]):
 
-        displacement = prediction['displacement'][0]
+        # Get the computed displacement
+        displacement = prediction['displacement']
+
+        # Update the MO and the OGL model (otherwise the update with SimRender will be displayed at next time step)
         m_state = self.root.net.getObject('GridMO')
         m_state.position.value = m_state.rest_position.value + displacement
         ogl_model = self.root.net.visual.getObject('OGL')

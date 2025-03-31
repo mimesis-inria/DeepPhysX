@@ -334,11 +334,8 @@ class SimulationController:
             self.__data = kwargs
             self.__data['env_id'] = self.__simulation_id
 
-    def get_training_data(self) -> Dict[str, ndarray]:
-        return self.__sample_training
-
-    def get_additional_data(self) -> Dict[str, ndarray]:
-        return self.__sample_additional
+    def get_data(self):
+        return self.__data
 
     def get_prediction(self, **kwargs) -> Dict[str, ndarray]:
         """
@@ -350,8 +347,8 @@ class SimulationController:
         if first_get:
             self.__first_get = False
             if not self.__manager.allow_prediction_requests:
-                raise ValueError(f"[{self.__simulation.name}] Prediction request is not available in the Data "
-                                 f"Generation pipeline.")
+                raise ValueError("[Simulation] Prediction request is not available in the Data "
+                                 "Generation pipeline.")
 
         # 2. Check training data
         default_fields = {'id', 'env_id'}
@@ -365,7 +362,7 @@ class SimulationController:
         if len((default_fields_set_by_user := user_fields - (user_fields - default_fields))) > 0:
             if first_get:
                 self.__first_get = False
-                print(f"[{self.__simulation.name}] WARNING: The fields {default_fields_set_by_user} are already "
+                print(f"[Simulation] WARNING: The fields {default_fields_set_by_user} are already "
                       f"default fields in the Database, please choose another name (default fields: {default_fields}).")
             for field in default_fields_set_by_user:
                 kwargs.pop(field)
@@ -373,7 +370,7 @@ class SimulationController:
 
         # 2.2. Check that the fields defined by the user are in the Database
         if len((non_existing_fields := user_fields - set(self.__prediction_fields))) > 0:
-            raise ValueError(f"[{self.__simulation.name}] The fields {non_existing_fields} are not in the training "
+            raise ValueError(f"[Simulation] The fields {non_existing_fields} are not in the training "
                              f"Database (required fields: {set(self.__prediction_fields)}).")
 
         # 2.3. Check that the required fields are all defined
@@ -390,7 +387,7 @@ class SimulationController:
         # 3.3. Receive the prediction data
         data_prediction = self.__database_handler.get_data(exchange=True, line_id=self.__simulation_id)
         data_prediction.pop('id')
-        return data_prediction
+        return {key: value[0] for key, value in data_prediction.items()}
 
     def trigger_prediction(self) -> None:
         """

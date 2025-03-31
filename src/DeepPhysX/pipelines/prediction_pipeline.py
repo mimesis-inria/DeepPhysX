@@ -161,7 +161,6 @@ class SofaPredictionPipeline(Sofa.Core.Controller, PredictionPipeline):
         self.database_manager.close()
         self.network_manager.close()
 
-
     def onAnimateEndEvent(self, event):
         """
         Event callback for SOFA.
