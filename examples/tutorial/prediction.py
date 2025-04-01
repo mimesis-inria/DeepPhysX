@@ -1,10 +1,5 @@
-"""
-prediction.py
-Run the pipeline BaseRunner to check the predictions of the trained networks.
-"""
-
 # Python related imports
-from os.path import exists
+from os.path import exists, join
 
 # DeepPhysX related imports
 from DeepPhysX.pipelines.prediction_pipeline import PredictionPipeline
@@ -19,34 +14,28 @@ from simulation import SpringEnvironmentPrediction
 
 if __name__ == '__main__':
 
-    session = 'sessions/offline_training'
-    if not exists(session):
-        session = 'sessions/online_training'
-        if not exists(session):
-            quit(print("Trained networks required. Run a training script first."))
+    if not exists(join('sessions', 'training')):
+        raise FileNotFoundError('You must run the "training.py" pipeline first.')
 
-    # Environment configuration
+    # Create the simulation manager
     simulation_manager = SimulationManager(simulation_class=SpringEnvironmentPrediction,
                                            use_viewer=True)
 
-    # Dataset configuration with the path to the existing Dataset
+    # Create the database manager
     database_manager = DatabaseManager(normalize=True)
 
-    # Fully Connected configuration (the number of neurones on the first and last layer is defined by the total amount
-    # of parameters in the input and the output vectors respectively)
+    # Create the neural network manager
     network_manager = NetworkManager(network_architecture=MLP,
                                      network_kwargs={'dim_layers': [5, 5, 5, 1],
                                                      'out_shape': (1,)},
                                      data_forward_fields='state',
                                      data_backward_fields='displacement')
 
-    # Create DataGenerator
+    # Launch the prediction pipeline
     pipeline = PredictionPipeline(simulation_manager=simulation_manager,
                                   database_manager=database_manager,
                                   network_manager=network_manager,
                                   session_dir='sessions',
-                                  session_name=session.split('/')[1],
+                                  session_name='training',
                                   step_nb=-1)
-
-    # Launch the training session
     pipeline.execute()

@@ -1,4 +1,4 @@
-from time import sleep, time
+from time import sleep
 from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
@@ -9,6 +9,10 @@ from DeepPhysX.simulation.dpx_simulation import DPXSimulation
 class SpringEnvironment(DPXSimulation):
 
     def __init__(self, **kwargs):
+        """
+        The numerical simulation of the scenario in a DeepPhysX compatible implementation.
+        This class is used for the data generation pipeline.
+        """
 
         DPXSimulation.__init__(self, **kwargs)
 
@@ -42,6 +46,9 @@ class SpringEnvironment(DPXSimulation):
         self.mesh_wall = Box(pos=[-0.02, 0.02, 0., 2 * self.cube_size, -self.cube_size, self.cube_size])
 
     def create(self):
+        """
+        Create the Simulation. Automatically called when the simulation is launched.
+        """
 
         # Define random parameters
         self.spring_stiffness = uniform(10., 50.)
@@ -54,11 +61,18 @@ class SpringEnvironment(DPXSimulation):
         self.t = 0.
 
     def init_database(self):
+        """
+        Define the fields of the training database. Automatically called when Simulation is launched.
+        """
 
+        # Define the training data fields 'state' and 'displacement'
         for field_name in ('state', 'displacement'):
             self.add_data_field(field_name=field_name, field_type=ndarray)
 
     def init_visualization(self):
+        """
+        Define the 3D objects to render in the viewer. Automatically called when Simulation is launched.
+        """
 
         # Add the meshes to the rendering window
         self.viewer.objects.add_mesh(positions=self.mesh_cube.vertices, cells=self.mesh_cube.cells, color='green7')
@@ -67,6 +81,9 @@ class SpringEnvironment(DPXSimulation):
         self.viewer.objects.add_mesh(positions=self.mesh_wall.vertices, cells=self.mesh_wall.cells, color='grey')
 
     def step(self):
+        """
+        Compute a time step of the numerical simulation. Automatically called when a data sample is requested.
+        """
 
         # Reset the simulation when the max time step is reached
         if self.t >= self.T:
@@ -83,12 +100,11 @@ class SpringEnvironment(DPXSimulation):
 
         # Set the training data
         if self.compute_training_data:
-            # self.set_data(input=net_input, ground_truth=net_output)
             self.set_data(state=net_input, displacement=net_output)
 
         self.mesh_cube.vertices = self.mesh_cube_init + self.X - self.X_rest
-        # self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X,
-        #                           coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
+        self.mesh_spring = Spring(start_pt=[0., 0.5 * self.cube_size, 0.], end_pt=self.X,
+                                  coils=int(15 * self.spring_length), r1=0.05, thickness=0.01)
         if self.viewer is not None:
             self.viewer.objects.update_mesh(object_id=0, positions=self.mesh_cube.vertices)
             self.viewer.objects.update_mesh(object_id=1, positions=self.mesh_spring.vertices)
@@ -98,20 +114,35 @@ class SpringEnvironment(DPXSimulation):
 class SpringEnvironmentPrediction(SpringEnvironment):
 
     def __init__(self, **kwargs):
+        """
+        The numerical simulation of the scenario in a DeepPhysX compatible implementation.
+        This class is used for the prediction pipeline.
+        """
 
         SpringEnvironment.__init__(self, **kwargs)
 
+        # Add a mesh to apply the predictions of the network and compare with the real solution
         self.mesh_pred = Cube(pos=self.X_rest, side=self.cube_size).clean()
 
     def init_visualization(self):
+        """
+        Define the 3D objects to render in the viewer. Automatically called when Simulation is launched.
+        """
 
         SpringEnvironment.init_visualization(self)
         self.viewer.objects.add_mesh(positions=self.mesh_pred.vertices, cells=self.mesh_pred.cells, color='blue',
                                      wireframe=True, line_width=5)
 
     def apply_prediction(self, prediction):
+        """
+        Apply networks prediction in the numerical simulation. Automatically called when the prediction is sent to the
+        simulation.
+        """
 
-        U = prediction['displacement'][0][0]
+        # Get the data field 'displacement' produced by the network
+        U = prediction['displacement'][0]
+
+        # Update the cube position
         self.mesh_pred.pos([self.X_rest[0] + U, 0.5 * self.cube_size, 0])
         if self.viewer is not None:
             self.viewer.objects.update_mesh(object_id=4, positions=self.mesh_pred.vertices)
