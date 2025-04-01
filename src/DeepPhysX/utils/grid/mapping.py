@@ -14,7 +14,6 @@ class GridMapping:
         :param slave_positions: Array of positions of the slave mesh.
         """
 
-        # Clone meshes
         master_points = np.array(master_positions)
         master_cells = np.array(master_cells)
         slave_points = np.array(slave_positions)
