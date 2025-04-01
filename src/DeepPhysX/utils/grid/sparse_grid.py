@@ -9,6 +9,21 @@ except ImportError:
     pass
 
 
+def get_grid_resolution(grid_min: ndarray,
+                        grid_max: ndarray,
+                        cell_size: float):
+    """
+    Compute the grid resolution with hexahedron cells.
+
+    :param grid_min: Min corner of the grid.
+    :param grid_max: Max corner of the grid.
+    :param cell_size: Individual cell size in % of the total grid size.
+    """
+
+    size = abs(grid_max - grid_min)
+    return [int(s / (cell_size * size.min())) + 1 for s in size]
+
+
 def create_sparse_grid(mesh_file: str,
                        scale: float,
                        cell_size: float):

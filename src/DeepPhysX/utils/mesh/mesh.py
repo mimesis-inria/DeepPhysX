@@ -10,3 +10,11 @@ def find_center(mesh_file: str, scale: float):
     """
 
     return Mesh(mesh_file).scale(scale).center_of_mass()
+
+def get_bbox(mesh_file: str, scale: float):
+    """
+    Get the bounding box of a mesh.
+    """
+
+    bounds = Mesh(mesh_file).scale(scale).bounds()
+    return bounds[[0, 2, 4]], bounds[[1, 3, 5]]
