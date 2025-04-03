@@ -23,6 +23,24 @@ def get_grid_resolution(grid_min: ndarray,
     size = abs(grid_max - grid_min)
     return [int(s / (cell_size * size.min())) + 1 for s in size]
 
+def get_regular_grid(grid_min: ndarray,
+                     grid_max: ndarray,
+                     grid_res: ndarray) -> Tuple[ndarray, ndarray]:
+    """
+    Get a regular grid topology from grid parameters.
+
+    :param grid_min: Min corner of the grid.
+    :param grid_max: Max corner of the grid.
+    :param grid_res: Spatial resolution of the grid.
+    :return: Tuple of 2 arrays containing the position and the quads of the grid.
+    """
+
+    # Create a RegularGrid topology
+    node = Sofa.Core.Node('root')
+    node.addObject('RequiredPlugin', pluginName='Sofa.Component.Topology.Container.Grid')
+    regular_grid = node.addObject('RegularGridTopology', n=grid_res, min=grid_min, max=grid_max)
+    node.init()
+    return regular_grid.position.value, regular_grid.quads.value
 
 def create_sparse_grid(mesh_file: str,
                        scale: float,

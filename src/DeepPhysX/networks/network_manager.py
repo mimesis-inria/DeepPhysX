@@ -297,7 +297,7 @@ class NetworkManager:
 
         # 1. Normalize the batch of data
         normalization = self.__db_handler.normalization
-        sample = self.__db_handler.get_data(exchange=True, line_id=instance_id)
+        sample = self.__db_handler.get_data(exchange=True, line_id=instance_id, fields=self.data_forward_fields)
         del sample['id']
         for field in sample.keys():
             sample[field] = array([sample[field]])
@@ -306,8 +306,7 @@ class NetworkManager:
             sample[field] = self.__network.to_torch(tensor=sample[field], grad=False)
 
         # 2. Compute prediction
-        inp = (sample[field_name] for field_name in self.data_forward_fields)
-        net_predict = self.__network.predict(*inp)
+        net_predict = self.__network.predict(*(sample[field_name] for field_name in self.data_forward_fields))
         net_predict = net_predict if isinstance(net_predict, tuple) else (net_predict,)
 
         # 3. Return the prediction

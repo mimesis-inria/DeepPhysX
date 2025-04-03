@@ -302,7 +302,6 @@ class SimulationManager:
     def get_prediction(self, instance_id: int):
 
         self.__network_manager.get_prediction(instance_id=instance_id)
-        # self.__network_manager.compute_online_prediction(instance_id=instance_id)
 
     @__check_init
     def is_viewer_open(self) -> bool:

@@ -211,7 +211,6 @@ class SimulationController:
         self.__required_fields: List[str] = []
         self.__prediction_fields: List[str] = []
         self.compute_training_data: bool = True
-        self.update_line: Optional[List[int]] = None
 
     @property
     def simulation(self) -> DPXSimulation:
@@ -429,16 +428,8 @@ class SimulationController:
         Get the training data and the additional data from their respective Databases.
         """
 
-        self.update_line = line_id
-
-        # Get Database training sample
-        self.__sample_training = self.__database_handler.get_data(table_name='Training', line_id=line_id)
-        self.set_training_data(**self.__sample_training)
-
-        # Get Database additional sample
-        self.__sample_additional = self.__database_handler.get_line(table_name='Additional', line_id=line_id)
-        self.set_additional_data(**self.__sample_additional)
-        self.__sample_additional = None if len(self.__sample_training) == 1 else self.__sample_training
+        self.__data = self.__database_handler.get_data(line_id=line_id)
+        self.__data['env_id'] = self.__simulation_id
 
     def reset_data(self) -> None:
         """
@@ -446,8 +437,6 @@ class SimulationController:
         """
 
         self.__data = {}
-        self.__sample = None
-        self.update_line = None
 
     def close(self):
 
