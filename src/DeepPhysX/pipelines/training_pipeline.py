@@ -83,7 +83,7 @@ class TrainingPipeline:
         self.network_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                  normalize_data=self.database_manager.normalize)
         if self.simulation_manager is not None:
-            self.network_manager.link_clients(self.simulation_manager.nb_parallel_env)
+            self.simulation_manager.connect_to_network_manager(network_manager=self.network_manager)
 
         # Create a StatsManager
         self.stats_manager = StatsManager(session=join(self.session_dir, session_name)) if use_tensorboard else None
@@ -140,7 +140,10 @@ class TrainingPipeline:
                 manager.close()
 
 
-    def __default_training_loop(self):
+    def __default_training_loop(self) -> None:
+        """
+        Default training loop if no training function was set by user.
+        """
 
         # Epoch condition
         while self.epoch_id < self.epoch_nb:
@@ -173,10 +176,10 @@ class TrainingPipeline:
                                 (self.epoch_id == 0 or not self.simulation_manager.only_first_epoch):
                             self.simulation_manager.dispatch_batch(data_lines=self.data_lines,
                                                                    animate=True)
-                        # # Environment is no longer used
-                        # else:
-                        #     self.simulation_manager.close()
-                        #     self.simulation_manager = None
+                        # Environment is no longer used
+                        else:
+                            self.simulation_manager.close()
+                            self.simulation_manager = None
 
                 # Optimize
                 batch_fwd, batch_bwd = self.network_manager.get_data(lines_id=self.data_lines)
@@ -189,11 +192,11 @@ class TrainingPipeline:
                 if self.stats_manager is not None:
                     self.stats_manager.add_train_batch_loss(loss,
                                                             self.epoch_id * self.batch_nb + self.batch_id)
-                    # for key in self.loss_dict.keys():
-                    #     if key != 'loss':
-                    #         self.stats_manager.add_custom_scalar(tag=key,
-                    #                                              value=self.loss_dict[key],
-                    #                                              count=self.epoch_id * self.batch_nb + self.batch_id)
+                    for key in self.loss_dict.keys():
+                        if key != 'loss':
+                            self.stats_manager.add_custom_scalar(tag=key,
+                                                                 value=self.loss_dict[key],
+                                                                 count=self.epoch_id * self.batch_nb + self.batch_id)
 
             # Epoch end
             self.epoch_id += 1

@@ -3,13 +3,13 @@ from socket import socket
 from numpy import ndarray
 
 from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
-from DeepPhysX.simulation.dpx_simulation import DPXSimulation, SimulationController
+from DeepPhysX.simulation.simulation_controller import Simulation, SimulationController
 
 
 class TcpIpClient(TcpIpObject):
 
     def __init__(self,
-                 simulation: Type[DPXSimulation],
+                 simulation: Type[Simulation],
                  ip_address: str = 'localhost',
                  port: int = 10000,
                  instance_id: int = 0,

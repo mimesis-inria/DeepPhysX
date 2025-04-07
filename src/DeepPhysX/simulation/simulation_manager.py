@@ -7,19 +7,17 @@ from subprocess import run
 
 from DeepPhysX.simulation.multiprocess.tcpip_server import TcpIpServer
 from DeepPhysX.networks.network_manager import NetworkManager
-from DeepPhysX.database.database_manager import DatabaseManager
-from DeepPhysX.simulation.dpx_simulation import DPXSimulation, SimulationController
+from DeepPhysX.simulation.simulation_controller import Simulation, SimulationController
 
 
 
 class SimulationManager:
 
     def __init__(self,
-                 simulation_class: Type[DPXSimulation],
+                 simulation_class: Type[Simulation],
                  simulation_kwargs: Optional[Dict[str, Any]] = None,
                  nb_parallel_env: int = 1,
                  simulations_per_step: int = 1,
-                 max_wrong_samples_per_step: int = 10,
                  load_samples: bool = False,
                  only_first_epoch: bool = True,
                  always_produce: bool = False,
@@ -32,10 +30,10 @@ class SimulationManager:
         :param simulation_kwargs: Dict of kwargs to create an instance of the numerical simulation.
         :param nb_parallel_env: Number of numerical simulations to run in parallel.
         :param simulations_per_step: Number of simulation steps to compute before producing a data sample.
-        :param max_wrong_samples_per_step:
-        :param load_samples:
-        :param only_first_epoch:
-        :param always_produce:
+        :param load_samples: If True, samples should be loaded from an existing database.
+        :param only_first_epoch: If True, the simulation produces samples only during the first epoch of the online
+        training pipeline.
+        :param always_produce: If True, the simulation produces samples during the whole training pipeline.
         :param use_viewer: If True, the viewer will be displayed.
         """
 
@@ -59,7 +57,6 @@ class SimulationManager:
         self.load_samples: bool = load_samples
         self.always_produce: bool = always_produce
         self.simulations_per_step: int = simulations_per_step
-        self.max_wrong_samples_per_step: int = max_wrong_samples_per_step
         self.dataset_batch: Optional[List[List[int]]] = None
         self.use_viewer: bool = use_viewer
         self.nb_parallel_env = min(max(nb_parallel_env, 1), cpu_count())
@@ -67,7 +64,6 @@ class SimulationManager:
 
         # Manager variables
         self.__network_manager: Optional[NetworkManager] = None
-        self.__database_manager: Optional[DatabaseManager] = None
 
     ################
     # Init methods #
@@ -128,18 +124,28 @@ class SimulationManager:
     # Controller create methods #
     #############################
 
-    def __create_simulation(self):
+    def __create_simulation(self) -> None:
+        """
+        Create the simulation controller that handles the simulation instance.
+        """
 
         self.simulation_controller = SimulationController(simulation_class=self.__simulation_class,
                                                           simulation_kwargs=self.__simulation_kwargs,
                                                           manager=self)
         self.simulation_controller.create_simulation(use_viewer=self.use_viewer)
 
-    def __create_server(self, batch_size: int):
+    def __create_server(self, batch_size: int) -> None:
+        """
+        Create the server that handles the parallel simulation controllers.
+
+        :param batch_size: Number of samples to produce per batch of data.
+        """
 
         # Create server
-        self.__server = TcpIpServer(nb_client=self.nb_parallel_env, batch_size=batch_size,
-                                    manager=self, use_viewer=self.use_viewer)
+        self.__server = TcpIpServer(nb_client=self.nb_parallel_env,
+                                    batch_size=batch_size,
+                                    manager=self,
+                                    use_viewer=self.use_viewer)
         server_thread = Thread(target=self.__start_server)
         server_thread.start()
 
@@ -171,7 +177,10 @@ class SimulationManager:
         :param idx: Index of client.
         """
 
-        script = join(dirname(modules[DPXSimulation.__module__].__file__), 'multiprocess', 'launcher.py')
+        # Get the launcher python script
+        script = join(dirname(modules[Simulation.__module__].__file__), 'multiprocess', 'launcher.py')
+
+        # Run a new python process to launch the client
         run([executable, script, self.__simulation_file, self.__simulation_class.__name__,
              self.__server.ip_address, str(self.__server.port), str(idx), str(self.nb_parallel_env)])
 
@@ -181,18 +190,28 @@ class SimulationManager:
 
     def connect_to_database(self,
                             database_path: Tuple[str, str],
-                            normalize_data: bool):
+                            normalize_data: bool) -> None:
+        """
+        Connect the SimulationManager to the Database.
+
+        :param database_path: Path of the Database to connect to.
+        :param normalize_data: If True, data should be normalized.
+        """
 
         if self.simulation_controller is not None:
             self.simulation_controller.connect_to_database(database_path=database_path, normalize_data=normalize_data)
         elif self.__server is not None:
             self.__server.connect_to_database(database_path=database_path, normalize_data=normalize_data)
 
-    def connect_to_network_manager(self, network_manager):
-        self.__network_manager = network_manager
+    def connect_to_network_manager(self, network_manager: NetworkManager) -> None:
+        """
+        Connect the SimulationManager to the NetworkManager for direct prediction requests.
 
-    def connect_to_database_manager(self, database_manager):
-        self.__database_manager = database_manager
+        :param network_manager: The network manager to use.
+        """
+
+        self.__network_manager = network_manager
+        self.__network_manager.link_clients(self.nb_parallel_env)
 
     #########################
     # Simulation management #
@@ -299,12 +318,18 @@ class SimulationManager:
                                         request_prediction=request_prediction)
 
     @__check_init
-    def get_prediction(self, instance_id: int):
+    def get_prediction(self, instance_id: int) -> None:
+        """
+        Direct prediction request from the SimulationManager to the NetworkManager.
+        """
 
-        self.__network_manager.get_prediction(instance_id=instance_id)
+        self.__network_manager.get_prediction_from_simulation(instance_id=instance_id)
 
     @__check_init
     def is_viewer_open(self) -> bool:
+        """
+        Check if the viewer window is still opened.
+        """
 
         if self.simulation_controller.simulation.viewer is None:
             return False

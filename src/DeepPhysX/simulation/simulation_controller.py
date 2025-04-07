@@ -1,9 +1,8 @@
 from typing import Type, Tuple, Dict, Any, Union, List, Optional
-from os.path import isfile, join
 from numpy import ndarray
 
 from SimRender.core import Viewer
-from DeepPhysX.database.database_handler import DatabaseHandler, Database
+from DeepPhysX.database.database_controller import DatabaseController
 
 try:
     import Sofa
@@ -13,26 +12,29 @@ except ImportError:
     pass
 
 
-class DPXSimulation:
+class Simulation:
 
     def __init__(self, **kwargs):
         """
-        BaseSimulation computes simulated data for the networks and its training process.
+        Simulation computes simulated data for the networks and its training process.
         """
 
         self.__controller: Optional[SimulationController] = kwargs.pop('simulation_controller', None)
-        self.viewer: Viewer = None
+        self.viewer: Optional[Viewer] = None
 
     @property
     def simulation_id(self) -> int:
+
         return self.__controller.simulation_ids[0]
 
     @property
     def simulation_nb(self) -> int:
+
         return self.__controller.simulation_ids[1]
 
     @property
     def compute_training_data(self) -> bool:
+
         return self.__controller.compute_training_data
 
     ###################
@@ -63,20 +65,6 @@ class DPXSimulation:
 
         pass
 
-    def save_parameters(self, **kwargs) -> None:
-        """
-        Save a set of parameters in the Database.
-        """
-
-        self.__controller.save_parameters(**kwargs)
-
-    def load_parameters(self) -> Dict[str, Any]:
-        """
-        Load a set of parameters from the Database.
-        """
-
-        return self.__controller.load_parameters()
-
     #######################
     # Simulation behavior #
     #######################
@@ -93,8 +81,6 @@ class DPXSimulation:
         """
         Check if the current produced sample is usable for training.
         Not mandatory.
-
-        :return: Current data can be used or not
         """
 
         return True
@@ -121,7 +107,7 @@ class DPXSimulation:
     # Data samples #
     ################
 
-    def add_data_field(self, field_name: str, field_type: Type):
+    def add_data_field(self, field_name: str, field_type: Type) -> None:
         """
         Add a new data field in the Database.
 
@@ -140,6 +126,7 @@ class DPXSimulation:
 
     @property
     def data(self) -> Dict[str, ndarray]:
+
         return self.__controller.get_data()
 
     ############
@@ -149,35 +136,29 @@ class DPXSimulation:
     def get_prediction(self, **kwargs) -> Dict[str, ndarray]:
         """
         Request a prediction from networks.
-
-        :return: networks prediction.
         """
 
         return self.__controller.get_prediction(**kwargs)
 
-    def __str__(self):
 
-        description = "\n"
-        description += f"  Simulation\n"
-        # description += f"    Name: {self.name} n°{self.simulation_id}\n"
-        # description += f"    Comments:\n"
-        # description += f"    Input size:\n"
-        # description += f"    Output size:\n"
-        return description
-
-
-class SofaSimulation(Sofa.Core.Controller, DPXSimulation):
+class SofaSimulation(Sofa.Core.Controller, Simulation):
 
     def __init__(self, **kwargs):
+        """
+        SofaSimulation computes simulated data for the networks and its training process using the Sofa framework.
+        """
 
         Sofa.Core.Controller.__init__(self, **kwargs)
         # Warning: Define root node before init Environment
         self.root = Sofa.Core.Node('root')
         self.root.addObject(self)
-        DPXSimulation.__init__(self, **kwargs)
-        self.viewer: SofaViewer = None
+        Simulation.__init__(self, **kwargs)
+        self.viewer: Optional[SofaViewer] = None
 
-    def step(self):
+    def step(self) -> None:
+        """
+        Trigger a Sofa time step.
+        """
 
         Sofa.Simulation.animate(self.root, self.root.dt.value)
 
@@ -185,17 +166,24 @@ class SofaSimulation(Sofa.Core.Controller, DPXSimulation):
 class SimulationController:
 
     def __init__(self,
-                 simulation_class: Type[DPXSimulation],
+                 simulation_class: Type[Simulation],
                  simulation_kwargs: Dict[str, Any],
                  manager: Any,
                  simulation_id: int = 1,
                  simulation_nb: int = 1):
         """
+        SimulationController allows components to interact with the simulation.
+        
+        :param simulation_class: The numerical simulation class.
+        :param simulation_kwargs: Dict of kwargs to create an instance of the numerical simulation.
+        :param manager: The SimulationManager that handles this controller.
+        :param simulation_id: Index of the controlled simulation.
+        :param simulation_nb: Nuber of parallel simulations.
         """
 
         # Simulation variables
-        self.__simulation: Optional[DPXSimulation] = None
-        self.__simulation_class: Type[DPXSimulation] = simulation_class
+        self.__simulation: Optional[Simulation] = None
+        self.__simulation_class: Type[Simulation] = simulation_class
         self.__simulation_kwargs: Dict[str, Any] = simulation_kwargs
         self.__simulation_id: int = simulation_id
         self.__simulation_nb: int = simulation_nb
@@ -204,7 +192,7 @@ class SimulationController:
         self.__manager = manager
 
         # Data access variables
-        self.__database_handler: DatabaseHandler = DatabaseHandler()
+        self.__database: DatabaseController = DatabaseController()
         self.__first_set: bool = True
         self.__first_get: bool = True
         self.__data: Dict[str, ndarray] = {}
@@ -213,22 +201,22 @@ class SimulationController:
         self.compute_training_data: bool = True
 
     @property
-    def simulation(self) -> DPXSimulation:
+    def simulation(self) -> Simulation:
+
         return self.__simulation
 
     @property
     def simulation_ids(self) -> Tuple[int, int]:
+
         return self.__simulation_id, self.__simulation_nb
 
-    @property
-    def database_handler(self) -> DatabaseHandler:
-        return self.__database_handler
-
     def create_simulation(self, use_viewer: bool, viewer_key: Optional[int] = None) -> None:
+        """
+        Create the simulation instance, initialize database fields and visualization.
+        """
 
         # Create the simulation instance
-        self.__simulation: DPXSimulation = self.__simulation_class(**self.__simulation_kwargs,
-                                                                   simulation_controller=self)
+        self.__simulation: Simulation = self.__simulation_class(**self.__simulation_kwargs, simulation_controller=self)
         self.__simulation.create()
 
         # In case of Sofa simulation, init the root node
@@ -253,42 +241,19 @@ class SimulationController:
 
     def connect_to_database(self,
                             database_path: Tuple[str, str],
-                            normalize_data: bool):
+                            normalize_data: bool) -> None:
+        """
+        Connect to the database controller.
 
-        self.database_handler.init(database_path=database_path, normalize_data=normalize_data)
+        :param database_path: Path to the database repository.
+        :param normalize_data: If True, data should be normalized.
+        """
+
+        # Initialize the database instance
+        self.__database.init(database_path=database_path, normalize_data=normalize_data)
+
+        # Create user data fields
         self.__simulation.init_database()
-
-    def save_parameters(self, **kwargs) -> None:
-        """
-        Save a set of parameters in the Database.
-        """
-
-        # Create a dedicated Database
-        database_dir = self.__database_handler.get_database_dir()
-        database_name = 'simulation_parameters'
-        if isfile(join(database_dir, f'{database_name}.db')):
-            database = Database(database_dir=database_dir, database_name=database_name).load()
-        else:
-            database = Database(database_dir=database_dir, database_name=database_name).new()
-
-        # Create Fields and add data
-        fields = [(field, type(value)) for field, value in kwargs.items()]
-        database.create_table(table_name=f'Simulation_{self.__simulation_id}', fields=fields)
-        database.add_data(table_name=f'Simulation_{self.__simulation_id}', data=kwargs)
-        database.close()
-
-    def load_parameters(self) -> Dict[str, Any]:
-        """
-        Load a set of parameters from the Database.
-        """
-
-        # Load the dedicated Database and the parameters
-        database_dir = self.__database_handler.get_database_dir()
-        database_name = 'simulation_parameters'
-        if isfile(join(database_dir, f'{database_name}.db')):
-            database = Database(database_dir=database_dir, database_name=database_name).load()
-            return database.get_line(table_name=f'Simulation_{self.__simulation_id}')
-        return {}
 
     def define_database_fields(self, fields: Union[List[Tuple[str, Type]], Tuple[str, Type]]) -> None:
         """
@@ -298,12 +263,12 @@ class SimulationController:
         """
 
         fields = [fields] if not isinstance(fields, list) else fields
-        self.__database_handler.create_fields(fields=fields)
+        self.__database.create_fields(fields=fields)
         self.__required_fields += [f[0] for f in fields]
 
     def set_data(self, **kwargs) -> None:
         """
-        Set the data to send to the TcpIpServer or the SimulationManager.
+        Set the data to send to the database.
         """
 
         # First add: check data fields
@@ -333,12 +298,16 @@ class SimulationController:
             self.__data = kwargs
             self.__data['env_id'] = self.__simulation_id
 
-    def get_data(self):
+    def get_data(self) -> Dict[str, Any]:
+        """
+        Return the current data samples.
+        """
+
         return self.__data
 
     def get_prediction(self, **kwargs) -> Dict[str, ndarray]:
         """
-        Request a prediction from networks.
+        Request a prediction from the network.
         """
 
         # 1. Check Manager
@@ -352,8 +321,8 @@ class SimulationController:
         # 2. Check training data
         default_fields = {'id', 'env_id'}
         if len(self.__prediction_fields) == 0:
-            self.__database_handler.load()
-            self.__prediction_fields = list(set(self.__database_handler.get_fields(exchange=True)) -
+            self.__database.load()
+            self.__prediction_fields = list(set(self.__database.get_fields(exchange=True)) -
                                             default_fields)
 
         # 2.1. Check that default fields are not set by user
@@ -372,19 +341,13 @@ class SimulationController:
             raise ValueError(f"[Simulation] The fields {non_existing_fields} are not in the training "
                              f"Database (required fields: {set(self.__prediction_fields)}).")
 
-        # 2.3. Check that the required fields are all defined
-        # if len((non_defined_fields := set(self.__prediction_fields) - user_fields)) > 0:
-        #     raise ValueError(f"[{self.__simulation.name}] The fields {non_defined_fields} are required by the "
-        #                      f"training Database but not set by the Simulation "
-        #                      f"(required fields: {set(self.__prediction_fields)}).")
-
         # 3. Get the prediction from the networks
         # 3.1. Define the training data in the Database
-        self.__database_handler.update(exchange=True, data=kwargs, line_id=self.__simulation_id)
+        self.__database.update(exchange=True, data=kwargs, line_id=self.__simulation_id)
         # 3.2. Send a prediction request
         self.__manager.get_prediction(self.__simulation_id)
         # 3.3. Receive the prediction data
-        data_prediction = self.__database_handler.get_data(exchange=True, line_id=self.__simulation_id)
+        data_prediction = self.__database.get_data(exchange=True, line_id=self.__simulation_id)
         data_prediction.pop('id')
         return {key: value[0] for key, value in data_prediction.items()}
 
@@ -396,8 +359,8 @@ class SimulationController:
         # 1. Check training data
         default_fields = {'id', 'env_id'}
         if len(self.__prediction_fields) == 0:
-            self.__database_handler.load()
-            self.__prediction_fields = list(set(self.__database_handler.get_fields(exchange=True)) -
+            self.__database.load()
+            self.__prediction_fields = list(set(self.__database.get_fields(exchange=True)) -
                                             default_fields)
         data_training = {}
         for field, value in self.__data.items():
@@ -413,7 +376,7 @@ class SimulationController:
         Add the training data and the additional data in their respective Databases.
         """
 
-        return self.__database_handler.add_data(data=self.__data)
+        return self.__database.add_data(data=self.__data)
 
     def trigger_update_data(self, line_id: List[int]) -> None:
         """
@@ -421,14 +384,14 @@ class SimulationController:
         """
 
         if len(self.__data) > 0:
-            self.__database_handler.update(data=self.__data, line_id=line_id)
+            self.__database.update(data=self.__data, line_id=line_id)
 
     def trigger_get_data(self, line_id: List[int]) -> None:
         """
         Get the training data and the additional data from their respective Databases.
         """
 
-        self.__data = self.__database_handler.get_data(line_id=line_id)
+        self.__data = self.__database.get_data(line_id=line_id)
         self.__data['env_id'] = self.__simulation_id
 
     def reset_data(self) -> None:
@@ -438,7 +401,10 @@ class SimulationController:
 
         self.__data = {}
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Close the simulation and the viewer.
+        """
 
         if self.__simulation.viewer is not None:
             self.__simulation.viewer.shutdown()

@@ -5,11 +5,11 @@ import json
 from SSD.core import Database
 
 
-class DatabaseHandler:
+class DatabaseController:
 
-    def __init__(self, ):
+    def __init__(self):
         """
-        DatabaseHandler allows components to be synchronized with the Database partitions and to  have a read & write
+        DatabaseController allows components to be synchronized with the Database partitions and to have a read & write
         access to data.
         """
 
@@ -18,7 +18,8 @@ class DatabaseHandler:
         self.__current_table: str = 'train'
         self.__exchange_db: Optional[Database] = None
 
-        self.do_normalize = False
+        # Normalization variables
+        self.do_normalize: bool = False
         self.__normalize: bool = False
         self.__json_file: str = ''
 
@@ -96,14 +97,16 @@ class DatabaseHandler:
                 self.__db.create_fields(table_name=mode,
                                         fields=fields)
 
-    def get_fields(self, exchange: bool = False, only_names: bool = True) -> List[str]:
+    def get_fields(self, exchange: bool = False) -> List[str]:
         """
         Get the list of Fields in a Table.
+
+        :param exchange: If True, get the fields of the exchange Table.
         """
 
         if not exchange:
-            return self.__db.get_fields(table_name=self.__current_table, only_names=only_names)
-        return self.__exchange_db.get_fields(table_name='data', only_names=only_names)
+            return self.__db.get_fields(table_name=self.__current_table)
+        return self.__exchange_db.get_fields(table_name='data')
 
     @property
     def normalization(self):

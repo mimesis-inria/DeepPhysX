@@ -4,7 +4,7 @@ import vtk
 import numpy as np
 from vedo import Mesh, Points, Sphere, Arrows, Plotter, Text2D, Plane
 
-from DeepPhysX.simulation import DPXSimulation
+from DeepPhysX.simulation import Simulation
 from DeepPhysX.utils.grid.sparse_grid import get_regular_grid
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -12,7 +12,7 @@ from .beam_simulation import grid
 
 
 # Create an Environment as a BaseEnvironment child class
-class BeamInteractive(DPXSimulation):
+class BeamInteractive(Simulation):
 
     def __init__(self, **kwargs):
 

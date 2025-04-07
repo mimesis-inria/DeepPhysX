@@ -42,8 +42,7 @@ class PredictionPipeline:
 
         # Create a DatabaseManager
         self.database_manager = database_manager
-        self.database_manager.init_prediction_pipeline(session=join(self.session_dir, session_name),
-                                                       produce_data=record)
+        self.database_manager.init_prediction_pipeline(session=join(self.session_dir, session_name))
 
         # Create a SimulationManager
         self.simulation_manager = simulation_manager
@@ -56,10 +55,7 @@ class PredictionPipeline:
         self.network_manager.init_prediction_pipeline(session=path)
         self.network_manager.connect_to_database(database_path=(self.database_manager.database_dir, 'dataset'),
                                                  normalize_data=self.database_manager.normalize)
-        self.network_manager.link_clients(1)
-
         self.simulation_manager.connect_to_network_manager(network_manager=self.network_manager)
-        self.simulation_manager.connect_to_database_manager(database_manager=self.database_manager)
 
         # Prediction variables
         self.step_nb = step_nb
@@ -141,6 +137,7 @@ class SofaPredictionPipeline(Sofa.Core.Controller, PredictionPipeline):
                                     step_nb=step_nb,
                                     record=record)
 
+        # Get the simulation root node and add the pipeline to trigger the event bellow
         self.root: Sofa.Core.Node = self.simulation_manager.simulation_controller.simulation.root
         self.root.addObject(self)
 

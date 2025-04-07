@@ -3,10 +3,10 @@ from numpy import ndarray, array, zeros
 from numpy.random import uniform
 from vedo import Spring, Cube, Box
 
-from DeepPhysX.simulation.dpx_simulation import DPXSimulation
+from DeepPhysX.simulation import Simulation
 
 
-class SpringEnvironment(DPXSimulation):
+class SpringEnvironment(Simulation):
 
     def __init__(self, **kwargs):
         """
@@ -14,7 +14,7 @@ class SpringEnvironment(DPXSimulation):
         This class is used for the data generation pipeline.
         """
 
-        DPXSimulation.__init__(self, **kwargs)
+        Simulation.__init__(self, **kwargs)
 
         # Spring parameters
         self.spring_length: float = 1.

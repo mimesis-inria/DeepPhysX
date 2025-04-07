@@ -266,9 +266,7 @@ class TcpIpServer(TcpIpObject):
         :param sender: TcpIpObject sender.
         """
 
-        if self.simulation_manager.data_manager is None:
-            raise ValueError("Cannot request prediction if DataManager does not exist")
-        self.simulation_manager.data_manager.get_prediction(client_id)
+        self.simulation_manager.get_prediction_from_simulation(client_id)
         self.send_data(data_to_send=True, receiver=sender)
 
     def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:

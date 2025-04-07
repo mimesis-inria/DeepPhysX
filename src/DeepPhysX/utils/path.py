@@ -18,9 +18,13 @@ def get_first_caller() -> str:
     return dirname(abspath(module.__file__))
 
 
-def get_session_dir(session_dir: str, new_session: bool):
+def get_session_dir(session_dir: str,
+                    new_session: bool) -> str:
     """
     Get the DPX session root directory.
+
+    :param session_dir: Path to the current session.
+    :param new_session: If True, this session is a new one.
     """
 
     # 1. Check if the given path is absolute
@@ -50,7 +54,8 @@ def get_session_dir(session_dir: str, new_session: bool):
                              f"   - {rel_sd} not found ('session_dir' variable as relative path from the script dir.")
 
 
-def create_dir(session_dir: str, session_name: str) -> str:
+def create_dir(session_dir: str,
+               session_name: str) -> str:
     """
     Create a new directory of the given name in the given directory.
     If it already exists, add a unique identifier at the end of the directory name.
@@ -78,7 +83,10 @@ def create_dir(session_dir: str, session_name: str) -> str:
     return session
 
 
-def copy_dir(src_dir: str, dest_dir: str, dest_name: Optional[str] = None, sub_folders: Optional[str] = None) -> str:
+def copy_dir(src_dir: str,
+             dest_dir: str,
+             dest_name: Optional[str] = None,
+             sub_folders: Optional[str] = None) -> str:
     """
     Copy the source directory to the destination directory.
 
@@ -86,7 +94,6 @@ def copy_dir(src_dir: str, dest_dir: str, dest_name: Optional[str] = None, sub_f
     :param dest_dir: Parent of the destination directory to copy.
     :param dest_name: Destination directory to copy to.
     :param sub_folders: If sub folders are specified, the latest is actually copied.
-
     :return: Path to the newly copied directory.
     """
 

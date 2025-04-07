@@ -51,7 +51,7 @@ class DatabaseManager:
 
         # Data access variables
         self.pipeline: str = ''
-        self.first_add = True
+        self.first_add: bool = True
         self.sample_id: int = 0
         self.sample_indices: ndarray = array([])
         self.shuffle: bool = shuffle_data
@@ -157,14 +157,11 @@ class DatabaseManager:
         self.__exchange.new(remove_existing=True)
         self.__exchange.create_table(table_name='data')
 
-    def init_prediction_pipeline(self,
-                                 session: str,
-                                 produce_data: bool) -> None:
+    def init_prediction_pipeline(self, session: str) -> None:
         """
         Init method for the prediction pipeline.
 
-        :param session:
-        :param produce_data: If True, this session will store data in the Database.
+        :param session: Path to the session repository.
         """
 
         # Create the Database
@@ -371,6 +368,8 @@ class DatabaseManager:
     def __compute_batch_normalization(self, data_lines: List[int]) -> None:
         """
         Compute the mean and the standard deviation of the batched samples for each data field.
+
+        :param data_lines: Indices of samples in the batch.
         """
 
         # Get the normalization coefficient for each data field

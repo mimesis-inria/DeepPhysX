@@ -2,7 +2,7 @@ from os import sep
 from os.path import dirname
 from sys import argv, path
 
-from DeepPhysX.simulation.dpx_simulation import DPXSimulation as Simulation
+from DeepPhysX.simulation.simulation_controller import Simulation as Simulation
 from DeepPhysX.simulation.multiprocess.tcpip_client import TcpIpClient
 
 

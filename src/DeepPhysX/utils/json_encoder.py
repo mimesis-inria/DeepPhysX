@@ -5,8 +5,6 @@ from typing import Iterable, Any, Dict, List
 class CustomJSONEncoder(json.JSONEncoder):
     """
     JSON encoder class.
-        Description:
-
     """
 
     indentation_level: int

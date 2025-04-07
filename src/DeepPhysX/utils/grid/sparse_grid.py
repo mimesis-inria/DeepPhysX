@@ -11,7 +11,7 @@ except ImportError:
 
 def get_grid_resolution(grid_min: ndarray,
                         grid_max: ndarray,
-                        cell_size: float):
+                        cell_size: float) -> List[int]:
     """
     Compute the grid resolution with hexahedron cells.
 
@@ -133,9 +133,9 @@ def regular_grid_margin(regular_grid: Sofa.SofaBaseTopology.RegularGridTopology,
 
 def get_scaled_regular_grid_resolution(grid_resolution: ndarray,
                                        grid_size: ndarray,
-                                       margin: float):
+                                       margin: float) -> ndarray:
     """
-
+    Get the resolution of a regular grid with margins.
     """
 
     cell_size = grid_size / grid_resolution
