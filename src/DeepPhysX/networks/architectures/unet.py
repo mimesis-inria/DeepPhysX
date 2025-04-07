@@ -17,9 +17,19 @@ class UNet(Module):
                  nb_steps: int = 3,
                  two_sublayers: bool = True,
                  border_mode: str = 'valid',
-                 skip_merge: bool = False,
-                 data_scale: float = 1.):
+                 skip_merge: bool = False):
         """
+        Create a UNet network architecture.
+
+        :param input_size: Shape of the input tensor.
+        :param nb_dims: Number of dimensions of data.
+        :param nb_input_channels: Number of channels of the first layer.
+        :param nb_first_layer_channels: Number of channels of the first layer.
+        :param nb_output_channels: Number of channels of the final layer.
+        :param nb_steps: Number of down / up layers.
+        :param two_sublayers: If True, duplicate each layer.
+        :param border_mode: Padding mode.
+        :param skip_merge: If True, skip the crop step at each up layer.
         """
 
         Module.__init__(self)
@@ -77,7 +87,6 @@ class UNet(Module):
         self.nb_steps: int = nb_steps
         self.nb_output_channels: int = nb_output_channels
         self.nb_input_channels: int = nb_input_channels
-        self.data_scale: float = data_scale
         self.pad_widths: Optional[List[int]] = None
         self.inverse_pad_widths: Optional[List[int]] = None
 
@@ -89,13 +98,11 @@ class UNet(Module):
         self.reverse_up_step = lambda x: (x + border - 1) // 2 + 1
 
 
-    def forward(self,
-                input_data: Tensor) -> Tensor:
+    def forward(self, input_data: Tensor) -> Tensor:
         """
         Compute a forward pass of the Network.
 
         :param input_data: Input tensor.
-        :return: Network prediction.
         """
 
         # TRANSFORM BEFORE PREDICTION
@@ -121,6 +128,7 @@ class UNet(Module):
 
     def transform_before_prediction(self, data: Tensor) -> Tensor:
         """
+        Transform operations to apply before the forward pass.
         """
 
         # Transform tensor shape
@@ -137,6 +145,9 @@ class UNet(Module):
         return data
 
     def transform_after_prediction(self, data: Tensor) -> Tensor:
+        """
+        Transform operations to apply before the backward pass.
+        """
 
         data = pad(data, self.inverse_pad_widths)
         data = data.permute(0, 2, 3, 4, 1)
@@ -166,22 +177,6 @@ class UNet(Module):
             self.pad_widths += p
             self.inverse_pad_widths += (-p[0], -p[1])   # PyTorch accepts negative padding
 
-    # def __str__(self) -> str:
-    #
-    #     description = Network.__str__(self)
-    #     description += f"    Number of dimensions: {self.config.nb_dims}\n"
-    #     description += f"    Number of input channels: {self.config.nb_input_channels}\n"
-    #     description += f"    Number of first layer channels: {self.config.nb_first_layer_channels}\n"
-    #     description += f"    Number of output channels: {self.config.nb_output_channels}\n"
-    #     description += f"    Number of encoding/decoding steps: {self.config.nb_steps}\n"
-    #     description += f"    Two sublayers in a step: {self.config.two_sublayers}\n"
-    #     description += f"    Border mode: {self.config.border_mode}\n"
-    #     description += f"    Merge on same level: {not self.config.skip_merge}\n"
-    #     description += f"    Down layers: {self.print_architecture(str(self.down))}\n"
-    #     description += f"    Up layers: {self.print_architecture(str(self.up))}\n"
-    #     description += f"    Final layer: {self.print_architecture(str(self.finalLayer))}"
-    #     return description
-
 
 class UNetLayer(Module):
 
@@ -190,13 +185,15 @@ class UNetLayer(Module):
                  nb_output_channels: int,
                  nb_dims: int,
                  border_mode: str,
-                 two_sublayers: bool,
-                 ):
+                 two_sublayers: bool):
         """
-        Create a unet Layer.
+        Create one UNet layer.
 
-        :param nb_input_channels: Number of channels in input data.
-        :param nb_output_channels: Number of channels in output data.
+        :param nb_input_channels: Number of channels of the first layer.
+        :param nb_output_channels: Number of channels of the final layer.
+        :param nb_dims: Number of dimensions of data.
+        :param border_mode: Padding mode.
+        :param two_sublayers: If True, duplicate each layer.
         """
 
         super().__init__()
@@ -228,13 +225,11 @@ class UNetLayer(Module):
         # Set the unet layer
         self.unet_layer = Sequential(*layers)
 
-    def forward(self,
-                input_data: Tensor) -> Tensor:
+    def forward(self, input_data: Tensor) -> Tensor:
         """
         Compute a forward pass of the layer.
 
         :param input_data: Input tensor.
-        :return: Forward pass result.
         """
 
         return self.unet_layer(input_data)
@@ -290,4 +285,3 @@ def crop_and_merge(tensor1: Tensor, tensor2: Tensor) -> Tensor:
     slices[0] = slice(None)
     slices[1] = slice(None)
     return cat((tensor1[slices], tensor2), 1)
-
