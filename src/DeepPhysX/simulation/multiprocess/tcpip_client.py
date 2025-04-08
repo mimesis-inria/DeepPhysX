@@ -1,6 +1,5 @@
 from typing import Type
 from socket import socket
-from numpy import ndarray
 
 from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
 from DeepPhysX.simulation.simulation_controller import Simulation, SimulationController
@@ -47,8 +46,7 @@ class TcpIpClient(TcpIpObject):
         """
 
         # Receive additional arguments
-        env_kwargs = {}
-        self.receive_dict(recv_to=env_kwargs, sender=self.sock)
+        env_kwargs = self.receive_dict(sender=self.sock)
         env_kwargs = env_kwargs['env_kwargs'] if 'env_kwargs' in env_kwargs else {}
 
         self.simulation_controller = SimulationController(simulation_class=self.simulation_class,
@@ -93,7 +91,7 @@ class TcpIpClient(TcpIpObject):
             while not self.close_client:
                 self.__communicate(server=self.sock)
         except KeyboardInterrupt:
-            print(f"[{self.name}] KEYBOARD INTERRUPT: CLOSING PROCEDURE")
+            print("[TcpIpClient] KEYBOARD INTERRUPT: CLOSING PROCEDURE")
         finally:
             # Closing procedure when Client is asked to shut down
             self.__close()
@@ -106,7 +104,7 @@ class TcpIpClient(TcpIpObject):
         :param server: TcpIpServer to communicate with.
         """
 
-        self.listen_while_not_done(sender=server, data_dict={})
+        self.listen_while_not_done(sender=server)
 
     def __close(self) -> None:
         """
@@ -136,23 +134,14 @@ class TcpIpClient(TcpIpObject):
         self.send_command_prediction()
         _ = self.receive_data(sender=self.sock)
 
-    def request_update_visualization(self) -> None:
-        """
-        Triggers the Visualizer update.
-        """
-
-        self.send_command_visualisation()
-        self.send_labeled_data(data_to_send=self.simulation_instance[0], label='instance')
-
     ##################################
     # Actions to perform on commands #
     ##################################
 
-    def action_on_exit(self, data: ndarray, client_id: int, sender: socket) -> None:
+    def action_on_exit(self, client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'exit' command.
 
-        :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
         :param sender: TcpIpObject sender.
         """
@@ -160,11 +149,10 @@ class TcpIpClient(TcpIpObject):
         # Close client flag set to True
         self.close_client = True
 
-    def action_on_prediction(self, data: ndarray, client_id: int, sender: socket) -> None:
+    def action_on_prediction(self, client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'prediction' command.
 
-        :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
         :param sender: TcpIpObject sender.
         """
@@ -174,11 +162,10 @@ class TcpIpClient(TcpIpObject):
         # Apply the prediction in the simulation
         self.simulation_controller.simulation.apply_prediction(prediction)
 
-    def action_on_sample(self, data: ndarray, client_id: int, sender: socket) -> None:
+    def action_on_sample(self, client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'sample' command.
 
-        :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
         :param sender: TcpIpObject sender.
         """
@@ -186,11 +173,10 @@ class TcpIpClient(TcpIpObject):
         dataset_batch = self.receive_data(sender=sender)
         self.simulation_controller.trigger_get_data(dataset_batch)
 
-    def action_on_step(self, data: ndarray, client_id: int, sender: socket) -> None:
+    def action_on_step(self, client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'step' command.
 
-        :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
         :param sender: TcpIpObject sender.
         """
@@ -209,11 +195,7 @@ class TcpIpClient(TcpIpObject):
                 self.simulation_controller.simulation.step()
 
         # Sent training data to Server
-        if self.simulation_controller.update_line is None:
-            line = self.simulation_controller.trigger_send_data()
-        else:
-            self.simulation_controller.trigger_update_data(self.simulation_controller.update_line)
-            line = self.simulation_controller.update_line
+        line = self.simulation_controller.trigger_send_data()
         self.simulation_controller.reset_data()
         self.send_command_done(receiver=sender)
         self.send_data(data_to_send=line, receiver=sender)

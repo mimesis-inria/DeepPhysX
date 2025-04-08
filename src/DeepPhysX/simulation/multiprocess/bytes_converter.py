@@ -91,8 +91,7 @@ class BytesConverter:
             bytes_message += f
         return bytes_message
 
-    def bytes_to_data(self,
-                      bytes_fields: List[bytes]) -> Convertible:
+    def bytes_to_data(self, bytes_fields: List[bytes]) -> Convertible:
         """
         Recover data from bytes fields.
         Available types: None, bytes, str, bool, signed int, float, list, ndarray.

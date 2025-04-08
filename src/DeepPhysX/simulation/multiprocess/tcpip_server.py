@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 from asyncio import get_event_loop, run as async_run
 from socket import socket
-from queue import SimpleQueue
 from threading import Thread
 
 from DeepPhysX.simulation.multiprocess.tcpip_object import TcpIpObject
@@ -15,8 +14,8 @@ class TcpIpServer(TcpIpObject):
                  max_client_count: int = 10,
                  batch_size: int = 5,
                  manager: Optional[Any] = None,
-                 debug: bool = True,
-                 use_viewer: bool = False):
+                 use_viewer: bool = False,
+                 debug: bool = False):
         """
         TcpIpServer is used to communicate with clients associated with Environment to produce batches for the
         EnvironmentManager.
@@ -25,16 +24,17 @@ class TcpIpServer(TcpIpObject):
         :param max_client_count: Maximum number of allowed clients.
         :param batch_size: Number of samples in a batch.
         :param manager: EnvironmentManager that handles the TcpIpServer.
+        :param use_viewer: If True, the viewer will be displayed.
         """
 
         super(TcpIpServer, self).__init__()
-
         self.debug = debug
 
         # Bind to server address
         self.sock.bind((self.ip_address, self.port))
         self.port = self.sock.getsockname()[1]
-        self.message(f"[{self.name}] Binding to IP '{self.ip_address}' on PORT '{self.port}'")
+        if self.debug:
+            print(f"[TcpIpServer] Binding to IP '{self.ip_address}' on PORT '{self.port}'")
         self.sock.listen(max_client_count)
         self.sock.setblocking(False)
 
@@ -44,11 +44,7 @@ class TcpIpServer(TcpIpObject):
 
         # Init data to communicate with EnvironmentManager and Clients
         self.batch_size: int = batch_size
-        self.data_fifo: SimpleQueue = SimpleQueue()
-        self.data_dict: Dict[Any, Any] = {}
-        self.sample_to_client_id: List[int] = []
         self.batch_from_dataset: Optional[List[int]] = None
-        self.first_time: bool = True
         self.data_lines: List[List[int]] = []
 
         # Reference to EnvironmentManager
@@ -56,11 +52,6 @@ class TcpIpServer(TcpIpObject):
 
         # Create ViewerBatch
         self.viewer_batch: Optional[ViewerBatch] = ViewerBatch() if use_viewer else None
-
-    def message(self, txt: str):
-
-        if self.debug:
-            print(txt)
 
     ##########################################################################################
     ##########################################################################################
@@ -73,7 +64,8 @@ class TcpIpServer(TcpIpObject):
         Accept connections from clients.
         """
 
-        self.message(f"[{self.name}] Waiting for clients...")
+        if self.debug:
+            print("[TcpIpServer] Waiting for clients...")
         async_run(self.__connect())
 
     async def __connect(self) -> None:
@@ -89,7 +81,7 @@ class TcpIpServer(TcpIpObject):
             client, _ = await loop.sock_accept(self.sock)
             # Get the instance ID
             label, client_id = self.receive_labeled_data(sender=client)
-            print(f"[{self.name}] Client n°{client_id} connected: {client}")
+            print(f"[TcpIpServer] Client n°{client_id} connected: {client}")
             self.clients[client_id - 1] = [client_id, client]
             # self.clients.append([client_id, client])
 
@@ -106,7 +98,7 @@ class TcpIpServer(TcpIpObject):
         :param env_kwargs: Additional arguments to pass to the Environment.
         """
 
-        print(f"[{self.name}] Initializing clients...")
+        print("[TcpIpServer] Initializing clients...")
 
         # Init ViewerBatch
         viewer_keys = None if self.viewer_batch is None else self.viewer_batch.start(nb_view=self.nb_client)
@@ -130,7 +122,7 @@ class TcpIpServer(TcpIpObject):
 
             # Wait Client init
             self.receive_data(sender=client)
-            print(f"[{self.name}] Client n°{client_id} initialisation done")
+            print(f"[TcpIpServer] Client n°{client_id} initialisation done")
 
         # Synchronize Clients
         # for client_id, client in self.clients:
@@ -197,7 +189,7 @@ class TcpIpServer(TcpIpObject):
             if animate:
                 self.send_command_step(receiver=client)
                 # Receive data
-                self.listen_while_not_done(sender=client, data_dict=self.data_dict, client_id=client_id)
+                self.listen_while_not_done(sender=client, client_id=client_id)
                 line = self.receive_data(sender=client)
                 self.data_lines.append(line)
 
@@ -223,7 +215,7 @@ class TcpIpServer(TcpIpObject):
         Run __close method with asyncio.
         """
 
-        print(f"[{self.name}] Closing clients...")
+        print("[TcpIpServer] Closing clients...")
 
         # Send all exit protocol and wait for the last one to finish
         for client_id, client in self.clients:
@@ -242,7 +234,8 @@ class TcpIpServer(TcpIpObject):
         :param idx: Client index.
         """
 
-        print(f"[{self.name}] Sending exit command to", idx)
+        if self.debug:
+            print(f"[TcpIpServer] Sending exit command to {idx}")
         # Send exit command
         self.send_command_exit(receiver=client)
         self.send_command_done(receiver=client)
@@ -257,26 +250,13 @@ class TcpIpServer(TcpIpObject):
     ##########################################################################################
     ##########################################################################################
 
-    def action_on_prediction(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:
+    def action_on_prediction(self, client_id: int, sender: socket) -> None:
         """
         Action to run when receiving the 'prediction' command.
 
-        :param data: Dict storing data.
         :param client_id: ID of the TcpIpClient.
         :param sender: TcpIpObject sender.
         """
 
         self.simulation_manager.get_prediction_from_simulation(client_id)
         self.send_data(data_to_send=True, receiver=sender)
-
-    def action_on_visualisation(self, data: Dict[Any, Any], client_id: int, sender: socket) -> None:
-        """
-        Action to run when receiving the 'visualisation' command.
-
-        :param data: Dict storing data.
-        :param client_id: ID of the TcpIpClient.
-        :param sender: TcpIpObject sender.
-        """
-
-        _, idx = self.receive_labeled_data(sender=sender)
-        self.simulation_manager.update_visualizer(idx)
