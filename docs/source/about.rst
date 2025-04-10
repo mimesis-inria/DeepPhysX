@@ -19,14 +19,14 @@ This **full Python3** project brings several **pipelines**, allowing the user to
 .. list-table:: Classical pipelines (left), DeepPhysX pipelines (right)
     :widths: 34 66
 
-    * - .. image:: ../_static/image/about_classical_pipelines.png
+    * - .. image:: _static/image/about_classical_pipelines.png
             :alt: about_classical_pipelines.png
-      - .. image:: ../_static/image/about_dpx_pipelines.png
+      - .. image:: _static/image/about_dpx_pipelines.png
             :alt: about_dpx_pipelines.png
 
 About **dataset** components, the project has the following features:
 
- * Automatic training dataset **storage** and **loading** with **multiple files management**;
+ * Automatic training dataset **storage** and **loading**;
  * Dataset **shuffle** and **normalization**;
  * Multiple dataset **modes**: Training, Validation, Prediction;
  * **Customizable** dataset fields.
@@ -43,17 +43,15 @@ About **neural network** components, the project has the following features:
  * Automatic **storage** and **loading** of networks during training;
  * **Customizable data transformations** at each step (forward pass, optimization, prediction apply);
  * **Customizable optimization process** with training data;
- * Already **implemented architectures**: FC, UNet.
+ * Compatibility with any `torch.nn.Module` architecture;
+ * Already **implemented architectures**: MLP, UNet.
 
 **Additional tools** are also provided:
 
  * A **visualization** Factory to **init**, **update** and **render** the simulated objects (written with
-   :Vedo:`Vedo <>`);
+   :SimRender:`SimRender <>`);
  * An customizable analysis of the **evolution** of the **training session** (written with
    :Tensorboard:`Tensorboard <>`).
-
-
-.. _about-working-sessions:
 
 Working sessions
 ----------------
@@ -70,5 +68,5 @@ typically contains the following **tree structure**:
     :width: 80%
     :align: center
 
-    * - .. image:: ../_static/image/about_tree.png
+    * - .. image:: _static/image/about_tree.png
             :alt: about_working_session.png

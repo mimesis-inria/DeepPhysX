@@ -31,8 +31,7 @@ class SimulationManager:
         :param nb_parallel_env: Number of numerical simulations to run in parallel.
         :param simulations_per_step: Number of simulation steps to compute before producing a data sample.
         :param load_samples: If True, samples should be loaded from an existing database.
-        :param only_first_epoch: If True, the simulation produces samples only during the first epoch of the online
-        training pipeline.
+        :param only_first_epoch: If True, the simulation produces samples only during the first epoch of the online training pipeline.
         :param always_produce: If True, the simulation produces samples during the whole training pipeline.
         :param use_viewer: If True, the viewer will be displayed.
         """

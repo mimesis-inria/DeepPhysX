@@ -14,8 +14,8 @@ from os.path import abspath, join, pardir
 import sys
 
 # DeepPhysX root
-root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src', 'Core'))
-all_modules = ['AsyncSocket', 'Database', 'Environment', 'Manager', 'networks', 'pipelines', 'Visualization']
+root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src', 'DeepPhysX'))
+all_modules = ['database', 'networks', 'pipelines', 'simulation']
 
 # Import all modules
 sys.path.append(root)
@@ -84,5 +84,6 @@ extlinks = {'Caribou': ('https://caribou.readthedocs.io/%s', '%s'),
             'Tensorboard': ('https://www.tensorflow.org/tensorboard/%s', '%s'),
             'Vedo': ('https://vedo.embl.es/%s', '%s'),
             'VedoObject': ('https://vedo.embl.es/autodocs/content/vedo/%s', '%s'),
-            'SSD': ('https://github.com/RobinEnjalbert/SimulationSimpleDatabase/%s', '%s'),
-            'SSDd': ('https://simulationsimpledatabase.readthedocs.io/en/latest/%s', '%s')}
+            'SSD': ('https://github.com/mimesis-inria/SimulationSimpleDatabase/%s', '%s'),
+            'SSDd': ('https://simulationsimpledatabase.readthedocs.io/en/latest/%s', '%s'),
+            'SimRender': ('https://github.com/mimesis-inria/SimRender/%s', '%s')}
