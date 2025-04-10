@@ -1,6 +1,4 @@
 from os.path import join
-
-import torch
 from torch.optim import Adam
 
 from DeepPhysX.pipelines import TrainingPipeline
@@ -30,21 +28,21 @@ net_manager = NetworkManager(network_architecture=UNet,
 
 # Launch the training pipeline
 trainer = TrainingPipeline(database_manager=data_manager,
-                 network_manager=net_manager,
-                 loss_fnc=PhysicalLoss,
-                 loss_kwargs={'mu': 500, 'lmbd': 0.45},
-                 optimizer=Adam,
-                 optimizer_kwargs={'lr': 1e-5},
-                 epoch_nb=50,
-                 batch_nb=100,
-                 batch_size=16)
+                           network_manager=net_manager,
+                           loss_fnc=PhysicalLoss,
+                           loss_kwargs={'mu': 500, 'lmbd': 0.45, 'spacing': 1e3},
+                           optimizer=Adam,
+                           optimizer_kwargs={'lr': 1e-5},
+                           epoch_nb=50,
+                           batch_nb=100,
+                           batch_size=16)
 
-# Get 100 predictions to initialize PhyLoss coefficients
+# Get 100 predictions to initialize PhyLoss coefficient
 preds, targets = [], []
 data_lines = data_manager.get_data(batch_size=100)
 data_fwd, data_bwd = net_manager.get_data(data_lines)
 predict = net_manager.get_predict(batch_fwd=data_fwd)
 net_manager.loss_fnc.init_loss_coeff(predict, data_bwd['displacement'])
 
-
+# Launch the training session
 trainer.execute()

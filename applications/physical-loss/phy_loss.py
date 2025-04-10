@@ -4,12 +4,12 @@ from einops import rearrange
 
 class PhysicalLoss(torch.nn.Module):
 
-    def __init__(self, mu, lmbd, c1 = 0.5, c2 = 0.5):
+    def __init__(self, mu, lmbd, spacing=1.0, c1 = 0.5, c2 = 0.5):
 
         torch.nn.Module.__init__(self)
 
         self.mse_loss = torch.nn.MSELoss()
-        self.phy_loss = divPK1NeoHookLoss(mu=mu, lmbd=lmbd)
+        self.phy_loss = divPK1NeoHookLoss(mu=mu, lmbd=lmbd, spacing=spacing)
         self.c1, self.c2 = c1, c2
 
     def init_loss_coeff(self, prediction: torch.Tensor, target: torch.Tensor) -> None:
@@ -42,7 +42,7 @@ class PhysicalLoss(torch.nn.Module):
 
 class divPK1NeoHookLoss(torch.nn.Module):
 
-    def __init__(self, mu, lmbd, spacing=1.0):
+    def __init__(self, mu, lmbd, spacing):
 
         torch.nn.Module.__init__(self)
 

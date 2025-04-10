@@ -1,7 +1,7 @@
 from os.path import join, dirname
 from functools import reduce
 from math import prod
-from numpy import array, zeros
+from numpy import zeros
 from numpy.random import randint, uniform
 from numpy.linalg import norm
 
@@ -27,10 +27,6 @@ class BeamSofa(SofaSimulation):
 
         self.idx_step = 0
         self.sub_steps = 50
-        self.F = [zeros(3) for _ in range(forces['nb'])]
-
-        self.fem_node = True
-        self.net_node = False
 
     def create(self):
 
@@ -44,10 +40,8 @@ class BeamSofa(SofaSimulation):
         self.root.addObject('DefaultAnimationLoop')
 
         # Add fem node and / or nn node
-        if self.fem_node:
-            self.create_fem_node()
-        if self.net_node:
-            self.create_net_node()
+        self.create_fem_node()
+        self.create_net_node()
 
     def create_fem_node(self):
 
@@ -84,7 +78,7 @@ class BeamSofa(SofaSimulation):
         # Forces
         for i in range(forces['nb']):
             self.root.fem.addObject('SphereROI', name=f'Sphere_{i}', radii=forces['radius'], drawSphere=False)
-            self.root.fem.addObject('ConstantForceField', name=f'CFF_{i}', forces=self.F[i], indices=0,
+            self.root.fem.addObject('ConstantForceField', name=f'CFF_{i}', forces=zeros(3), indices=0,
                                     showArrowSize=0.5)
 
         # Visual
@@ -113,17 +107,6 @@ class BeamSofa(SofaSimulation):
         self.root.net.addObject('QuadSetTopologyModifier')
         self.root.net.addObject('Hexa2QuadTopologicalMapping', input='@HexaTopo', output='@QuadTopo')
 
-        # Constraints
-        self.root.net.addObject('BoxROI', name='FixedBox', box=grid['fix'])
-        self.root.net.addObject('FixedConstraint', indices='@FixedBox.indices')
-
-        if not self.fem_node:
-            # Forces
-            for i in range(forces['nb']):
-                self.root.net.addObject('SphereROI', name=f'Sphere_{i}', radii=forces['radius'], drawSphere=False)
-                self.root.net.addObject('ConstantForceField', name=f'CFF_{i}', forces=self.F[i], indices=0,
-                                        showArrowSize=0.5)
-
         # Visual
         self.root.net.addChild('visual')
         self.root.net.visual.addObject('OglModel', name='OGL', src='@../GridTopo', color='green')
@@ -133,17 +116,14 @@ class BeamSofa(SofaSimulation):
 
         if self.idx_step == 0:
 
-            # Select the node to apply forces
-            node = self.root.fem if self.fem_node else self.root.net
-
             # Reset positions and velocities
-            m_state = node.getObject('GridMO')
+            m_state = self.root.fem.getObject('GridMO')
             m_state.position.value = m_state.rest_position.value
             m_state.velocity.value = zeros(m_state.velocity.value.shape)
 
             # Select new SphereROI centers
             centers = []
-            surface_pos = node.getObject('QuadTopo').position.value
+            surface_pos = self.root.fem.getObject('QuadTopo').position.value
             for i in range(forces['nb']):
                 # Select a random surface point
                 center = surface_pos[randint(len(surface_pos))]
@@ -154,8 +134,8 @@ class BeamSofa(SofaSimulation):
                         intersect_spheres = True
                         break
                 # Update ROI and force
-                roi = node.getObject(f'Sphere_{i}')
-                cff = node.getObject(f'CFF_{i}')
+                roi = self.root.fem.getObject(f'Sphere_{i}')
+                cff = self.root.fem.getObject(f'CFF_{i}')
                 if not intersect_spheres:
                     centers.append(center)
                     roi.centers.value = [center]
