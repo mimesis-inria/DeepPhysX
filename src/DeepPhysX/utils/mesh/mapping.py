@@ -10,7 +10,7 @@ class BarycentricMapping:
                  source_cells: np.ndarray,
                  target_positions: np.ndarray):
         """
-        Python implementation of a barycentric mapping between a src mesh and a target mesh.
+        Python implementation of a barycentric mapping between a source mesh and a target mesh.
 
         :param source_positions: Array of positions of the source mesh.
         :param source_cells: Array of cells of the source mesh.
@@ -22,16 +22,6 @@ class BarycentricMapping:
         target_positions = np.array(target_positions)
 
         # Compute barycentric coordinates
-<<<<<<< HEAD:src/Core/Utils/Visualizer/barycentric_mapping.py
-        self.bar_coord, self.index = self.init_mapping()
-
-    def init_mapping(self):
-        """
-        Compute barycentric coordinates of target to map src.
-        """
-
-=======
->>>>>>> 0ea7c8f2e85ea2b52a4c2485e41048d4d55d521d:src/DeepPhysX/utils/mesh/mapping.py
         # 1. CONVERT SOURCE TO VTK
         # 1.1. Create a VTK mesh
         vtk_mesh = vtk.vtkPolyData()
@@ -83,7 +73,7 @@ class BarycentricMapping:
 
     def apply(self, source_positions: np.ndarray) -> np.ndarray:
         """
-        Apply mapping between new src positions and target with barycentric coordinates.
+        Apply mapping between new source positions and target with barycentric coordinates.
         """
 
         ABC = source_positions[self.cells[self.index]]

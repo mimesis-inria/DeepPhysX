@@ -88,7 +88,7 @@ def copy_dir(src_dir: str,
              dest_name: Optional[str] = None,
              sub_folders: Optional[str] = None) -> str:
     """
-    Copy the src directory to the destination directory.
+    Copy the source directory to the destination directory.
 
     :param src_dir: Source directory to copy.
     :param dest_dir: Parent of the destination directory to copy.
@@ -110,7 +110,7 @@ def copy_dir(src_dir: str,
         dest_name += f'{max_id + 1}'
 
     dest = join(dest_dir, dest_name) if dest_name is not None else dest_dir
-    print(f"Copying the src directory {src_dir} to {dest} for this session.")
+    print(f"Copying the source directory {src_dir} to {dest} for this session.")
     if sub_folders is None:
         copytree(src_dir, dest)
     else:

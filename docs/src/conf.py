@@ -10,12 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
-import os
+from os.path import abspath, join, pardir
 import sys
 
-<<<<<<< HEAD:docs/src/conf.py
-sys.path.insert(0, os.path.abspath('../../src'))
-=======
 # DeepPhysX root
 root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src', 'DeepPhysX'))
 all_modules = ['database', 'networks', 'pipelines', 'simulation']
@@ -24,7 +21,6 @@ all_modules = ['database', 'networks', 'pipelines', 'simulation']
 sys.path.append(root)
 for module in all_modules:
     sys.path.append(join(root, module))
->>>>>>> 0ea7c8f2e85ea2b52a4c2485e41048d4d55d521d:docs/source/conf.py
 
 # -- Project information -----------------------------------------------------
 
@@ -55,8 +51,8 @@ intersphinx_mapping = {
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
 
-# List of patterns, relative to src directory, that match files and
-# directories to ignore when looking for src files.
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
