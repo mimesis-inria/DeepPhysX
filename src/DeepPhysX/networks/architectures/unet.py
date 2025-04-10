@@ -14,6 +14,7 @@ class UNet(Module):
                  nb_input_channels: int = 1,
                  nb_first_layer_channels: int = 64,
                  nb_output_channels: int = 3,
+                 flatten_output: bool = False,
                  nb_steps: int = 3,
                  two_sublayers: bool = True,
                  border_mode: str = 'valid',
@@ -84,6 +85,7 @@ class UNet(Module):
 
         # Data transform config
         self.input_size: List[int] = [int(s) for s in input_size]
+        self.flatten_output: bool = flatten_output
         self.nb_steps: int = nb_steps
         self.nb_output_channels: int = nb_output_channels
         self.nb_input_channels: int = nb_input_channels
@@ -151,7 +153,10 @@ class UNet(Module):
 
         data = pad(data, self.inverse_pad_widths)
         data = data.permute(0, 2, 3, 4, 1)
-        data = data.view((-1, self.input_size[0] * self.input_size[1] * self.input_size[2], self.nb_output_channels))
+        if self.flatten_output:
+            data = data.view((-1, self.input_size[0] *self.input_size[1] * self.input_size[2], self.nb_output_channels))
+        else:
+            data = data.view((-1, self.input_size[0], self.input_size[1], self.input_size[2], self.nb_output_channels))
         return data
 
     def compute_pad_widths(self, desired_shape: List[int]) -> None:

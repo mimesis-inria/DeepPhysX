@@ -2,7 +2,7 @@ from typing import Optional, Type, Dict, Any, Callable
 from os.path import join, isfile, exists, sep
 from datetime import datetime
 from vedo import ProgressBar
-from torch.nn.modules.loss import _Loss
+from torch.nn import Module
 from torch.optim import Optimizer
 
 from DeepPhysX.database.database_manager import DatabaseManager
@@ -17,9 +17,10 @@ class TrainingPipeline:
     def __init__(self,
                  network_manager: NetworkManager,
                  database_manager: DatabaseManager,
-                 loss_fnc: Type[_Loss],
+                 loss_fnc: Type[Module],
                  optimizer: Type[Optimizer],
-                 optimizer_kwargs: Dict[str, Any],
+                 loss_kwargs: Optional[Dict[str, Any]] = None,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
                  simulation_manager: Optional[SimulationManager] = None,
                  new_session: bool = True,
                  session_dir: str = 'sessions',
@@ -37,6 +38,7 @@ class TrainingPipeline:
         :param database_manager: Manager for the Database.
         :param loss_fnc: Loss function to use in the optimization process.
         :param optimizer: Optimizer used for training.
+        :param loss_kwargs: Dict of kwargs to create an instance of the loss.
         :param optimizer_kwargs: Dict of kwargs to create an instance of the optimizer.
         :param simulation_manager: Manager for the numerical Simulation.
         :param new_session: If True, a new repository is created for the session.
@@ -75,6 +77,7 @@ class TrainingPipeline:
         # Create a NetworkManager
         self.network_manager = network_manager
         self.network_manager.init_training_pipeline(loss_fnc=loss_fnc,
+                                                    loss_kwargs=loss_kwargs,
                                                     optimizer=optimizer,
                                                     optimizer_kwargs=optimizer_kwargs,
                                                     new_session=new_session,
@@ -192,11 +195,6 @@ class TrainingPipeline:
                 if self.stats_manager is not None:
                     self.stats_manager.add_train_batch_loss(loss,
                                                             self.epoch_id * self.batch_nb + self.batch_id)
-                    for key in self.loss_dict.keys():
-                        if key != 'loss':
-                            self.stats_manager.add_custom_scalar(tag=key,
-                                                                 value=self.loss_dict[key],
-                                                                 count=self.epoch_id * self.batch_nb + self.batch_id)
 
             # Epoch end
             self.epoch_id += 1

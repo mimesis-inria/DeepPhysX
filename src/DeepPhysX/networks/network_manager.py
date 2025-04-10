@@ -42,13 +42,13 @@ class NetworkManager:
         self.network_template_name: str = ''
 
         # Network instance
-        self.__network: NetworkController = NetworkController(network_architecture=network_architecture,
-                                                              network_kwargs=network_kwargs,
-                                                              data_type=data_type)
-        self.__network.set_device()
+        self.network: NetworkController = NetworkController(network_architecture=network_architecture,
+                                                            network_kwargs=network_kwargs,
+                                                            data_type=data_type)
+        self.network.set_device()
 
         # Training materials variables
-        self.__loss_fnc: Optional[_Loss] = None
+        self.loss_fnc: Optional[_Loss] = None
         self.__loss_value: Optional[Any] = None
         self.__optimizer: Optional[Optimizer] = None
 
@@ -63,8 +63,9 @@ class NetworkManager:
 
     def init_training_pipeline(self,
                                loss_fnc: Type[_Loss],
+                               loss_kwargs: Optional[Dict[str, Any]],
                                optimizer: Type[Optimizer],
-                               optimizer_kwargs: Dict[str, Any],
+                               optimizer_kwargs: Optional[Dict[str, Any]],
                                new_session: bool,
                                session: str = 'sessions/default',
                                save_intermediate_state_every: int = 0) -> None:
@@ -72,6 +73,7 @@ class NetworkManager:
         Init the NetworkManager for the training pipeline.
 
         :param loss_fnc: The Torch loss function to use.
+        :param loss_kwargs: Dict of kwargs to create an instance of the loss.
         :param optimizer: The Torch optimizer to use.
         :param optimizer_kwargs: Dict of kwargs to create an instance of the optimizer.
         :param new_session: If True, create a new training session.
@@ -80,12 +82,14 @@ class NetworkManager:
         """
 
         # Configure the Network for the current pipeline
-        self.__network.train()
+        self.network.train()
         self.network_template_name = session.split(sep)[-1] + '_network_{}'
 
         # Create the training materials
-        self.__loss_fnc = loss_fnc()
-        self.__optimizer = optimizer(params=self.__network.parameters(), **optimizer_kwargs)
+        loss_kwargs = {} if loss_kwargs is None else loss_kwargs
+        self.loss_fnc = loss_fnc(**loss_kwargs)
+        optimizer_kwargs = {} if optimizer_kwargs is None else optimizer_kwargs
+        self.__optimizer = optimizer(params=self.network.parameters(), **optimizer_kwargs)
         self.save_every = save_intermediate_state_every
 
         # Case 1: Training from an existing Network state of parameters
@@ -107,7 +111,7 @@ class NetworkManager:
         """
 
         # Configure the Network for the current pipeline
-        self.__network.eval()
+        self.network.eval()
 
         # Load the Network state of parameters
         self.network_dir = join(session, 'networks')
@@ -120,7 +124,7 @@ class NetworkManager:
         """
 
         def wrapper(self, *args, **kwargs):
-            if not self.__network.is_ready:
+            if not self.network.is_ready:
                 raise ValueError(f"[NetworkManager] The manager is not completely initialized; please use one of the "
                                  f"'init_*_pipeline' methods.")
             return foo(self, *args, **kwargs)
@@ -191,7 +195,7 @@ class NetworkManager:
                   f"trained by default.")
 
         # Load the set of parameters
-        self.__network.load(files[network_id])
+        self.network.load(files[network_id])
         print(f"[NetworkManager] Load weights from {files[network_id]}.")
 
     def save_network(self, final_save: bool = False) -> None:
@@ -205,7 +209,7 @@ class NetworkManager:
         if final_save:
 
             path = join(self.network_dir, 'network')
-            self.__network.save(path=path)
+            self.network.save(path=path)
             print(f"[NetworkManager] Save final set of weights at {path}.")
 
         # Case 2: Intermediate save
@@ -220,13 +224,13 @@ class NetworkManager:
             # Case 2.1: Save intermediate state
             if self.save_every > 0 and self.saved_counter % self.save_every == 0:
                 path = join(self.network_dir, self.network_template_name.format(self.saved_counter))
-                self.__network.save(path=path)
+                self.network.save(path=path)
                 print(f"[NetworkManager] Save intermediate set of weights at {path}.")
 
             # Case 2.2: Save backup file
             else:
                 path = join(self.network_dir, f'temp_{self.saved_counter}')
-                self.__network.save(path=path)
+                self.network.save(path=path)
 
     #####################################
     # Network optimization & prediction #
@@ -251,8 +255,8 @@ class NetworkManager:
                 if self.__database.do_normalize and field_name in self.__database.normalization:
                     batch[field_name] = self.normalize_data(data=batch[field_name],
                                                             normalization=self.__database.normalization[field_name])
-                batch[field_name] = self.__network.to_torch(tensor=batch[field_name],
-                                                          grad=self.__network.is_training)
+                batch[field_name] = self.network.to_torch(tensor=batch[field_name],
+                                                          grad=self.network.is_training)
 
         return batch_fwd, batch_bwd
 
@@ -264,7 +268,7 @@ class NetworkManager:
         :param batch_fwd: Batch of forward data samples from the database.
         """
 
-        return self.__network.predict(*batch_fwd.values())
+        return self.network.predict(*batch_fwd.values())
 
     @__check_init
     def get_loss(self,
@@ -279,7 +283,7 @@ class NetworkManager:
 
         # Compute the loss function to the network prediction and the backward data
         net_predict = net_predict if isinstance(net_predict, tuple) else (net_predict,)
-        self.__loss_value = self.__loss_fnc(*net_predict, *batch_bwd.values())
+        self.__loss_value = self.loss_fnc(*net_predict, *batch_bwd.values())
         return self.__loss_value.item()
 
     @__check_init
@@ -308,16 +312,16 @@ class NetworkManager:
             sample[field] = array([sample[field]])
             if field in normalization:
                 sample[field] = self.normalize_data(data=sample[field], normalization=normalization[field])
-            sample[field] = self.__network.to_torch(tensor=sample[field], grad=False)
+            sample[field] = self.network.to_torch(tensor=sample[field], grad=False)
 
         # 2. Compute prediction
-        net_predict = self.__network.predict(*(sample[field_name] for field_name in self.data_forward_fields))
+        net_predict = self.network.predict(*(sample[field_name] for field_name in self.data_forward_fields))
         net_predict = net_predict if isinstance(net_predict, tuple) else (net_predict,)
 
         # 3. Return the prediction and write it in the exchange db
         data = {}
         for field, value in zip(self.data_backward_fields, net_predict):
-            data[field] = self.__network.to_numpy(tensor=net_predict[0])
+            data[field] = self.network.to_numpy(tensor=net_predict[0])
             if field in normalization.keys():
                 data[field] = self.normalize_data(data=data[field], normalization=normalization[field],
                                                   reverse=True)
@@ -353,15 +357,15 @@ class NetworkManager:
         Launch the closing procedure of the NetworkManager.
         """
 
-        if self.__network.is_training:
+        if self.network.is_training:
             self.save_network(final_save=True)
-        del self.__network
+        del self.network
 
     def __str__(self) -> str:
 
         description = "\n"
         description += f"# NetworkManager\n"
         description += f"    networks Directory: {self.network_dir}\n"
-        description += f"    Managed objects: networks: {self.__network.__class__.__name__}\n"
-        description += str(self.__network)
+        description += f"    Managed objects: networks: {self.network.__class__.__name__}\n"
+        description += str(self.network)
         return description

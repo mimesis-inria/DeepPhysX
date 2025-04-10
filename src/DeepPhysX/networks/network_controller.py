@@ -129,7 +129,7 @@ class NetworkController:
         :param grad: If True, record operations gradients.
         """
 
-        tensor = as_tensor(tensor.astype(self.data_type), device=self.__device)
+        tensor = as_tensor(tensor, dtype=self.data_type, device=self.__device)
         tensor.requires_grad_(grad)
         return tensor
 
@@ -140,5 +140,5 @@ class NetworkController:
         :param tensor: Torch tensor to convert.
         """
 
-        return tensor.cpu().detach().numpy().astype(self.data_type)
+        return tensor.cpu().detach().numpy()
         
