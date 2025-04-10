@@ -7,24 +7,18 @@
 The **DeepPhysX** project provides Python packages allowing users to easily interface their **numerical simulations**
 with **learning algorithms**.
 
-**DeepPhysX** provides a **Core** package with no dependency on any **simulation** or **AI** framework.
-Then other packages are compatible with this **Core** and a specific **simulation** or **AI** framework:
-* [DeepPhysX.Sofa](https://github.com/mimesis-inria/DeepPhysX_Sofa) as simulation packages;
-* [DeepPhysX.Torch](https://github.com/mimesis-inria/DeepPhysX_Torch) as AI packages.
-
-
 ### Features
 
-**DeepPhysX** is a full Python3 projects with 3 main features:
+**DeepPhysX** is a full Python3 projects with the following main features:
 * Generate a dataset with synthetic data from numerical simulations;
 * Train an artificial neural network with a synthetic dataset;
 * Use the predictions of a trained network in a numerical simulation.
 
 The full list of features is detailed in the [**documentation**](https://mimesis-inria.github.io/DeepPhysX/).
 
-
 ### Quick install
 
+<<<<<<< HEAD
 The project was initially developed using [SOFA](https://www.sofa-framework.org/) as the **simulation package** and
 [PyTorch](https://pytorch.org/) as the **AI framework**. 
 Thus, **DeepPhysX** is mainly designed for these frameworks, but obviously **other frameworks** can also be used.
@@ -34,11 +28,18 @@ The easiest way to install is using `pip`, but there are a several way to instal
 environment (refer to the [**documentation**](https://mimesis-inria.github.io/DeepPhysX/) 
 for further instructions).
 
+=======
+>>>>>>> 0ea7c8f2e85ea2b52a4c2485e41048d4d55d521d
 ``` bash
-$ pip install DeepPhysX             # Install default package
-$ pip install DeepPhysX.Sofa        # Install simulation package
-$ pip install DeepPhysX.Torch       # Install AI package
+# Option 1 (USERS): install with pip
+$ pip install git+https://github.com/mimesis-inria/DeepPhysX.git
+
+# Option 2 (DEVS): install as editable
+$ git clone https://github.com/mimesis-inria/DeepPhysX.git
+$ cd DeepPhysX
+$ pip install -e .
 ```
+<<<<<<< HEAD
 
 
 ### Demos
@@ -63,3 +64,5 @@ Did this project help you for your research ? Please cite us as:
 
 R. Enjalbert, A. Odot and S. Cotin, *DeepPhysX, a python framework to interface AI with numerical simulation*, 
 Zenodo, 2022, [**DOI**](https://doi.org/10.5281/zenodo.7389505)
+=======
+>>>>>>> 0ea7c8f2e85ea2b52a4c2485e41048d4d55d521d

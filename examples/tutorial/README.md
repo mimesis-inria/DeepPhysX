@@ -1,17 +1,15 @@
-## Tutorials
+# Tutorial
 
-This repository contains Python scripts to discover step by step the basic usage of DeepPhysX. 
+This repository is a first simple example where we train a neural network to predict the behavior of a mass-spring 
+system, depending on the stiffness of the spring, the mass of the cube and the friction.
 
-This tutorial only defines dummy objects so that users become familiar with the API and 
-what is required to run training and prediction sessions.
+![image](../../docs/source/_static/image/tutorial.png)
 
-### Description
+## Description
 
 Python scripts should be explored in the following order:
-* **#01** `environment.py`: how to define an Environment
-* **#02** `network.py`: how to define a Network
-* **#03** `configuration.py`: how to configure Environment, Network and Dataset
-* **#04** `dataGeneration.py`: how to only generate a Dataset
-* **#05** `offlineTraining.py`: how to launch a training session with an existing dataset
-* **#06** `onlineTraining.py`: how to generate a Dataset and launch a training session simultaneously
-* **#07** `prediction.py`: how to launch a prediction session with a trained Network
+* **#01** `scenario.py`: an interactive simulation to understand the system
+* **#02** `simulation.py`: the definition of our training Simulation in a DeepPhysX compatible implementation
+* **#03** `data_generation.py`: run the data generation pipeline using the numerical simulation
+* **#04** `training.py`: run the training pipeline using the generated samples
+* **#05** `prediction.py`: run the prediction pipeline to display the trained network predictions

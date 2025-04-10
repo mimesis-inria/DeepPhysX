@@ -13,7 +13,18 @@
 import os
 import sys
 
+<<<<<<< HEAD:docs/src/conf.py
 sys.path.insert(0, os.path.abspath('../../src'))
+=======
+# DeepPhysX root
+root = abspath(join(abspath(__file__), pardir, pardir, pardir, 'src', 'DeepPhysX'))
+all_modules = ['database', 'networks', 'pipelines', 'simulation']
+
+# Import all modules
+sys.path.append(root)
+for module in all_modules:
+    sys.path.append(join(root, module))
+>>>>>>> 0ea7c8f2e85ea2b52a4c2485e41048d4d55d521d:docs/source/conf.py
 
 # -- Project information -----------------------------------------------------
 
@@ -77,5 +88,6 @@ extlinks = {'Caribou': ('https://caribou.readthedocs.io/%s', '%s'),
             'Tensorboard': ('https://www.tensorflow.org/tensorboard/%s', '%s'),
             'Vedo': ('https://vedo.embl.es/%s', '%s'),
             'VedoObject': ('https://vedo.embl.es/autodocs/content/vedo/%s', '%s'),
-            'SSD': ('https://github.com/RobinEnjalbert/SimulationSimpleDatabase/%s', '%s'),
-            'SSDd': ('https://simulationsimpledatabase.readthedocs.io/en/latest/%s', '%s')}
+            'SSD': ('https://github.com/mimesis-inria/SimulationSimpleDatabase/%s', '%s'),
+            'SSDd': ('https://simulationsimpledatabase.readthedocs.io/en/latest/%s', '%s'),
+            'SimRender': ('https://github.com/mimesis-inria/SimRender/%s', '%s')}

@@ -1,0 +1,14 @@
+Sofa.Component.Constraint.Projective
+Sofa.Component.Engine.Select
+Sofa.Component.IO.Mesh
+Sofa.Component.LinearSolver.Iterative
+Sofa.Component.Mapping.Linear
+Sofa.Component.Mass
+Sofa.Component.MechanicalLoad
+Sofa.Component.ODESolver.Backward
+Sofa.Component.StateContainer
+Sofa.Component.Topology.Container.Dynamic
+Sofa.Component.Topology.Container.Grid
+Sofa.Component.Visual
+Sofa.GL.Component.Rendering3D
+SofaCaribou
